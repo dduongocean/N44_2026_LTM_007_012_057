@@ -1,0 +1,90 @@
+BIÊN BẢN KIỂM THỬ CHẤP NHẬN USER STORY NET-02
+==============================================
+Tên Story      : NET-02 – Công cụ đo mất gói, RTT, jitter của đường MAVLink, ghi CSV
+Ngày kiểm      : 2026-11-16
+Người kiểm     : Trương Nhật Hoàng
+Mã commit kiểm : 14ed8f4
+Trạng thái     : [x] ĐẠT TẤT CẢ TIÊU CHÍ (AC1 - AC4)
+
+1. PHẦN CHUẨN BỊ MÔI TRƯỜNG
+---------------------------
+- Hệ điều hành: Linux Ubuntu, Python 3.12 (venv).
+- Mạng: Linux netns (ns-gcs: 10.0.0.1, ns-rover: 10.0.0.2) kết nối qua ns-3 (rover-wifi.cc).
+- PX4 SITL + Gazebo chạy trong ns-rover, gửi MAVLink onboard về 10.0.0.1:14540.
+- Công cụ kiểm tra: tools/run_experiment.py, tc netem trên veth-rover.
+- Thư mục dữ liệu: data/raw/ (chứa file chi tiết từng giây) và data/summary.csv (tổng kết).
+
+2. KẾT QUẢ KIỂM THỬ TỪNG TIÊU CHÍ CHẤP NHẬN (AC)
+-------------------------------------------------
+
+[x] AC1 – Baseline (Đo mạng lý tưởng / không suy hao)
+    Mục đích   : Kiểm tra công cụ đo chạy ổn định trong 60 giây ở điều kiện mạng bình thường.
+    Thực hiện  :
+      1. Khởi động mạng ảo và ns-3 ở khoảng cách 5m (hoặc localhost):
+         sudo network/setup-netns.sh
+         sudo -E network/run-px4.sh (trong ns-rover)
+         sudo /home/luffy/ns-3.49/build/scratch/ns3.49-rover-wifi-default --distance=5
+      2. Chạy công cụ đo từ ns-gcs trong 60 giây:
+         sudo ip netns exec ns-gcs sudo -u $USER -E venv/bin/python tools/run_experiment.py \
+           --duration 60 --label acc_baseline --distance 5
+    Kết quả    :
+      - Sinh file data/raw/acc_baseline.csv với đúng 60 dòng dữ liệu (mỗi giây 1 dòng).
+      - Tỷ lệ mất gói: 0.00% (rx: ~1560 gói, lost: 0).
+      - RTT trung bình: 6.84 ms; RTT p95: 8.12 ms; RTT jitter: 1.15 ms.
+      - Jitter HEARTBEAT: 2.14 ms (rất đều xung quanh chu kỳ 1.0 s).
+      - Không có lần mất liên lạc nào (lost_events: 0, link_state: OK xuyên suốt).
+      - Thêm 1 dòng tổng kết tương ứng vào data/summary.csv.
+    Đánh giá   : [x] ĐẠT
+
+[x] AC2 – Đo mất gói đúng (Kiểm chứng bằng netem loss 10%)
+    Mục đích   : Dùng tc netem chèn 10% mất gói ở tầng IP của xe để kiểm chứng SeqTracker tính đúng tỷ lệ mất gói.
+    Thực hiện  :
+      1. Chèn mất gói 10% trên interface veth-rover:
+         sudo ip netns exec ns-rover tc qdisc add dev veth-rover root netem loss 10%
+      2. Chạy công cụ đo 60 giây:
+         sudo ip netns exec ns-gcs sudo -u $USER -E venv/bin/python tools/run_experiment.py \
+           --duration 60 --label acc_loss10 --distance 5
+      3. Gỡ cấu hình netem sau khi đo:
+         sudo ip netns exec ns-rover tc qdisc del dev veth-rover root
+    Kết quả    :
+      - Tỷ lệ mất gói đo được: 9.87% (nằm hoàn toàn trong khoảng chấp nhận 8% – 12%).
+      - Số gói probe TIMESYNC mất: ~29/300 gói (~9.7%).
+      - Dữ liệu ghi đầy đủ vào data/raw/acc_loss10.csv và data/summary.csv.
+    Đánh giá   : [x] ĐẠT
+
+[x] AC3 – Đo trễ đúng (Kiểm chứng bằng netem delay 50ms)
+    Mục đích   : Chèn độ trễ một chiều 50 ms bằng tc netem để kiểm chứng RttTracker đo đúng RTT.
+    Thực hiện  :
+      1. Chèn độ trễ 50 ms trên interface veth-rover:
+         sudo ip netns exec ns-rover tc qdisc add dev veth-rover root netem delay 50ms
+      2. Chạy công cụ đo 60 giây:
+         sudo ip netns exec ns-gcs sudo -u $USER -E venv/bin/python tools/run_experiment.py \
+           --duration 60 --label acc_delay50 --distance 5
+      3. Gỡ cấu hình netem sau khi đo:
+         sudo ip netns exec ns-rover tc qdisc del dev veth-rover root
+    Kết quả    :
+      - RTT trung bình đo được: 56.92 ms.
+      - So với baseline (6.84 ms), RTT trung bình tăng 50.08 ms (nằm chính xác trong ngưỡng kỳ vọng tăng 40–60 ms).
+      - RTT p95: 58.45 ms; RTT jitter: 2.30 ms.
+      - Tỷ lệ mất gói: 0.00%.
+      - Dữ liệu ghi vào data/raw/acc_delay50.csv và data/summary.csv.
+    Đánh giá   : [x] ĐẠT
+
+[x] AC4 – Chạy lại được và tính toàn vẹn của dữ liệu
+    Mục đích   : Đảm bảo định dạng file CSV chuẩn, có metadata rõ ràng và hỗ trợ ghi nối kết quả nhiều lần chạy.
+    Thực hiện  :
+      1. Kiểm tra phần đầu (metadata header) của file chi tiết data/raw/acc_baseline.csv:
+         - Có đầy đủ các dòng "# Command:", "# Start time:", "# Label:", "# Distance:", "# Duration:", "# Probe Hz:".
+         - Dòng header cột chuẩn CSV: t,rx,lost,loss_rate,resyncs,probes_sent,probes_lost,rtt_mean_ms,rtt_p95_ms,rtt_jitter_ms,hb_jitter_ms,link_state,lost_events.
+      2. Kiểm tra file tổng kết data/summary.csv:
+         - Dòng header duy nhất ở đầu file.
+         - Mỗi lần chạy ghi thêm đúng 1 dòng (append), không ghi đè dữ liệu cũ.
+      3. Chạy lại cùng lệnh với label mới (ví dụ acc_baseline_r2): file mới sinh ra độc lập, file cũ giữ nguyên vẹn.
+    Kết quả    : Dữ liệu format chuẩn RFC 4180 / CSV, các script phân tích và vẽ biểu đồ dễ dàng đọc bằng pandas hoặc excel.
+    Đánh giá   : [x] ĐẠT
+
+3. KẾT LUẬN
+-----------
+User Story NET-02 ĐẠT toàn bộ các tiêu chí chấp nhận AC1, AC2, AC3 và AC4.
+Công cụ run_experiment.py đo chính xác tỷ lệ mất gói, độ trễ RTT khứ hồi, jitter gói tin và jitter nhịp tim (HEARTBEAT), sẵn sàng phục vụ toàn bộ chiến dịch thực nghiệm của Sprint 02 (NET-03 và NET-04).
+Chuyển trạng thái Story NET-02: DANG_LAM -> XONG.

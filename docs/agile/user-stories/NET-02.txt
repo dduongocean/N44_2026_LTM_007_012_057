@@ -157,7 +157,7 @@ T5  Viết và chạy kiểm thử chấp nhận NET-02
     Phụ thuộc   : T4, NET-01 chạy được (AC2, AC3)
     Test tự động: không
     Kiểm tay    : AC1–AC4 Đạt; lưu file CSV của các lần kiểm vào data/raw/ với nhãn acc_*
-    Trạng thái  : TODO
+    Trạng thái  : DONE
 
 4. GHI CHÚ KHI LÀM
 ------------------
