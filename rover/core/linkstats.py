@@ -195,3 +195,80 @@ class IntervalStats:
         if self ._last_event is not None:
             self ._intervals .append (now - self ._last_event)
         self ._last_event = now
+
+
+def format_experiment_header (
+    command: str,
+    start_time: str,
+    label: str,
+    distance_m: float,
+    duration_s: float,
+    probe_hz: float,
+) -> str:
+    """Tạo các dòng chú thích ở đầu file CSV chi tiết theo yêu cầu NET-02."""
+    lines = [
+        f"# command: {command}",
+        f"# start_time: {start_time}",
+        f"# label: {label}",
+        f"# distance_m: {distance_m:.1f}",
+        f"# duration_s: {duration_s:.1f}",
+        f"# probe_hz: {probe_hz:.1f}",
+        "t,rx,lost,loss_rate,resyncs,probes_sent,probes_lost,rtt_mean_ms,rtt_p95_ms,rtt_jitter_ms,hb_jitter_ms,link_state,lost_events",
+    ]
+    return "\n" .join (lines) + "\n"
+
+
+def format_experiment_row (
+    t: float,
+    rx: int,
+    lost: int,
+    loss_rate: float,
+    resyncs: int,
+    probes_sent: int,
+    probes_lost: int,
+    rtt_mean_ms: float | None,
+    rtt_p95_ms: float | None,
+    rtt_jitter_ms: float | None,
+    hb_jitter_ms: float | None,
+    link_state: str,
+    lost_events: int,
+) -> str:
+    """Tạo một dòng dữ liệu mỗi giây cho file CSV chi tiết."""
+    def _fmt (val: float | None) -> str:
+        return f"{val:.2f}" if val is not None else ""
+
+    return (
+        f"{t:.1f},{rx},{lost},{loss_rate:.4f},{resyncs},{probes_sent},{probes_lost},"
+        f"{_fmt (rtt_mean_ms)},{_fmt (rtt_p95_ms)},{_fmt (rtt_jitter_ms)},"
+        f"{_fmt (hb_jitter_ms)},{link_state},{lost_events}\n"
+    )
+
+
+def format_summary_header () -> str:
+    """Tiêu đề cho file data/summary.csv."""
+    return "label,distance,duration,rx,lost,loss_rate,rtt_mean_ms,rtt_p95_ms,rtt_jitter_ms,hb_jitter_ms,probes_lost,lost_events\n"
+
+
+def format_summary_row (
+    label: str,
+    distance: float,
+    duration: float,
+    rx: int,
+    lost: int,
+    loss_rate: float,
+    rtt_mean_ms: float | None,
+    rtt_p95_ms: float | None,
+    rtt_jitter_ms: float | None,
+    hb_jitter_ms: float | None,
+    probes_lost: int,
+    lost_events: int,
+) -> str:
+    """Tạo một dòng tổng kết cho data/summary.csv."""
+    def _fmt (val: float | None) -> str:
+        return f"{val:.2f}" if val is not None else ""
+
+    return (
+        f"{label},{distance:.1f},{duration:.1f},{rx},{lost},{loss_rate:.4f},"
+        f"{_fmt (rtt_mean_ms)},{_fmt (rtt_p95_ms)},{_fmt (rtt_jitter_ms)},"
+        f"{_fmt (hb_jitter_ms)},{probes_lost},{lost_events}\n"
+    )

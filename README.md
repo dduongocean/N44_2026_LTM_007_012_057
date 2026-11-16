@@ -154,4 +154,14 @@ Lưu ý:
 - Dựng lại mạng (`setup-netns.sh`) thì phải chạy lại PX4, vì netns cũ đã bị xóa.
 - Cảnh báo `sudo: unable to resolve host ...` khi vào netns là vô hại.
 
-Các bước chạy chương trình đo sẽ được bổ sung ở đây khi NET-02 xong.
+### Chạy chương trình đo lường (NET-02/T4)
+Đo mất gói MAVLink, RTT và jitter, xuất file CSV chi tiết và bảng tổng kết:
+- **Baseline localhost** (không qua ns-3): PX4 chạy bình thường ở namespace chính:
+  ```bash
+  python tools/run_experiment.py --duration 60 --label baseline_r1
+  ```
+- **Chạy trong `ns-gcs` qua ns-3**:
+  ```bash
+  sudo ip netns exec ns-gcs sudo -u $USER -E venv/bin/python tools/run_experiment.py --duration 60 --label d040_r1 --distance 40
+  ```
+Số liệu chi tiết từng giây lưu tại `data/raw/<label>.csv`, dòng tổng kết được ghi nối tiếp vào `data/summary.csv`.

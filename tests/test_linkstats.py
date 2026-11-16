@@ -9,6 +9,10 @@ from rover .core .linkstats import (
     calc_mean,
     calc_percentile,
     calc_stdev,
+    format_experiment_header,
+    format_experiment_row,
+    format_summary_header,
+    format_summary_row,
 )
 
 
@@ -259,3 +263,75 @@ def test_14_stats_helpers_mean_stdev_percentile ():
     p95 = calc_percentile (vals, 95)
     assert p95 is not None
     assert 40.0 <= p95 <= 50.0
+
+
+def test_15_format_experiment_header_and_row ():
+    # Kiểm tra header và dòng chi tiết file CSV
+    hdr = format_experiment_header (
+        command = "python tools/run_experiment.py",
+        start_time = "2026-11-16 19:40:00",
+        label = "test_run",
+        distance_m = 10.0,
+        duration_s = 60.0,
+        probe_hz = 5.0,
+    )
+    assert "# command: python tools/run_experiment.py" in hdr
+    assert "# label: test_run" in hdr
+    assert "t,rx,lost,loss_rate,resyncs,probes_sent,probes_lost,rtt_mean_ms,rtt_p95_ms,rtt_jitter_ms,hb_jitter_ms,link_state,lost_events" in hdr
+
+    row = format_experiment_row (
+        t = 1.0,
+        rx = 400,
+        lost = 5,
+        loss_rate = 5 / 405,
+        resyncs = 0,
+        probes_sent = 5,
+        probes_lost = 0,
+        rtt_mean_ms = 4.52,
+        rtt_p95_ms = 6.10,
+        rtt_jitter_ms = 1.25,
+        hb_jitter_ms = 0.85,
+        link_state = "CONNECTED",
+        lost_events = 0,
+    )
+    assert row .startswith ("1.0,400,5,0.0123,0,5,0,4.52,6.10,1.25,0.85,CONNECTED,0\n")
+
+    # Kiểm tra giá trị None khi chưa có mẫu RTT / Jitter
+    row_none = format_experiment_row (
+        t = 0.0,
+        rx = 0,
+        lost = 0,
+        loss_rate = 0.0,
+        resyncs = 0,
+        probes_sent = 0,
+        probes_lost = 0,
+        rtt_mean_ms = None,
+        rtt_p95_ms = None,
+        rtt_jitter_ms = None,
+        hb_jitter_ms = None,
+        link_state = "WAITING",
+        lost_events = 0,
+    )
+    assert row_none == "0.0,0,0,0.0000,0,0,0,,,,,WAITING,0\n"
+
+
+def test_16_format_summary_header_and_row ():
+    # Kiểm tra header và dòng summary file CSV
+    hdr = format_summary_header ()
+    assert hdr == "label,distance,duration,rx,lost,loss_rate,rtt_mean_ms,rtt_p95_ms,rtt_jitter_ms,hb_jitter_ms,probes_lost,lost_events\n"
+
+    row = format_summary_row (
+        label = "d050_r1",
+        distance = 50.0,
+        duration = 60.0,
+        rx = 24000,
+        lost = 120,
+        loss_rate = 120 / (24000 + 120),
+        rtt_mean_ms = 8.42,
+        rtt_p95_ms = 14.20,
+        rtt_jitter_ms = 3.12,
+        hb_jitter_ms = 2.45,
+        probes_lost = 1,
+        lost_events = 0,
+    )
+    assert row == "d050_r1,50.0,60.0,24000,120,0.0050,8.42,14.20,3.12,2.45,1,0\n"

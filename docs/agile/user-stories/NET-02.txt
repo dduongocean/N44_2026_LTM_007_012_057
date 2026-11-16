@@ -149,7 +149,7 @@ T4  Chương trình đo chạy không giao diện, ghi CSV
 
     Test tự động: có (hàm tạo dòng CSV); vòng lặp kiểm tay
     Kiểm tay    : chạy 10 s với PX4 localhost, mở CSV thấy 10 dòng hợp lý
-    Trạng thái  : TODO
+    Trạng thái  : DONE
 
 T5  Viết và chạy kiểm thử chấp nhận NET-02
     File        : docs/acceptance/NET-02-acceptance.txt
