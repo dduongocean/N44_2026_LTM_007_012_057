@@ -14,7 +14,7 @@ Quy tắc:
 --------+--------+---------------------------------------------------------------+------+--------+------------+--------------
 1       | NET-01 | Điều khiển xe khi MAVLink hai chiều đi qua Wi-Fi mô phỏng ns-3 |  8   |  S1    | XONG       | NET-01.txt
 2       | NET-02 | Công cụ đo mất gói, RTT, jitter của đường MAVLink, ghi CSV     |  5   |  S1    | XONG       | NET-02.txt
-3       | NET-03 | Khảo sát chất lượng đường MAVLink theo khoảng cách             |  5   |  S2    | DANG_LAM   | NET-03.txt
+3       | NET-03 | Khảo sát chất lượng đường MAVLink theo khoảng cách             |  5   |  S2    | XONG       | NET-03.txt
 4       | NET-04 | Đánh giá phản ứng của xe khi mất liên lạc giữa lúc chạy        |  3   |  S2    | MOI        | NET-04.txt
 
 Ghi chú planning (2026-11-16)

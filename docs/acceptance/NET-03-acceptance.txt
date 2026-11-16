@@ -1,0 +1,49 @@
+BIÊN BẢN KIỂM THỬ CHẤP NHẬN USER STORY NET-03
+==============================================
+Tên Story      : NET-03 – Khảo sát chất lượng đường MAVLink theo khoảng cách
+Ngày kiểm      : 2026-11-17
+Người kiểm     : Đinh Trần Thảo Phương
+Mã commit kiểm : 7442cd8 (+ sửa analysis/plot_results.py trong lần kiểm, xem AC2)
+Trạng thái     : [x] ĐẠT TẤT CẢ TIÊU CHÍ (AC1 – AC5)
+
+Cấu hình kênh: 802.11g 6 Mbit/s, 16 dBm, LogDistance exponent 3, ReferenceLoss 40.046 dB, fading Nakagami m=1.5
+(docs/experiments/config.txt). Mức khoảng cách: 10 40 50 60 70 80 90 100 m (calibration.txt mục 6).
+
+[x] AC1 – Đủ số liệu
+    Kiểm   : đối chiếu data/summary.csv với mức trong calibration.txt; mỗi nhãn có file data/raw/<label>.csv.
+    Kết quả: 8 mức × 3 lần (d010_r1 … d100_r3) + baseline localhost 3 lần (baseline_r1..r3) = 27 dòng; mọi lần
+             duration 60 s; không nhãn trùng, không mức thừa; đủ 27 file raw (mỗi file ghi lệnh, nhãn, khoảng cách,
+             thời điểm bắt đầu).
+    Đánh giá: [x] Đạt
+
+[x] AC2 – Biểu đồ (a) mất gói, (b) RTT tb và p95, (c) jitter, (d) số lần mất kết nối; có baseline, có độ phân tán 3 lần
+    Kiểm   : xem analysis/combined_metrics.png và 5 hình riêng.
+    Lần 1  : KHÔNG ĐẠT – (c) và (d) không có baseline, không có thanh sai số; (c) jitter RTT bị jitter HEARTBEAT
+             (tới ~6000 ms) ép sát trục; (d) chỉ có trong hình ghép.
+    Sửa    : plot_results.py – (c) hai trục y (RTT trái, HEARTBEAT phải), baseline + độ lệch chuẩn; (d) trung bình mỗi
+             lần chạy ± độ lệch chuẩn, baseline; thêm analysis/lost_events_vs_distance.png.
+    Lần 2  : (a)–(d) đều có baseline và thanh sai số (độ lệch chuẩn 3 lần; ở (a), (b) rất nhỏ: ± 0.2–0.6 %).
+    Đánh giá: [x] Đạt
+
+[x] AC3 – Bảng tổng hợp
+    Kết quả: analysis/summary_table.csv, summary_table.txt (khoảng cách – mất gói ± std, RTT tb ± std, p95, jitter,
+             số lần mất kết nối; trung bình 3 lần).
+    Đánh giá: [x] Đạt
+
+[x] AC4 – Minh chứng pcap gần ngưỡng có cờ Retry
+    Kết quả: docs/evidence/net-03-wifi-80m.pcap (80 m, --pcap, phía xe): 15 777 / 25 874 khung data có cờ Retry (61%);
+             ảnh docs/evidence/net-03-wireshark-retry-80m.png lọc wlan.fc.retry == 1, thấy "Retry: Frame is being
+             retransmitted".
+    Đánh giá: [x] Đạt
+
+[x] AC5 – Chạy lại được
+    Kết quả: tools/run_sweep.sh chạy toàn bộ loạt (mặc định đúng 8 mức trên, 3 lần × 60 s; baseline: --baseline-only
+             khi không có netns); docs/experiments/config.txt ghi bảng tham số cố định khớp rover-wifi.cc.
+    Đánh giá: [x] Đạt
+
+KẾT LUẬN
+--------
+NET-03 ĐẠT AC1–AC5. Kết quả chính: 0% mất gói tới 60 m; 70 m mất 7.6% nhưng RTT ~445 ms; 80 / 90 / 100 m mất
+63 / 82 / 90%, bắt đầu mất kết nối từ 80 m. Chuyển NET-03: DANG_LAM -> XONG.
+Lưu ý cho báo cáo: RTT >= 70 m chạm trần ~500 ms của hàng đợi MAC ns-3; mất gói theo seq ở 90–100 m thấp hơn
+thật 2–3 điểm % (seq 8 bit) – xem calibration.txt mục 6.

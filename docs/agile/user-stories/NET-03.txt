@@ -41,4 +41,4 @@ T4  pcap + ảnh Wireshark (AC4); ghi docs/experiments/config.txt (AC5)
                 Flags thấy "Retry: Frame is being retransmitted": docs/evidence/net-03-wireshark-retry-80m.png
 
 T5  Kiểm thử chấp nhận NET-03
-    Trạng thái: TODO
+    Trạng thái: DONE (2026-11-17) – docs/acceptance/NET-03-acceptance.txt, AC1–AC5 Đạt

@@ -67,9 +67,13 @@ def generate_summary_table(df: pd.DataFrame, out_dir: str) -> pd.DataFrame:
         rtt_std=("rtt_mean_ms", "std"),
         rtt_p95_mean=("rtt_p95_ms", "mean"),
         rtt_jitter_mean=("rtt_jitter_ms", "mean"),
+        rtt_jitter_std=("rtt_jitter_ms", "std"),
         hb_jitter_mean=("hb_jitter_ms", "mean"),
+        hb_jitter_std=("hb_jitter_ms", "std"),
         probes_lost_sum=("probes_lost", "sum"),
         lost_events_sum=("lost_events", "sum"),
+        lost_events_mean=("lost_events", "mean"),
+        lost_events_std=("lost_events", "std"),
     ).reset_index()
 
     # Lưu ra CSV
@@ -94,6 +98,52 @@ def generate_summary_table(df: pd.DataFrame, out_dir: str) -> pd.DataFrame:
         f.write("=" * 96 + "\n")
     print(f"[OK] Đã xuất bảng văn bản: {out_txt}")
     return grouped
+
+
+def _baseline_value(baseline_summary: pd.DataFrame, col: str):
+    """Giá trị trung bình của baseline (distance == 0) cho một cột; None nếu không có baseline."""
+    if len(baseline_summary) == 0 or pd.isnull(baseline_summary[col].values[0]):
+        return None
+    return baseline_summary[col].values[0]
+
+
+def draw_jitter(ax, wifi_summary: pd.DataFrame, baseline_summary: pd.DataFrame, title: str):
+    """(c) Jitter: RTT ở trục trái, HEARTBEAT ở trục phải (hai thang khác nhau ~100 lần), có baseline và độ lệch chuẩn 3 lần."""
+    rtt = wifi_summary.dropna(subset=["rtt_jitter_mean"])
+    hb = wifi_summary.dropna(subset=["hb_jitter_mean"])
+    ax2 = ax.twinx()
+    ax.errorbar(rtt["distance"], rtt["rtt_jitter_mean"], yerr=rtt["rtt_jitter_std"].fillna(0),
+                fmt="-o", color="darkorange", capsize=3, linewidth=2, label="Jitter RTT (trục trái)")
+    ax2.errorbar(hb["distance"], hb["hb_jitter_mean"], yerr=hb["hb_jitter_std"].fillna(0),
+                 fmt="-^", color="forestgreen", capsize=3, linewidth=2, label="Jitter HEARTBEAT (trục phải)")
+    b_rtt = _baseline_value(baseline_summary, "rtt_jitter_mean")
+    b_hb = _baseline_value(baseline_summary, "hb_jitter_mean")
+    if b_rtt is not None:
+        ax.axhline(y=b_rtt, color="darkorange", linestyle="--", alpha=0.6, label=f"Baseline RTT ({b_rtt:.2f} ms)")
+    if b_hb is not None:
+        ax2.axhline(y=b_hb, color="forestgreen", linestyle="--", alpha=0.6, label=f"Baseline HEARTBEAT ({b_hb:.1f} ms)")
+    ax.set_title(title, fontweight="bold")
+    ax.set_xlabel("Khoảng cách (m)")
+    ax.set_ylabel("Jitter RTT (ms)", color="darkorange")
+    ax2.set_ylabel("Jitter HEARTBEAT (ms)", color="forestgreen")
+    ax.grid(True, linestyle=":", alpha=0.6)
+    h1, l1 = ax.get_legend_handles_labels()
+    h2, l2 = ax2.get_legend_handles_labels()
+    ax.legend(h1 + h2, l1 + l2, loc="upper left", fontsize=8)
+
+
+def draw_lost_events(ax, wifi_summary: pd.DataFrame, baseline_summary: pd.DataFrame, title: str):
+    """(d) Số lần mất liên lạc (quá 3 s không có HEARTBEAT) trung bình mỗi lần chạy 60 s, thanh sai số = độ lệch chuẩn 3 lần."""
+    ax.bar(wifi_summary["distance"], wifi_summary["lost_events_mean"], width=4, color="purple", alpha=0.7,
+           yerr=wifi_summary["lost_events_std"].fillna(0), capsize=4, label="Trung bình mỗi lần chạy (± độ lệch chuẩn)")
+    b = _baseline_value(baseline_summary, "lost_events_mean")
+    if b is not None:
+        ax.axhline(y=b, color="gray", linestyle="--", label=f"Baseline ({b:.1f} lần)")
+    ax.set_title(title, fontweight="bold")
+    ax.set_xlabel("Khoảng cách (m)")
+    ax.set_ylabel("Số lần mất liên lạc / lần chạy")
+    ax.grid(True, linestyle=":", alpha=0.6)
+    ax.legend(loc="upper left", fontsize=8)
 
 
 def plot_metrics(df: pd.DataFrame, summary_df: pd.DataFrame, out_dir: str):
@@ -176,35 +226,23 @@ def plot_metrics(df: pd.DataFrame, summary_df: pd.DataFrame, out_dir: str):
     plt.close()
     print(f"[OK] Đã lưu biểu đồ: {rtt_png}")
 
-    # 3. Đồ thị Jitter RTT và Jitter HEARTBEAT
-    plt.figure(figsize=(8, 5))
-    valid_jit_summary = wifi_summary.dropna(subset=["rtt_jitter_mean", "hb_jitter_mean"])
-    plt.plot(
-        valid_jit_summary["distance"],
-        valid_jit_summary["rtt_jitter_mean"],
-        "-o",
-        color="darkorange",
-        linewidth=2,
-        label="Jitter RTT (ms)",
-    )
-    plt.plot(
-        valid_jit_summary["distance"],
-        valid_jit_summary["hb_jitter_mean"],
-        "-^",
-        color="forestgreen",
-        linewidth=2,
-        label="Jitter HEARTBEAT (ms)",
-    )
-    plt.title("Độ biến thiên trễ (Jitter) theo khoảng cách", fontsize=13, fontweight="bold")
-    plt.xlabel("Khoảng cách (m)", fontsize=11)
-    plt.ylabel("Jitter (ms)", fontsize=11)
-    plt.grid(True, linestyle=":", alpha=0.6)
-    plt.legend(loc="upper left")
-    plt.tight_layout()
+    # 3. Đồ thị Jitter RTT và Jitter HEARTBEAT (hai trục y)
+    fig, ax = plt.subplots(figsize=(8, 5))
+    draw_jitter(ax, wifi_summary, baseline_summary, "Độ biến thiên trễ (Jitter) theo khoảng cách")
+    fig.tight_layout()
     jit_png = os.path.join(out_dir, "jitter_vs_distance.png")
-    plt.savefig(jit_png, dpi=300)
-    plt.close()
+    fig.savefig(jit_png, dpi=300)
+    plt.close(fig)
     print(f"[OK] Đã lưu biểu đồ: {jit_png}")
+
+    # 3b. Đồ thị số lần mất liên lạc
+    fig, ax = plt.subplots(figsize=(8, 5))
+    draw_lost_events(ax, wifi_summary, baseline_summary, "Số lần mất liên lạc (quá 3 s không có HEARTBEAT)")
+    fig.tight_layout()
+    lost_png = os.path.join(out_dir, "lost_events_vs_distance.png")
+    fig.savefig(lost_png, dpi=300)
+    plt.close(fig)
+    print(f"[OK] Đã lưu biểu đồ: {lost_png}")
 
     # 4. Hình ghép 2x2 tổng hợp cho Báo cáo (Combined 4-panel)
     fig, axs = plt.subplots(2, 2, figsize=(13, 9))
@@ -242,22 +280,9 @@ def plot_metrics(df: pd.DataFrame, summary_df: pd.DataFrame, out_dir: str):
     axs[0, 1].grid(True, linestyle=":", alpha=0.6)
     axs[0, 1].legend()
 
-    # Panel (c) Jitter
-    axs[1, 0].plot(valid_jit_summary["distance"], valid_jit_summary["rtt_jitter_mean"], "-o", color="darkorange", label="Jitter RTT (ms)")
-    axs[1, 0].plot(valid_jit_summary["distance"], valid_jit_summary["hb_jitter_mean"], "-^", color="forestgreen", label="Jitter HEARTBEAT (ms)")
-    axs[1, 0].set_title("(c) Độ biến động (Jitter)", fontweight="bold")
-    axs[1, 0].set_xlabel("Khoảng cách (m)")
-    axs[1, 0].set_ylabel("Jitter (ms)")
-    axs[1, 0].grid(True, linestyle=":", alpha=0.6)
-    axs[1, 0].legend()
-
-    # Panel (d) Số lần mất liên lạc (Lost events)
-    axs[1, 1].bar(wifi_summary["distance"], wifi_summary["lost_events_sum"], width=3.5, color="purple", alpha=0.7, label="Số lần mất liên lạc")
-    axs[1, 1].set_title("(d) Số lần mất liên lạc (Heartbeat timeout)", fontweight="bold")
-    axs[1, 1].set_xlabel("Khoảng cách (m)")
-    axs[1, 1].set_ylabel("Tổng số lần mất liên lạc")
-    axs[1, 1].grid(True, linestyle=":", alpha=0.6)
-    axs[1, 1].legend()
+    # Panel (c) Jitter và (d) Số lần mất liên lạc
+    draw_jitter(axs[1, 0], wifi_summary, baseline_summary, "(c) Độ biến động (Jitter)")
+    draw_lost_events(axs[1, 1], wifi_summary, baseline_summary, "(d) Số lần mất liên lạc (Heartbeat timeout)")
 
     plt.tight_layout()
     combined_png = os.path.join(out_dir, "combined_metrics.png")
