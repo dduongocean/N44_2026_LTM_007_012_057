@@ -457,3 +457,40 @@ def test_20_send_timesync_does_nothing_if_no_vehicle_seen ():
         assert timesync_msgs == []
     finally:
         link .close ()
+
+
+def unknown_message_bytes (msg_id, system_id = 1, component_id = 1, seq = 0, payload = b"\x01\x02\x03"):
+    """Đóng một gói MAVLink 2 có msgid mà dialect common không biết (ví dụ 514 – message "development" PX4 gửi).
+
+    Dialect không có định nghĩa nên không kiểm được CRC; 2 byte CRC cuối để 0, pymavlink vẫn trả MAVLink_unknown.
+    """
+    header = bytes ([0xFD, len (payload), 0, 0, seq, system_id, component_id,
+                     msg_id & 0xFF, (msg_id >> 8) & 0xFF, (msg_id >> 16) & 0xFF])
+    return header + payload + b"\x00\x00"
+
+
+def test_18_unknown_message_keeps_vehicle_source_and_seq ():
+    # Đầu vào: PX4 gửi message ngoài dialect common (msgid 514) từ xe (1, 1), seq = 42.
+    # Lỗi cũ (BUG-02): pymavlink gán nguồn (0, 0) cho message lạ -> SeqTracker thấy seq của xe bị hở 1 ô
+    # và đếm là mất gói (~1.3% ở mọi khoảng cách, kể cả baseline).
+    port = find_free_port ()
+    link = MavlinkVehicleLink (url = f"udpin:127.0.0.1:{port}")
+    pkt = unknown_message_bytes (514, system_id = 1, component_id = 1, seq = 42)
+    try:
+        with HeartbeatSimulator (port, [(pkt, 0.3)]):
+            deadline = time .monotonic () + 1.0
+            seen = None
+            while time .monotonic () < deadline and seen is None:
+                for event in link .poll ():
+                    if isinstance (event, PacketSeen):
+                        seen = event
+                time .sleep (0.02)
+
+        # Mong đợi: PacketSeen mang đúng nguồn và seq đọc từ header của gói
+        assert seen is not None
+        assert seen .system_id == 1
+        assert seen .component_id == 1
+        assert seen .seq == 42
+        assert seen .msg_type .startswith ("UNKNOWN")
+    finally:
+        link .close ()

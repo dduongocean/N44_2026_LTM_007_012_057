@@ -50,6 +50,22 @@ def parse_heartbeat (msg):
     )
 
 
+def packet_source (msg):
+    """Trả (system_id, component_id, seq) của một message đã giải mã, kể cả message ngoài dialect.
+
+    PX4 gửi cả message thuộc dialect "development" (ví dụ CURRENT_MODE 436, GNSS_INTEGRITY 441) mà dialect common
+    không có. pymavlink vẫn trả chúng dưới dạng MAVLink_unknown nhưng KHÔNG điền header (nguồn ra (0, 0)), trong khi
+    chúng vẫn dùng một số seq của xe. Không đọc lại header thì seq của xe bị hở và bị đếm là mất gói (BUG-02).
+    """
+    if msg .get_type () .startswith ("UNKNOWN"):
+        buf = bytes (msg .get_msgbuf () or b"")
+        if len (buf) >= 7 and buf [0] == 0xFD:      # MAVLink 2: FD len incompat compat seq sysid compid ...
+            return buf [5], buf [6], buf [4]
+        if len (buf) >= 5 and buf [0] == 0xFE:      # MAVLink 1: FE len seq sysid compid ...
+            return buf [3], buf [4], buf [2]
+    return msg .get_srcSystem (), msg .get_srcComponent (), msg .get_seq ()
+
+
 class MavlinkVehicleLink:
     """Kênh nhận dữ liệu từ xe qua MAVLink/UDP; poll () đọc hết gói đang chờ mà không làm đơ chương trình."""
 
@@ -93,10 +109,11 @@ class MavlinkVehicleLink:
                     events .append (TimesyncReply (ts1_ns = msg .ts1))
 
             # Mọi message hợp lệ của xe đều sinh PacketSeen kèm seq và nguồn để đếm mất gói
+            system_id, component_id, seq = packet_source (msg)
             events .append (PacketSeen (
-                system_id = msg .get_srcSystem (),
-                component_id = msg .get_srcComponent (),
-                seq = msg .get_seq (),
+                system_id = system_id,
+                component_id = component_id,
+                seq = seq,
                 msg_type = msg_type,
             ))
 
