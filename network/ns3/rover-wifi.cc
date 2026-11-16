@@ -49,6 +49,9 @@ main(int argc, char* argv[])
     std::string phyMode("ErpOfdmRate6Mbps");    // Chế độ PHY (DataMode, ControlMode, NonUnicastMode)
     double txPower = 16.0;                      // Công suất phát (dBm)
     double exponent = 3.0;                      // Hệ số suy hao khoảng cách LogDistance
+    double refLoss = 40.046;                    // Suy hao ở mốc 1 m (dB) cho 2.412 GHz: 20log10(4*pi*1m/lambda)
+    bool fading = true;                         // Fading Nakagami: mất gói tăng dần thay vì đứt gọn ở một khoảng cách
+    double fadingM = 1.5;                       // Tham số m của Nakagami (m=1: Rayleigh; m càng lớn càng ít dao động)
     bool pcap = false;                          // Bật bắt gói PCAP radiotap ra data/pcap/
 
     CommandLine cmd(__FILE__);
@@ -57,6 +60,9 @@ main(int argc, char* argv[])
     cmd.AddValue("phyMode", "Che do toc do 802.11g PHY", phyMode);
     cmd.AddValue("txPower", "Cong suat phat (dBm)", txPower);
     cmd.AddValue("exponent", "He so suy hao LogDistancePropagationLossModel", exponent);
+    cmd.AddValue("refLoss", "Suy hao o moc 1 m cua LogDistance (dB), 40.046 cho 2.412 GHz", refLoss);
+    cmd.AddValue("fading", "Bat fading NakagamiPropagationLossModel", fading);
+    cmd.AddValue("fadingM", "Tham so m cua Nakagami (dung chung cho moi khoang cach)", fadingM);
     cmd.AddValue("pcap", "Bat bat goi pcap 802.11 ra data/pcap/", pcap);
     cmd.Parse(argc, argv);
 
@@ -67,6 +73,10 @@ main(int argc, char* argv[])
     std::cout << " Chế độ PHY      : " << phyMode << std::endl;
     std::cout << " Công suất phát  : " << txPower << " dBm" << std::endl;
     std::cout << " Hệ số suy hao   : " << exponent << std::endl;
+    std::cout << " Suy hao mốc 1 m : " << refLoss << " dB" << std::endl;
+    std::cout << " Fading Nakagami : " << (fading ? "Bật, m = " + std::to_string(fadingM) : std::string("Tắt"))
+              << std::endl;
+    std::cout << " RngRun          : " << RngSeedManager::GetRun() << std::endl;
     std::cout << " Bắt gói PCAP    : " << (pcap ? "Bật (data/pcap/)" : "Tắt") << std::endl;
     std::cout << " Cổng TAP ảo     : tap-gcs (Node 0) <---> tap-rover (Node 1)" << std::endl;
     std::cout << " Chế độ TapBridge: UseLocal (RealtimeSimulator)" << std::endl;
@@ -87,7 +97,19 @@ main(int argc, char* argv[])
     YansWifiChannelHelper channel;
     channel.SetPropagationDelay("ns3::ConstantSpeedPropagationDelayModel");
     channel.AddPropagationLoss("ns3::LogDistancePropagationLossModel",
-                               "Exponent", DoubleValue(exponent));
+                               "Exponent", DoubleValue(exponent),
+                               "ReferenceLoss", DoubleValue(refLoss));
+    // Fading nhanh: mỗi khung nhận thêm một hệ số công suất ngẫu nhiên Gamma(m, 1/m) quanh giá trị LogDistance.
+    // Không có fading thì công suất thu cố định theo khoảng cách; mô hình phát hiện preamble của ns-3
+    // (MinimumRssi -82 dBm) cắt liên lạc gọn tại một khoảng cách (mất gói chỉ 0% hoặc 100%).
+    // Xem docs/experiments/calibration.txt mục 6.
+    if (fading)
+    {
+        channel.AddPropagationLoss("ns3::NakagamiPropagationLossModel",
+                                   "m0", DoubleValue(fadingM),
+                                   "m1", DoubleValue(fadingM),
+                                   "m2", DoubleValue(fadingM));
+    }
 
     // Cấu hình tầng vật lý (PHY)
     YansWifiPhyHelper phy;

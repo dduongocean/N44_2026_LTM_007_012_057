@@ -11,14 +11,21 @@ Tài liệu liên quan: docs/experiments/calibration.txt, network/ns3/rover-wifi
 - Tốc độ điều khiển (Control) : ErpOfdmRate6Mbps
 - NonUnicastMode (Broadcast) : ErpOfdmRate6Mbps
 - Công suất phát (TxPower)   : 16.0 dBm (cố định TxPowerStart = TxPowerEnd = 16 dBm)
-- Ngưỡng nhạy thu (RxSensitivity): Mặc định của ns-3 YansWifiPhy (-82 dBm đối với 6 Mbps)
+- Ngưỡng nhận khung          : ThresholdPreambleDetectionModel mặc định của ns-3 (MinimumRssi -82 dBm, SNR >= 4 dB);
+                               khung thu yếu hơn -82 dBm bị bỏ hẳn (RxSensitivity -101 dBm không phải ngưỡng quyết định)
 - Antenna Model              : Isotropic antenna (Gain = 0 dBi)
 
 2. CẤU HÌNH KÊNH TRUYỀN SÓNG (PROPAGATION CHANNEL)
 --------------------------------------------------
 - Mô hình suy hao công suất   : ns3::LogDistancePropagationLossModel
 - Hệ số suy hao môi trường (n): Exponent = 3.0 (phù hợp môi trường ngoài trời có che chắn / phản xạ gần mặt đất)
-- Suy hao mốc 1 mét (L0)     : 40.046 dB (theo bước sóng 2.412 GHz)
+- Suy hao mốc 1 mét (L0)     : 40.046 dB (theo bước sóng 2.412 GHz), đặt tường minh bằng --refLoss
+                               (mặc định của ns-3 là 46.6777 dB cho 5.15 GHz; loạt cũ trong data/old/ dùng giá trị này)
+- Fading nhanh               : ns3::NakagamiPropagationLossModel, m = 1.5 cho mọi khoảng cách (--fading, --fadingM).
+                               Không fading thì liên lạc đứt gọn tại khoảng cách có công suất thu = -82 dBm
+                               (≈ 51.4 m với L0 46.68 dB; ≈ 85 m với L0 40.05 dB). Lý do thêm: calibration.txt mục 6.
+- Hạt giống ngẫu nhiên       : --RngRun = số thứ tự lần lặp (1, 2, 3), do tools/run_sweep.sh truyền vào
+- Hàng đợi MAC Wi-Fi         : mặc định ns-3 (500 gói, MaxDelay 500 ms): gói chờ quá 500 ms bị bỏ
 - Mô hình độ trễ lan truyền   : ns3::ConstantSpeedPropagationDelayModel (vận tốc ánh sáng c ≈ 3e8 m/s)
 
 3. CẤU HÌNH MẠNG VÀ TAPBRIDGE LINUX

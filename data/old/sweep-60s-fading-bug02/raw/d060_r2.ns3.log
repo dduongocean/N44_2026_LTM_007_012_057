@@ -1,0 +1,13 @@
+================ Mô phỏng ns-3 Wi-Fi TapBridge ================
+ Khoảng cách     : 60 m
+ Thời gian chạy  : 3600 s
+ Chế độ PHY      : ErpOfdmRate6Mbps
+ Công suất phát  : 16 dBm
+ Hệ số suy hao   : 3
+ Suy hao mốc 1 m : 40.046 dB
+ Fading Nakagami : Bật, m = 1.500000
+ RngRun          : 2
+ Bắt gói PCAP    : Tắt
+ Cổng TAP ảo     : tap-gcs (Node 0) <---> tap-rover (Node 1)
+ Chế độ TapBridge: UseLocal (RealtimeSimulator)
+================================================================

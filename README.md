@@ -165,3 +165,17 @@ Lưu ý:
   sudo ip netns exec ns-gcs sudo -u $USER -E venv/bin/python tools/run_experiment.py --duration 60 --label d040_r1 --distance 40
   ```
 Số liệu chi tiết từng giây lưu tại `data/raw/<label>.csv`, dòng tổng kết được ghi nối tiếp vào `data/summary.csv`.
+
+### Chạy loạt thí nghiệm khoảng cách (NET-03)
+Kênh ns-3 có fading Nakagami (m = 1.5) và ReferenceLoss 40.046 dB (xem `docs/experiments/config.txt`). Build lại `rover-wifi` nếu bản build cũ hơn thay đổi này.
+```bash
+NS3=/home/<user>/<thư mục ns-3>/build/scratch/<tên file>-rover-wifi-<profile>
+# 1. Quét khoảng cách (≈ 30 phút): netns + PX4 trong ns-rover đang chạy (mục "Lái xe qua ns-3"), ns-3 CHƯA chạy
+sudo NS3_BIN=$NS3 tools/run_sweep.sh                 # mức mặc định 10 40 50 60 70 80 90 100, 3 lần × 60 s
+# 2. Baseline localhost (≈ 3.5 phút): tắt PX4, sudo network/teardown-netns.sh, PX4 chạy bình thường
+sudo tools/run_sweep.sh --baseline-only
+# 3. Vẽ biểu đồ và bảng
+venv/bin/python analysis/plot_results.py
+```
+Thử nhanh trước khi chạy loạt (không ghi vào `data/`): `sudo NS3_BIN=$NS3 tools/run_sweep.sh --quick --out-dir /tmp/q --summary-file /tmp/q/s.csv`.
+So sánh với kênh không fading: thêm `NS3_ARGS="--fading=false"` (loạt cũ: `data/old/sweep-20s-nofading/`).

@@ -25,13 +25,20 @@ T1  Script chạy loạt: tools/run_sweep.sh – với mỗi khoảng cách × l
     Trạng thái: DONE
 
 T2  Chạy loạt thí nghiệm, kiểm số liệu thô (khoảng 8 mức × 3 lần × 70 s ≈ 30 phút, cộng baseline)
-    Trạng thái: DONE
+    Trạng thái: DONE (2026-11-17) – 8 mức × 3 lần × 60 s + baseline localhost 3 lần, kênh fading, sau khi sửa BUG-02.
+                Kết quả: calibration.txt mục 6 cuối. Loạt trước khi sửa BUG-02: data/old/sweep-60s-fading-bug02/.
+                Lịch sử: chạy lại với kênh có fading (2026-11-18). Loạt cũ (20 s, không baseline, không fading,
+                đứt gọn ≈ 51.4 m) chuyển sang data/old/sweep-20s-nofading/. Mức: 10 40 50 60 70 80 90 100
+                (calibration.txt mục 6: thử nhanh với PX4 thật cho thấy vùng chuyển tiếp gần hơn mô phỏng). Baseline localhost chạy riêng: tools/run_sweep.sh --baseline-only.
 
 T3  Script phân tích: analysis/plot_results.py (đọc data/summary.csv, vẽ biểu đồ AC2, xuất bảng AC3; thêm matplotlib vào requirements.txt)
-    Trạng thái: DONE
+    Trạng thái: DONE – đã vẽ lại với số liệu mới (analysis/*.png, summary_table.*). Nên cải thiện: hình (c) jitter RTT bị
+                jitter HEARTBEAT (tới ~6000 ms) ép sát trục -> tách trục y hoặc thang log.
 
 T4  pcap + ảnh Wireshark (AC4); ghi docs/experiments/config.txt (AC5)
-    Trạng thái: DONE
+    Trạng thái: DONE (2026-11-17) – config.txt đã cập nhật; pcap 80 m kênh mới: docs/evidence/net-03-wifi-80m.pcap
+                (phía xe, 15 777 / 25 874 khung data có cờ Retry = 61%); ảnh Wireshark lọc wlan.fc.retry == 1, mở
+                Flags thấy "Retry: Frame is being retransmitted": docs/evidence/net-03-wireshark-retry-80m.png
 
 T5  Kiểm thử chấp nhận NET-03
     Trạng thái: TODO

@@ -11,8 +11,17 @@
 # Tùy chọn:
 #   --duration <giây>       Thời gian mỗi lần đo (mặc định: 60)
 #   --runs <số lần>         Số lần lặp lại cho mỗi mốc khoảng cách (mặc định: 3)
-#   --distances "<d1 d2..>" Danh sách khoảng cách (mặc định: "10 50 60 70 80 90 100 120")
+#   --distances "<d1 d2..>" Danh sách khoảng cách (mặc định: "10 40 50 60 70 80 90 100", calibration.txt mục 6)
 #   --skip-baseline         Bỏ qua các lần đo baseline
+#   --baseline-only         Chỉ đo baseline (bỏ qua quét khoảng cách)
+#
+# Baseline = PX4 và chương trình đo nói chuyện qua localhost, KHÔNG qua ns-3: chạy khi CHƯA dựng netns
+# (sudo network/teardown-netns.sh; PX4 chạy bình thường: make px4_sitl gz_r1_rover). Nếu netns đang có,
+# script bỏ qua baseline và báo. Quét khoảng cách thì ngược lại: cần netns + PX4 trong ns-rover.
+#
+# Biến môi trường:
+#   NS3_BIN   đường dẫn file chạy rover-wifi (bắt buộc khi quét khoảng cách)
+#   NS3_ARGS  tham số thêm cho rover-wifi, ví dụ "--fading=false" để so sánh với kênh không fading
 #   --quick                 Chế độ kiểm tra nhanh: duration 10s, 1 lần lặp, khoảng cách "10 70"
 #   --out-dir <thư mục>     Thư mục chứa file CSV chi tiết (mặc định: data/raw)
 #   --summary-file <file>   Đường dẫn file tổng hợp (mặc định: data/summary.csv)
@@ -31,13 +40,15 @@ cd "$ROOT_DIR"
 
 RUN_USER="${SUDO_USER:-$USER}"
 PYTHON="${PYTHON:-$ROOT_DIR/venv/bin/python}"
-NS3_BIN="${NS3_BIN:-/home/luffy/ns-3.49/build/scratch/ns3.49-rover-wifi-default}"
+NS3_BIN="${NS3_BIN:-}"
+NS3_ARGS="${NS3_ARGS:-}"
 
 # Cấu hình mặc định
 DURATION=60
 RUNS=3
-DISTANCES="10 50 60 70 80 90 100 120"
+DISTANCES="10 40 50 60 70 80 90 100"
 RUN_BASELINE=true
+RUN_SWEEP=true
 OUT_DIR="data/raw"
 SUMMARY_FILE="data/summary.csv"
 PROBE_HZ=5.0
@@ -59,6 +70,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --skip-baseline)
             RUN_BASELINE=false
+            shift
+            ;;
+        --baseline-only)
+            RUN_SWEEP=false
             shift
             ;;
         --quick)
@@ -97,10 +112,6 @@ if [[ ! -x "$PYTHON" ]]; then
     exit 1
 fi
 
-if [[ ! -x "$NS3_BIN" ]]; then
-    echo "Lỗi: Không tìm thấy binary ns-3 tại $NS3_BIN" >&2
-    exit 1
-fi
 
 # Biến lưu PID của tiến trình ns-3 đang chạy nền
 CURRENT_NS3_PID=""
@@ -124,23 +135,55 @@ if ip netns list | grep -qw "ns-gcs"; then
     ip -n ns-rover neigh replace 10.0.0.1 lladdr 02:00:00:00:00:01 dev veth-rover 2>/dev/null || true
 fi
 
+if [[ "$RUN_BASELINE" == true && "$USE_NETNS" == true ]]; then
+    echo "Cảnh báo: netns đang có -> bỏ qua baseline (baseline phải chạy localhost, không qua ns-3)." >&2
+    echo "          Chạy baseline riêng: sudo network/teardown-netns.sh ; PX4 bình thường ; sudo $0 --baseline-only" >&2
+    RUN_BASELINE=false
+fi
+if [[ "$RUN_SWEEP" == true && "$USE_NETNS" != true ]]; then
+    echo "Lỗi: quét khoảng cách cần netns + PX4 trong ns-rover (sudo network/setup-netns.sh). Chỉ đo baseline: --baseline-only" >&2
+    exit 1
+fi
+if [[ "$RUN_SWEEP" == true && ! -x "$NS3_BIN" ]]; then
+    echo "Lỗi: không thấy file chạy ns-3 '$NS3_BIN'. Đặt biến NS3_BIN, ví dụ:" >&2
+    echo "     sudo NS3_BIN=/home/<user>/ns-3-dev/build/scratch/ns3-dev-rover-wifi-debug $0" >&2
+    exit 1
+fi
+
 echo "========================================================================"
 echo " CHIẾN DỊCH QUÉT KHOẢNG CÁCH WI-FI MAVLINK (NET-03/T1)"
 echo "========================================================================"
 echo " Thời gian mỗi lần đo : ${DURATION} s"
 echo " Số lần lặp mỗi mốc   : ${RUNS}"
 echo " Mốc khoảng cách (m)  : ${DISTANCES}"
-echo " Chạy baseline        : $([[ "$RUN_BASELINE" == true ]] && echo "Có (3 lần)" || echo "Bỏ qua")"
+echo " Chạy baseline        : $([[ "$RUN_BASELINE" == true ]] && echo "Có (${RUNS} lần, localhost)" || echo "Bỏ qua")"
+echo " Quét khoảng cách     : $([[ "$RUN_SWEEP" == true ]] && echo "Có" || echo "Bỏ qua")"
+echo " ns-3                 : ${NS3_BIN:-–} ${NS3_ARGS}"
 echo " Thư mục raw CSV      : ${OUT_DIR}"
 echo " File tổng hợp        : ${SUMMARY_FILE}"
 echo " Chế độ mạng          : $([[ "$USE_NETNS" == true ]] && echo "Linux netns (ns-gcs <-> ns-rover qua ns-3)" || echo "Localhost (trực tiếp)")"
 echo "========================================================================"
 
-mkdir -p "$OUT_DIR"
-mkdir -p "$(dirname "$SUMMARY_FILE")"
+# Script chạy bằng root nhưng run_experiment.py chạy bằng $RUN_USER: thư mục ghi kết quả phải thuộc $RUN_USER.
+# OUT_DIR là thư mục riêng cho kết quả nên luôn trao lại; thư mục của file tổng hợp chỉ trao khi do script tạo ra.
+SUMMARY_DIR="$(dirname "$SUMMARY_FILE")"
+[[ -d "$SUMMARY_DIR" ]] && SUMMARY_DIR_EXISTED=true || SUMMARY_DIR_EXISTED=false
+mkdir -p "$OUT_DIR" "$SUMMARY_DIR"
+chown "$RUN_USER": "$OUT_DIR"
+[[ "$SUMMARY_DIR_EXISTED" == false ]] && chown "$RUN_USER": "$SUMMARY_DIR"
+if [[ -e "$SUMMARY_FILE" && ! -w "$SUMMARY_FILE" ]] || ! sudo -u "$RUN_USER" test -w "$SUMMARY_DIR"; then
+    echo "Lỗi: $RUN_USER không ghi được vào $SUMMARY_FILE / $SUMMARY_DIR" >&2
+    exit 1
+fi
 
-# Dọn dẹp tiến trình ns-3 cũ nếu còn chạy để tránh xung đột cổng tap
-pkill -9 -f "rover-wifi" 2>/dev/null || true
+# Dừng tiến trình ns-3 cũ (nếu còn) để tránh tranh tap. Chỉ khớp tiến trình có dòng lệnh BẮT ĐẦU bằng file chạy
+# ns-3; không dùng "pkill -f rover-wifi" vì nó khớp cả dòng lệnh "sudo NS3_BIN=...rover-wifi... run_sweep.sh"
+# và giết luôn chính script này.
+kill_old_ns3() {
+    [[ -n "$NS3_BIN" ]] || return 0
+    pkill -9 -f "^${NS3_BIN}( |$)" 2>/dev/null || true
+}
+kill_old_ns3
 sleep 1
 
 run_single_test() {
@@ -155,10 +198,12 @@ run_single_test() {
 
     # Nếu dùng netns, khởi động ns-3 với khoảng cách tương ứng
     if [[ "$USE_NETNS" == true ]]; then
-        pkill -9 -f "rover-wifi" 2>/dev/null || true
+        kill_old_ns3
         sleep 0.5
         echo "[ns-3] Khởi chạy mô phỏng Wi-Fi: --distance=${dist}..."
-        "$NS3_BIN" --distance="$dist" > /dev/null 2>&1 &
+        # RngRun khác nhau cho mỗi lần lặp để fading của các lần r1..r3 độc lập nhau
+        # shellcheck disable=SC2086
+        "$NS3_BIN" --distance="$dist" --RngRun="$run_idx" $NS3_ARGS > "$OUT_DIR/${label}.ns3.log" 2>&1 &
         CURRENT_NS3_PID=$!
         sleep 2
 
@@ -194,6 +239,7 @@ run_single_test() {
         kill -9 "$CURRENT_NS3_PID" 2>/dev/null || true
         wait "$CURRENT_NS3_PID" 2>/dev/null || true
         CURRENT_NS3_PID=""
+        chown "$RUN_USER": "$OUT_DIR/${label}.ns3.log" 2>/dev/null || true
     fi
 
     # Nghỉ 2 giây giữa các lần chạy để dọn sạch socket và ổn định
@@ -210,14 +256,16 @@ if [[ "$RUN_BASELINE" == true ]]; then
 fi
 
 # 2. Chạy loạt quét khoảng cách
-echo -e "\n[GIAI ĐOẠN 2] Quét các mốc khoảng cách: ${DISTANCES}..."
-for dist in $DISTANCES; do
-    pad_dist=$(printf "%03d" "$dist")
-    for r in $(seq 1 "$RUNS"); do
-        label="d${pad_dist}_r${r}"
-        run_single_test "$label" "$dist" "$r"
+if [[ "$RUN_SWEEP" == true ]]; then
+    echo -e "\n[GIAI ĐOẠN 2] Quét các mốc khoảng cách: ${DISTANCES}..."
+    for dist in $DISTANCES; do
+        pad_dist=$(printf "%03d" "$dist")
+        for r in $(seq 1 "$RUNS"); do
+            label="d${pad_dist}_r${r}"
+            run_single_test "$label" "$dist" "$r"
+        done
     done
-done
+fi
 
 echo ""
 echo "========================================================================"

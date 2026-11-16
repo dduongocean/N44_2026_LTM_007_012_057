@@ -23,8 +23,11 @@ Ghi chú planning (2026-11-16)
 - NET-01 có rủi ro lớn nhất (PX4 + Gazebo chạy trong network namespace). Đầu Sprint 01 có spike 3 giờ (NET-01/T3). Nếu spike thất bại, PO quyết định chuyển sang phương án dự phòng: relay UDP qua socket trong ns-3 (không cần netns cho PX4).
 - NET-02 làm song song NET-01: phần xử lý (đếm seq, RTT) test tự động được bằng giả lập UDP có sẵn trong tests/, không cần chờ ns-3.
 - NET-04 để MOI: cách đọc vị trí xe khi đường MAVLink chính bị cắt và hành vi failsafe của PX4 sẽ làm rõ ở planning Sprint 02.
-- Ngoài phạm vi: node trên xe di chuyển theo vị trí xe thật trong Gazebo; fading; nhiều trạm cạnh tranh kênh; hiển thị chỉ số mạng trên giao diện. Ghi vào phần hạn chế và hướng phát triển của báo cáo.
+- Ngoài phạm vi: node trên xe di chuyển theo vị trí xe thật trong Gazebo; nhiều trạm cạnh tranh kênh; hiển thị chỉ số mạng trên giao diện. Ghi vào phần hạn chế và hướng phát triển của báo cáo. (Fading đã đưa vào phạm vi ngày 2026-11-18, xem lịch sử.)
 
 Lịch sử thay đổi backlog
 ------------------------
 2026-11-16  Tạo backlog. NET-01, NET-02: SAN_SANG -> DANG_LAM (bắt đầu Sprint 01, 2026-11-17). NET-03: SAN_SANG. NET-04: MOI.
+2026-11-18  Đổi phạm vi (PO): đưa fading Nakagami (m=1.5) và ReferenceLoss 40.046 dB vào mô hình kênh của NET-03. Lý do: không fading
+            thì liên lạc đứt gọn tại ≈ 51.4 m (0% -> 100% trong 10 cm), không có vùng chuyển tiếp để trả lời câu hỏi của NET-03.
+            NET-03/T2, T3, T4 làm lại (chạy lại loạt, vẽ lại, chụp lại pcap). Chi tiết: docs/experiments/calibration.txt mục 6.

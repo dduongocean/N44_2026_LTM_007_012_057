@@ -32,6 +32,16 @@ def load_data(filepath: str) -> pd.DataFrame:
     df = pd.read_csv(filepath)
     # Loại bỏ các dòng trống nếu có
     df = df.dropna(subset=["label", "distance", "loss_rate"])
+    # Chỉ giữ các lần chạy của NET-03: baseline_rN và dXXX_rN (bỏ test_*, acc_* của NET-02...)
+    keep = df["label"].astype(str).str.match(r"^(baseline_r\d+|d\d+_r\d+)$")
+    if (~keep).any():
+        print(f"[Bỏ qua] {(~keep).sum()} dòng không thuộc NET-03: {', '.join(df.loc[~keep, 'label'].astype(str))}")
+    df = df[keep]
+    # Nếu một nhãn bị ghi nhiều lần (chạy lại), chỉ giữ lần cuối
+    dup = df.duplicated(subset=["label"], keep="last")
+    if dup.any():
+        print(f"[Bỏ qua] {dup.sum()} dòng trùng nhãn (giữ lần chạy cuối): {', '.join(df.loc[dup, 'label'].astype(str))}")
+    df = df[~dup]
     # Đảm bảo các cột số là kiểu float
     numeric_cols = [
         "distance", "duration", "rx", "lost", "loss_rate",

@@ -51,3 +51,62 @@ Khoảng cách (m) | Số gói gửi/nhận | % Mất gói (Loss) | RTT min/avg/
 5.  80 m : Mốc suy giảm trung bình (loss ~25% - 35%)
 6.  90 m : Mốc suy giảm nặng (loss ~50% - 60%)
 7. 100 m : Mốc tới hạn mất kết nối (loss > 80%, dễ kích hoạt ngắt kết nối MAVLink HEARTBEAT)
+
+
+6. HIỆU CHỈNH LẠI SAU KHI THÊM FADING (2026-11-18, Hoàng) – DÙNG CHO NET-03
+--------------------------------------------------------------------------
+Lý do: loạt NET-03 đầu tiên (data/old/sweep-20s-nofading/) cho 10–50 m mất ~1.3%, từ 60 m mất 100%, không có
+vùng chuyển tiếp. Nguyên nhân: không có fading nên công suất thu cố định theo khoảng cách; ns-3 bỏ mọi khung
+dưới -82 dBm. Mô phỏng kiểm chứng (cấu hình cũ, 1000 khung/mức): 51.3 m mất 0%, 51.4 m mất 100%; tính tay
+16 - (46.68 + 30 log10 d) = -82 => d = 51.37 m. Dò mịn hơn không tạo ra vùng chuyển tiếp.
+Bảng mục 3 không khớp với số liệu chạy thật của cấu hình cũ; không dùng cho NET-03.
+
+Quyết định (PO, 2026-11-18): thêm --refLoss=40.046 (đúng 2.4 GHz) và fading Nakagami m=1.5 (config.txt).
+
+Ước lượng bằng chương trình ns-3 nhỏ KHÔNG dùng tap (cùng kênh, PHY, MAC với rover-wifi.cc; 1000 khung unicast
+80 byte, mỗi 10 ms; 3 lần lặp RngRun 1..3). Trễ là trễ một chiều ở tầng MAC, lần r1:
+  d (m)  | mất gói r1 / r2 / r3 (%) | tb (%) | trễ tb / max (ms)
+  10     |   0.0 /  0.0 /  0.0      |   0.0  |   0.00 /   0
+  50     |   0.0 /  0.0 /  0.0      |   0.0  |   0.04 /   2
+  70     |   0.0 /  0.0 /  0.0      |   0.0  |   1.86 /  42
+  80     |   1.9 /  0.9 /  0.9      |   1.2  |  22.1  / 120
+  90     |  35.5 / 34.8 / 33.1      |  34.5  | 463    / 500
+  100    |  60.3 / 61.1 / 60.2      |  60.5  | 471    / 500
+  110    |  78.9 / 79.6 / 80.0      |  79.5  | 480    / 500
+  120    |  90.7 / 89.8 / 91.6      |  90.7  | 483    / 499
+  140    |  98.8 / 99.1 / 99.3      |  99.1  | 495    / 498
+  160    | 100.0 / 99.9 /100.0      | 100.0  |   –
+Nhận xét: trễ tăng vọt từ ~90 m do MAC gửi lại nhiều lần -> hàng đợi MAC đầy (trần 500 ms = MaxDelay mặc định).
+PX4 thật gửi ~350–415 gói/s (NET-01 spike Q6), nhiều hơn 100 gói/s ở trên, nên hàng đợi có thể đầy sớm hơn.
+Mức đề xuất ban đầu (theo mô phỏng 100 gói/s): 10 70 80 90 100 110 120 140.
+
+Thử nhanh với PX4 thật qua tap (2026-11-18, run_sweep.sh --quick, 1 lần × 10 s mỗi mức):
+  d (m) | rx (gói) | mất gói | RTT tb  | RTT p95
+  10    | 3607     | 1.45%   |  11 ms  |  19 ms
+  70    | 3594     | 4.08%   | 384 ms  | 490 ms
+PX4 thật gửi ≈ 360 gói/s (cộng lệnh và TIMESYNC chiều ngược lại), gấp ~3.6 lần tải mô phỏng, nên hàng đợi MAC
+đầy sớm hơn: ở 70 m RTT đã gần trần 500 ms, trong khi mô phỏng 100 gói/s cho 70 m chỉ trễ ~2 ms. Vùng chuyển
+tiếp thật dịch lại gần hơn ước lượng.
+=> Mức DÙNG cho NET-03/T2: 10 40 50 60 70 80 90 100 (8 mức × 3 lần × 60 s)
+  (10 m: tham chiếu gần; 40–60 m: RTT bắt đầu tăng; 70–100 m: mất gói tăng tới gần hết).
+
+Kết quả loạt chính NET-03/T2 (2026-11-17, sau khi sửa BUG-02; data/summary.csv, analysis/summary_table.txt):
+  d (m)    | mất gói (seq) | mất gói (theo rx) | RTT tb   | RTT p95 | jitter RTT | mất kết nối (tổng 3 lần)
+  baseline |  0.00%        |   –               |  10.3 ms |  10.5   |  0.12      |  0
+  10       |  0.00%        |  0.0%             |  10.5    |  10.4   |  1.6       |  0
+  40       |  0.00%        |  ~0               |  10.5    |  10.4   |  1.8       |  0
+  50       |  0.00%        |  ~0               |  10.5    |  10.4   |  1.8       |  0
+  60       |  0.01%        |  ~0               |  11.8    |  20.6   |  5.3       |  0
+  70       |  7.6%         |  8.2%             | 444.9    | 502.3   | 55.9       |  0
+  80       | 63.2%         | 63.4%             | 503.2    | 515.0   |  8.3       | 15
+  90       | 81.8%         | 84.0%             | 506.8    | 520.0   |  7.1       | 20
+  100      | 90.1%         | 92.8%             | 512.7    | 533.4   | 10.8       | 11
+Ghi chú:
+- "theo rx" = 1 - rx / (397 gói/s × 60 s), 397 gói/s là tốc độ nhận ở 10 m. Ở 90–100 m đếm theo seq thấp hơn thật
+  2–3 điểm % vì seq 8 bit: đứt liền > 255 gói (≈ 0.65 s) thì SeqTracker không đếm hết (quy ước đứt quãng của NET-02).
+- RTT ~10.3 ms ở baseline không qua ns-3 -> phần nền này không do Wi-Fi (khả năng do chu kỳ 10 ms của chương trình đo);
+  Wi-Fi ở gần chỉ cộng ~0.15 ms.
+- Từ 70 m RTT chạm trần ~500 ms = MaxDelay của hàng đợi MAC ns-3; jitter RTT giảm ở >= 80 m cũng vì trần này.
+- 70 m: mất gói còn thấp (7.6%) nhưng RTT đã ~445 ms -> độ trễ xấu đi trước mất gói.
+- pcap 80 m (docs/evidence/net-03-wifi-80m.pcap, phía xe): 15 777 / 25 874 khung data có cờ Retry (61%);
+  so với pcap 50 m không fading cũ: 6 / 26 528.

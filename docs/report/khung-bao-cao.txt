@@ -11,13 +11,13 @@ Mục | Tiêu chí (điểm)                       | Nội dung tối thiểu   
 3   | Kiến trúc, thiết kế (15)              | Sơ đồ tổng thể (netns, veth, bridge, tap, TapBridge, kênh Wi-Fi); luồng gói hai chiều; nguyên lý          | NET-01/T5, NET-01.txt mục 3    | Dương
     |                                       | TapBridge chế độ UseLocal; so sánh cấu hình loopback (baseline) với cấu hình qua ns-3; so sánh dùng      |                                |
     |                                       | QGroundControl với chương trình đo tự viết (đo được seq, RTT, chạy tự động, lặp lại được)                |                                |
-4   | Mô hình toán, phát biểu bài toán (15) | Bảng biến / tham số / giả thiết / ràng buộc; công thức suy hao log-distance, công suất thu, SNR; vai trò  | NET-01/T2, NET-02.txt          | Dương, Phương
+4   | Mô hình toán, phát biểu bài toán (15) | Bảng biến / tham số / giả thiết / ràng buộc; công thức suy hao log-distance (L0 40.05 dB), fading Nakagami m=1.5, công suất thu, SNR; ngưỡng -82 dBm; vai trò | NET-01/T2, NET-02.txt          | Dương, Phương
     |                                       | gửi lại của MAC; công thức tỷ lệ mất gói từ seq (mod 256, quy ước đứt quãng), RTT bằng TIMESYNC, jitter |                                |
 5   | Triển khai hệ thống, giải thuật (20)  | Các bước dựng; công nghệ; lưu đồ chương trình đo; mã giả SeqTracker; bảng cấu hình ns-3 và PX4;          | NET-01, NET-02, docs/evidence/ | Hoàng, Phương
     |                                       | kiểm chứng công cụ đo bằng netem (AC2, AC3 của NET-02); ảnh Wireshark                                    |                                |
 6   | Phân tích, đánh giá hiệu năng (25)    | Kịch bản và chỉ số; biểu đồ theo khoảng cách so với baseline; kết quả NET-04; giải thích bằng mô hình    | NET-03, NET-04                 | Phương (cả nhóm góp)
-    |                                       | mục 4 (vùng chuyển tiếp hẹp do MAC gửi lại); độ phức tạp: SeqTracker O(1) thời gian mỗi gói, O(số nguồn) |                                |
+    |                                       | mục 4 (fading + MAC gửi lại: mất gói và trễ tăng dần; so với kênh không fading đứt gọn ≈ 51.4 m); SeqTracker O(1) mỗi gói, O(số nguồn) |                                |
     |                                       | bộ nhớ                                                                                                  |                                |
 7   | Kết luận, hướng phát triển (5)        | Khoảng cách ngưỡng tìm được; mức hoàn thành; hạn chế: node đứng yên, mô hình kênh đơn giản, một trạm,     | NET-03, NET-04                 | Hoàng
-    |                                       | độ phân giải thời gian 10 ms; hướng: node bám vị trí xe, fading, nhiều trạm                              |                                |
+    |                                       | độ phân giải thời gian 10 ms, fading không tương quan theo thời gian; hướng: node bám vị trí xe, nhiều trạm |                                |
 8   | Chất lượng báo cáo (5)                | Bố cục, hình, bảng đánh số; trích dẫn tài liệu ns-3, PX4, MAVLink                                        | –                              | Cả nhóm

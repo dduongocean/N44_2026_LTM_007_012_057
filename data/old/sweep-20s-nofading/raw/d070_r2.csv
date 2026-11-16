@@ -1,0 +1,26 @@
+# command: tools/run_experiment.py --duration 20 --label d070_r2 --distance 70 --out-dir data/raw --summary-file data/summary.csv --probe-hz 5.0
+# start_time: 2026-11-16 20:47:26
+# label: d070_r2
+# distance_m: 70.0
+# duration_s: 20.0
+# probe_hz: 5.0
+t,rx,lost,loss_rate,resyncs,probes_sent,probes_lost,rtt_mean_ms,rtt_p95_ms,rtt_jitter_ms,hb_jitter_ms,link_state,lost_events
+1.0,0,0,0.0000,0,0,0,,,,,WAITING,0
+2.0,0,0,0.0000,0,0,0,,,,,WAITING,0
+3.0,0,0,0.0000,0,0,0,,,,,WAITING,0
+4.0,0,0,0.0000,0,0,0,,,,,WAITING,0
+5.0,0,0,0.0000,0,0,0,,,,,WAITING,0
+6.0,0,0,0.0000,0,0,0,,,,,WAITING,0
+7.0,0,0,0.0000,0,0,0,,,,,WAITING,0
+8.0,0,0,0.0000,0,0,0,,,,,WAITING,0
+9.0,0,0,0.0000,0,0,0,,,,,WAITING,0
+10.0,0,0,0.0000,0,0,0,,,,,WAITING,0
+11.0,0,0,0.0000,0,0,0,,,,,WAITING,0
+12.0,0,0,0.0000,0,0,0,,,,,WAITING,0
+13.0,0,0,0.0000,0,0,0,,,,,WAITING,0
+14.0,0,0,0.0000,0,0,0,,,,,WAITING,0
+15.0,0,0,0.0000,0,0,0,,,,,WAITING,0
+16.0,0,0,0.0000,0,0,0,,,,,WAITING,0
+17.0,0,0,0.0000,0,0,0,,,,,WAITING,0
+18.0,0,0,0.0000,0,0,0,,,,,WAITING,0
+19.0,0,0,0.0000,0,0,0,,,,,WAITING,0

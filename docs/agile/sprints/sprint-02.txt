@@ -40,6 +40,34 @@ Phương viết NET-03/T3 trước bằng file summary.csv mẫu để không ph
 DAILY SCRUM
 -----------
 
+2026-11-18 – Hoàng ghi – NET-03: đổi sang kênh có fading, chạy lại T2–T4
+  Vì sao: loạt đầu cho 10–50 m mất ~1.3%, từ 60 m mất 100% – không có vùng chuyển tiếp. Không phải lỗi đo:
+  không fading thì mọi khung ở cùng khoảng cách nhận cùng công suất, ns-3 bỏ mọi khung dưới -82 dBm -> đứt gọn
+  tại 51.37 m (mô phỏng: 51.3 m mất 0%, 51.4 m mất 100%). Ngoài ra loạt đầu: 20 s thay vì 60 s, không có baseline
+  localhost, d010_r1 trùng, lẫn test_* của NET-02.
+  Quyết định PO: thêm fading Nakagami m=1.5 + ReferenceLoss 40.046 dB (ghi vào product-backlog, đổi phạm vi).
+  Mô phỏng kênh mới: 80 m 1.2%, 90 m 34%, 100 m 60%, 120 m 91%, 140 m 99%; trễ tăng tới ~500 ms từ 90 m
+  (hàng đợi MAC đầy). Chi tiết: docs/experiments/calibration.txt mục 6.
+  Đã sửa: rover-wifi.cc (--refLoss, --fading, --fadingM, in RngRun); run_sweep.sh (mức mới, --RngRun theo lần lặp,
+  baseline chỉ chạy localhost qua --baseline-only, bắt buộc NS3_BIN, log ns-3 vào data/raw/<label>.ns3.log);
+  plot_results.py (lọc nhãn, bỏ trùng); config.txt; khung-bao-cao mục 4, 6, 7. Số liệu + pcap cũ: data/old/sweep-20s-nofading/.
+  CẦN BIẾT:
+  - Dương : pull, BUILD LẠI rover-wifi (bản cũ không có fading). T4: chụp lại pcap ≈ 90 m (--pcap) + ảnh Wireshark.
+  - Phương: T3 vẽ lại khi có data/summary.csv mới (lệnh không đổi). REPORT-4: thêm công thức Nakagami.
+  - Còn mở: ~1.3% mất gói ở 10 m dù tín hiệu rất mạnh; nếu baseline localhost cũng ~1.3% thì có thể do cách đếm seq.
+  - NET-03/T5: người kiểm phải khác người làm T2 (Hoàng, Dương).
+
+2026-11-18 – Hoàng ghi – thứ tự còn lại của sprint: làm hết mô phỏng trước, báo cáo sau
+  - run_sweep.sh sửa thêm 2 lỗi khi chạy: (1) "pkill -f rover-wifi" giết luôn lệnh sudo chứa NS3_BIN -> chỉ dừng
+    tiến trình có dòng lệnh bắt đầu bằng file ns-3; (2) thư mục kết quả do root tạo, run_experiment.py (user
+    thường) không ghi được -> script trao thư mục lại cho user.
+  - Thử nhanh với PX4 thật: 70 m RTT tb 384 ms (hàng đợi MAC gần đầy) -> đổi mức thành 10 40 50 60 70 80 90 100
+    (calibration.txt mục 6). Loạt chính đang chạy.
+  Thứ tự: (1) NET-03 loạt chính ~30 phút -> (2) NET-03 baseline localhost ~4 phút -> (3) vẽ biểu đồ ->
+          (4) NET-04: chốt AC, sửa run_failsafe_experiment.py (cắt mạng bằng netem, đọc vị trí qua instance
+          localhost trong ns-rover) rồi chạy -> (5) NET-03/T4 pcap ~90 m + ảnh Wireshark -> (6) báo cáo.
+  Ai rảnh trong lúc máy chạy: viết trước REPORT-2, 3, 4, 5 (không cần số liệu NET-03/NET-04).
+
 SPRINT REVIEW
 -------------
 
