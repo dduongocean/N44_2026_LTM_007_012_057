@@ -93,4 +93,29 @@ Lái thử khi PX4 SITL đang chạy (chưa qua ns-3):
 make px4_sitl gz_r1_rover          # trong thư mục PX4-Autopilot, terminal khác
 python tools/drive_check.py tien
 ```
-Các bước dựng mạng, chạy ns-3, PX4 trong netns và chương trình đo sẽ được bổ sung ở đây khi các task NET-01, NET-02 xong.
+### Dựng / gỡ mạng ảo (NET-01/T1)
+Hai script tạo "đường ống" Linux để gói giữa trạm mặt đất và xe buộc phải đi qua ns-3 (xem mục Kiến trúc mạng):
+
+| Script | Làm gì | Khi nào chạy |
+|---|---|---|
+| `network/setup-netns.sh` | Tạo 2 netns `ns-gcs` (10.0.0.1) và `ns-rover` (10.0.0.2), mỗi bên nối với một tap (`tap-gcs`, `tap-rover`) qua veth + bridge. Tự gỡ bản cũ trước nên chạy lại bao nhiêu lần cũng được. | Đầu mỗi buổi làm việc / trước mỗi thí nghiệm, **trước** khi chạy ns-3 và PX4 |
+| `network/teardown-netns.sh` | Xóa hết netns, veth, bridge, tap ở trên. Không báo lỗi nếu chưa có. | Khi làm xong, hoặc khi muốn dọn sạch máy |
+
+```
+sudo network/setup-netns.sh                     # 1. dựng mạng
+# 2. chạy ns-3 (rover-wifi, NET-01/T2) ở terminal khác -> hai netns mới thông nhau
+# 3. chạy chương trình trong netns (cần sudo để vào netns, sudo -u $USER để không chạy bằng root):
+sudo ip netns exec ns-gcs   sudo -u $USER -E venv/bin/python tools/drive_check.py tien
+sudo ip netns exec ns-rover sudo -u $USER -E <lệnh chạy PX4>      # network/run-px4.sh (NET-01/T3)
+sudo network/teardown-netns.sh                  # 4. dọn
+```
+Kiểm nhanh sau khi dựng (mọi lệnh `ip -n` / `ip netns exec` cần sudo):
+```
+sudo ip -n ns-gcs addr show veth-gcs            # inet 10.0.0.1/24
+sudo ip -n ns-rover addr show veth-rover        # inet 10.0.0.2/24
+ip link show master br-gcs                      # tap-gcs, veth-gcs-br
+sudo ip netns exec ns-gcs ping -c 5 10.0.0.2    # chưa chạy ns-3: 100% loss (không có đường tắt)
+```
+`tap-gcs`, `tap-rover` báo `NO-CARRIER` khi ns-3 chưa chạy: bình thường.
+
+Các bước chạy ns-3, PX4 trong netns và chương trình đo sẽ được bổ sung ở đây khi các task NET-01, NET-02 xong.

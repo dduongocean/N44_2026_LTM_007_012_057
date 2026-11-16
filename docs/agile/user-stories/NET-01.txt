@@ -59,7 +59,7 @@ T1  Script dựng / gỡ mạng ảo: 2 netns, 2 bridge, 2 tap, 2 cặp veth
 
     Test tự động: không (script shell)
     Kiểm tay    : sau setup: ip -n ns-gcs addr và ip -n ns-rover addr thấy đúng IP; ip link thấy tap-gcs, tap-rover nằm trong bridge (master br-gcs / br-rover); AC1 đạt. Chạy setup 2 lần liên tiếp không lỗi; teardown xong thì ip netns list trống.
-    Trạng thái  : TODO
+    Trạng thái  : DONE
 
 T2  Chương trình ns-3: 2 node Wi-Fi ad-hoc nối hai tap, khoảng cách chỉnh được
     File        : network/ns3/rover-wifi.cc (tạo symlink hoặc chép vào ~/ns-3-dev/scratch/rover-wifi.cc để build)
@@ -164,6 +164,21 @@ T6  Viết và chạy kiểm thử chấp nhận NET-01
 4. GHI CHÚ KHI LÀM
 ------------------
 (mỗi task ghi lệnh đã chạy, kết quả thấy, vấn đề gặp phải)
+
+T1 (Hoàng, 2026-11-17)
+  Lệnh đã chạy:
+    sudo network/setup-netns.sh            (chạy 2 lần liên tiếp: không lỗi)
+    sudo ip -n ns-gcs addr show veth-gcs   -> inet 10.0.0.1/24, UP
+    sudo ip -n ns-rover addr show veth-rover -> inet 10.0.0.2/24, UP
+    ip link show master br-gcs             -> tap-gcs, veth-gcs-br
+    ip link show master br-rover           -> tap-rover, veth-rover-br
+    sudo ip netns exec ns-gcs ping -c 5 10.0.0.2 -> 100% packet loss, Destination Host Unreachable (AC1 đạt)
+    sudo network/teardown-netns.sh ; ip netns list -> trống
+  Lưu ý:
+    - Mọi lệnh "ip -n <netns> ..." đều cần sudo; thiếu sudo sẽ báo
+      'setting the network namespace "..." failed: Operation not permitted' (không phải lỗi script).
+    - tap-gcs / tap-rover hiện NO-CARRIER, state DOWN khi chưa chạy ns-3: bình thường,
+      có carrier khi ns-3 (T2) mở tap.
 
 5. KẾT QUẢ SPIKE T3
 -------------------

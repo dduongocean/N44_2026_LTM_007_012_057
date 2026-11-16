@@ -25,7 +25,7 @@ SPRINT BACKLOG (cập nhật trạng thái mỗi khi task đổi trạng thái)
 ---------------------------------------------------------------
 Task         | Người   | Mô tả ngắn                                            | Test tự động   | Phụ thuộc                  | Trạng thái | Commit
 -------------+---------+-------------------------------------------------------+----------------+----------------------------+------------+-------
-NET-01/T1    | Hoàng   | Script dựng / gỡ netns, bridge, tap, veth             | không          | –                          | TODO       |
+NET-01/T1    | Hoàng   | Script dựng / gỡ netns, bridge, tap, veth             | không          | –                          | DONE       |
 NET-01/T2    | Dương   | rover-wifi.cc: 2 node Wi-Fi + TapBridge, tham số      | không          | – (chạy thử cần T1)        | TODO       |
 NET-01/T3    | Hoàng   | Spike: PX4 + Gazebo trong ns-rover, MAVLink tới .1    | không          | NET-01/T1                  | TODO       |
 NET-01/T4    | Dương   | Hiệu chỉnh khoảng cách bằng ping                      | không          | NET-01/T1, T2              | TODO       |

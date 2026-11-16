@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+# Dựng mạng ảo của NET-01 (xem README, mục Kiến trúc mạng):
+#
+#   ns-gcs  [veth-gcs 10.0.0.1/24]   -- veth-gcs-br   -- br-gcs   -- tap-gcs   == ns-3 node 0
+#   ns-rover[veth-rover 10.0.0.2/24] -- veth-rover-br -- br-rover -- tap-rover == ns-3 node 1
+#
+# Hai netns chỉ nối với nhau qua ns-3 (TapBridge UseLocal). Tap phải ở namespace chính
+# vì ns-3 chạy ở đó và mở tap theo tên.
+#
+# Mục đích: tách trạm mặt đất (ns-gcs) và xe PX4 (ns-rover) thành 2 "máy" mạng riêng,
+# để gói MAVLink không đi tắt qua 127.0.0.1 mà phải qua mô hình Wi-Fi của ns-3.
+#
+# Cách dùng:
+#   sudo network/setup-netns.sh        dựng mạng (chạy lại nhiều lần được: tự gọi teardown trước)
+#   sudo network/teardown-netns.sh     gỡ khi làm xong
+# Sau khi dựng: chạy ns-3 (rover-wifi) rồi chạy chương trình bằng
+#   sudo ip netns exec ns-gcs   sudo -u $USER -E <lệnh>    (trạm mặt đất, 10.0.0.1)
+#   sudo ip netns exec ns-rover sudo -u $USER -E <lệnh>    (PX4 + Gazebo, 10.0.0.2)
+set -euo pipefail
+
+if [[ $EUID -ne 0 ]]; then
+    echo "Cần chạy bằng sudo: sudo $0" >&2
+    exit 1
+fi
+
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+"$DIR/teardown-netns.sh" >/dev/null
+
+# Hàm dựng một phía: <netns> <bridge> <tap> <veth trong netns> <veth ở bridge> <ip/cidr>
+setup_side() {
+    local ns=$1 br=$2 tap=$3 veth=$4 veth_br=$5 addr=$6
+
+    # 1. netns + bật lo (PX4 và Gazebo nói chuyện qua lo trong ns-rover)
+    ip netns add "$ns"
+    ip -n "$ns" link set lo up
+
+    # 2. bridge
+    ip link add "$br" type bridge
+
+    # 3. tap ở namespace chính, gắn vào bridge
+    ip tuntap add dev "$tap" mode tap
+    ip link set "$tap" promisc on
+    ip link set "$tap" master "$br"
+    ip link set "$tap" up
+
+    # 4. cặp veth: một đầu vào netns, một đầu gắn vào bridge
+    ip link add "$veth_br" type veth peer name "$veth"
+    ip link set "$veth" netns "$ns"
+    ip link set "$veth_br" master "$br"
+    ip link set "$veth_br" up
+
+    # 5. IP trong netns, bật veth và bridge
+    ip -n "$ns" addr add "$addr" dev "$veth"
+    ip -n "$ns" link set "$veth" up
+    ip link set "$br" up
+}
+
+setup_side ns-gcs   br-gcs   tap-gcs   veth-gcs   veth-gcs-br   10.0.0.1/24
+setup_side ns-rover br-rover tap-rover veth-rover veth-rover-br 10.0.0.2/24
+
+# 6. Tắt bridge-nf để iptables (ví dụ của Docker) không chặn gói đi qua bridge,
+#    giống virtual-network-setup.sh trong ví dụ tap-bridge của ns-3.
+modprobe br_netfilter 2>/dev/null || true
+for f in /proc/sys/net/bridge/bridge-nf-*; do
+    [[ -e "$f" ]] && echo 0 > "$f"
+done
+
+echo "Đã dựng mạng ảo:"
+echo "  ns-gcs   : veth-gcs   10.0.0.1/24 -> br-gcs   + tap-gcs"
+echo "  ns-rover : veth-rover 10.0.0.2/24 -> br-rover + tap-rover"
+echo "Chưa chạy ns-3 thì hai netns KHÔNG thông nhau (AC1)."
