@@ -151,7 +151,7 @@ T5  Sơ đồ kiến trúc mạng
     Yêu cầu: theo quy ước sơ đồ trong README (Mermaid; .txt chú thích ký hiệu và luồng). Thể hiện: 2 netns, veth, bridge, tap, 2 ghost node + kênh Wi-Fi của ns-3, PX4 + Gazebo trong ns-rover, chương trình đo / drive_check trong ns-gcs; luồng gói hai chiều (HEARTBEAT, telemetry, ACK từ xe; lệnh, TIMESYNC từ trạm); IP và cổng. Dùng cho mục 3 của báo cáo.
     Test tự động: không
     Kiểm tay    : người khác trong nhóm đọc sơ đồ + chú thích mà giải thích lại được đường đi của một gói HEARTBEAT
-    Trạng thái  : TODO
+    Trạng thái  : DONE
 
 T6  Viết và chạy kiểm thử chấp nhận NET-01
     File        : docs/acceptance/NET-01-acceptance.txt (gồm: thông tin lần kiểm – ngày, người kiểm, mã commit; phần chuẩn bị; từng AC với các bước và ô [v] Đạt)
@@ -168,6 +168,11 @@ T2 (Dương, 2026-11-16):
   - Hỗ trợ CommandLine: --distance, --simTime, --phyMode, --txPower, --exponent, --pcap.
   - Symlink vào ~/ns-3.49/scratch/rover-wifi.cc, biên dịch bằng "ninja -C cmake-cache scratch_rover-wifi" thành công, file thực thi tại build/scratch/ns3.49-rover-wifi-default.
   - Kiểm tra --help và chạy thử --distance=10 --simTime=1 in đúng các tham số ra màn hình.
+
+T5 (Dương, 2026-11-16):
+  - Tạo sơ đồ docs/diagrams/network-overview/ gồm network-overview.mmd, network-overview.svg, network-overview.txt.
+  - Sơ đồ thể hiện đầy đủ 2 netns (ns-gcs, ns-rover), các cổng veth/bridge/tap, ns-3 engine (Ghost node 0 & 1, kênh 802.11g, suy hao LogDistance, trễ, MAC retry), ứng dụng đo/lái và PX4+Gazebo.
+  - File txt thuyết minh chi tiết nguyên lý TapBridge UseLocal, luồng gói 2 chiều MAVLink UDP 14540 (HEARTBEAT, ARM/drive, TIMESYNC) và bảng so sánh với cấu hình loopback baseline. Dùng cho mục 3 của báo cáo.
 
 T1 (Hoàng, 2026-11-17)
   Lệnh đã chạy:

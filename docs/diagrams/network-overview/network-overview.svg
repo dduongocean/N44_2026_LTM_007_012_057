@@ -1,0 +1,157 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 780" width="100%" height="100%" style="background-color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <defs>
+    <!-- Arrow marker -->
+    <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#1976d2" />
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#2e7d32" />
+    </marker>
+    <marker id="arrow-orange" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#e65100" />
+    </marker>
+    <!-- Filter for drop shadow -->
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <!-- Title -->
+  <text x="550" y="35" text-anchor="middle" font-size="20" font-weight="bold" fill="#1a237e">KIẾN TRÚC MẠNG MÔ PHỎNG PX4 SITL + GAZEBO VÀ NS-3 WI-FI</text>
+  <text x="550" y="58" text-anchor="middle" font-size="13" fill="#555555">Sơ đồ tổng thể 2 chiều: Trạm mặt đất (GCS) &lt;---&gt; ns-3 (Wi-Fi 802.11g) &lt;---&gt; Xe tự hành Rover</text>
+
+  <!-- ==================== NAMESPACE GCS (LEFT) ==================== -->
+  <rect x="40" y="90" width="280" height="280" rx="10" fill="#e3f2fd" stroke="#1976d2" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="40" y="90" width="280" height="35" rx="10" fill="#1976d2"/>
+  <rect x="40" y="115" width="280" height="10" fill="#1976d2"/>
+  <text x="180" y="113" text-anchor="middle" font-size="14" font-weight="bold" fill="#ffffff">netns: ns-gcs (Trạm mặt đất)</text>
+
+  <!-- GCS App box -->
+  <rect x="60" y="145" width="240" height="95" rx="6" fill="#ffffff" stroke="#90caf9" stroke-width="1.5"/>
+  <text x="180" y="170" text-anchor="middle" font-size="13" font-weight="bold" fill="#0d47a1">Ứng dụng GCS / Đo lường</text>
+  <text x="180" y="190" text-anchor="middle" font-size="12" fill="#333333">tools/drive_check.py</text>
+  <text x="180" y="208" text-anchor="middle" font-size="12" fill="#333333">tools/run_experiment.py (NET-02)</text>
+  <text x="180" y="226" text-anchor="middle" font-size="11" font-weight="bold" fill="#d84315">IP: 10.0.0.1 | Port: 14540 (UDP)</text>
+
+  <!-- veth-gcs in netns -->
+  <rect x="90" y="280" width="180" height="55" rx="6" fill="#bbdefb" stroke="#1976d2" stroke-width="1.5"/>
+  <text x="180" y="303" text-anchor="middle" font-size="13" font-weight="bold" fill="#0d47a1">veth-gcs</text>
+  <text x="180" y="322" text-anchor="middle" font-size="11" fill="#333333">10.0.0.1/24 (UP)</text>
+
+  <!-- Link inside GCS netns -->
+  <line x1="180" y1="240" x2="180" y2="280" stroke="#1976d2" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="190" y="262" font-size="10" fill="#666666">UDP Socket</text>
+
+
+  <!-- ==================== NAMESPACE ROVER (RIGHT) ==================== -->
+  <rect x="780" y="90" width="280" height="280" rx="10" fill="#fff3e0" stroke="#e65100" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="780" y="90" width="280" height="35" rx="10" fill="#e65100"/>
+  <rect x="780" y="115" width="280" height="10" fill="#e65100"/>
+  <text x="920" y="113" text-anchor="middle" font-size="14" font-weight="bold" fill="#ffffff">netns: ns-rover (Xe Rover PX4)</text>
+
+  <!-- Rover App box -->
+  <rect x="800" y="145" width="240" height="95" rx="6" fill="#ffffff" stroke="#ffcc80" stroke-width="1.5"/>
+  <text x="920" y="170" text-anchor="middle" font-size="13" font-weight="bold" fill="#bf360c">PX4 SITL + Gazebo Garden</text>
+  <text x="920" y="190" text-anchor="middle" font-size="12" fill="#333333">Model: gz_r1_rover</text>
+  <text x="920" y="208" text-anchor="middle" font-size="11" fill="#333333">MAVLink Onboard: 10.0.0.2:14540</text>
+  <text x="920" y="226" text-anchor="middle" font-size="11" fill="#757575">Local GCS: 127.0.0.1:14550</text>
+
+  <!-- veth-rover in netns -->
+  <rect x="830" y="280" width="180" height="55" rx="6" fill="#ffe0b2" stroke="#e65100" stroke-width="1.5"/>
+  <text x="920" y="303" text-anchor="middle" font-size="13" font-weight="bold" fill="#bf360c">veth-rover</text>
+  <text x="920" y="322" text-anchor="middle" font-size="11" fill="#333333">10.0.0.2/24 (UP)</text>
+
+  <!-- Link inside Rover netns -->
+  <line x1="920" y1="240" x2="920" y2="280" stroke="#e65100" stroke-width="2" marker-end="url(#arrow-orange)"/>
+  <text x="930" y="262" font-size="10" fill="#666666">UDP Socket</text>
+
+
+  <!-- ==================== HOST NAMESPACE (MIDDLE & BOTTOM) ==================== -->
+  <rect x="40" y="410" width="1020" height="340" rx="10" fill="#f5f5f5" stroke="#757575" stroke-width="2" stroke-dasharray="6,4" filter="url(#shadow)"/>
+  <text x="60" y="435" font-size="15" font-weight="bold" fill="#424242">Host Linux Namespace (Namespace chính của hệ điều hành)</text>
+
+  <!-- Cặp veth-gcs kết nối -->
+  <path d="M 180 335 L 180 470" stroke="#1976d2" stroke-width="3" stroke-dasharray="4,4"/>
+  <rect x="110" y="385" width="140" height="24" rx="4" fill="#ffffff" stroke="#1976d2" stroke-width="1"/>
+  <text x="180" y="401" text-anchor="middle" font-size="11" font-weight="bold" fill="#1976d2">veth pair (Cáp ảo L2)</text>
+
+  <!-- Cầu nối phía GCS (br-gcs) -->
+  <rect x="80" y="470" width="200" height="110" rx="8" fill="#ffffff" stroke="#9e9e9e" stroke-width="1.5"/>
+  <text x="180" y="493" text-anchor="middle" font-size="13" font-weight="bold" fill="#424242">Bridge Linux: br-gcs</text>
+  <rect x="95" y="505" width="80" height="30" rx="4" fill="#e0e0e0"/>
+  <text x="135" y="524" text-anchor="middle" font-size="10" fill="#333333">veth-gcs-br</text>
+  <rect x="185" y="505" width="80" height="30" rx="4" fill="#bbdefb"/>
+  <text x="225" y="524" text-anchor="middle" font-size="10" font-weight="bold" fill="#0d47a1">tap-gcs</text>
+  <text x="180" y="555" text-anchor="middle" font-size="10" fill="#616161">Chuyển tiếp khung Ethernet L2</text>
+  <text x="180" y="570" text-anchor="middle" font-size="10" fill="#616161">bridge-nf = 0 (tắt iptables filter)</text>
+
+  <!-- Cặp veth-rover kết nối -->
+  <path d="M 920 335 L 920 470" stroke="#e65100" stroke-width="3" stroke-dasharray="4,4"/>
+  <rect x="850" y="385" width="140" height="24" rx="4" fill="#ffffff" stroke="#e65100" stroke-width="1"/>
+  <text x="920" y="401" text-anchor="middle" font-size="11" font-weight="bold" fill="#e65100">veth pair (Cáp ảo L2)</text>
+
+  <!-- Cầu nối phía Rover (br-rover) -->
+  <rect x="820" y="470" width="200" height="110" rx="8" fill="#ffffff" stroke="#9e9e9e" stroke-width="1.5"/>
+  <text x="920" y="493" text-anchor="middle" font-size="13" font-weight="bold" fill="#424242">Bridge Linux: br-rover</text>
+  <rect x="835" y="505" width="80" height="30" rx="4" fill="#ffe0b2"/>
+  <text x="875" y="524" text-anchor="middle" font-size="10" font-weight="bold" fill="#bf360c">tap-rover</text>
+  <rect x="925" y="505" width="80" height="30" rx="4" fill="#e0e0e0"/>
+  <text x="965" y="524" text-anchor="middle" font-size="10" fill="#333333">veth-rover-br</text>
+  <text x="920" y="555" text-anchor="middle" font-size="10" fill="#616161">Chuyển tiếp khung Ethernet L2</text>
+  <text x="920" y="570" text-anchor="middle" font-size="10" fill="#616161">bridge-nf = 0 (tắt iptables filter)</text>
+
+
+  <!-- ==================== NS-3 SIMULATION ENGINE (CENTER) ==================== -->
+  <rect x="310" y="460" width="480" height="270" rx="10" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2"/>
+  <text x="550" y="488" text-anchor="middle" font-size="15" font-weight="bold" fill="#1b5e20">Tiến trình mô phỏng ns-3 (rover-wifi.cc)</text>
+  <text x="550" y="506" text-anchor="middle" font-size="11" fill="#388e3c">RealtimeSimulatorImpl | ChecksumEnabled=true</text>
+
+  <!-- Ghost Node 0 -->
+  <rect x="330" y="525" width="110" height="85" rx="6" fill="#ffffff" stroke="#81c784" stroke-width="1.5"/>
+  <text x="385" y="548" text-anchor="middle" font-size="12" font-weight="bold" fill="#2e7d32">Ghost Node 0</text>
+  <text x="385" y="566" text-anchor="middle" font-size="11" fill="#333333">Vị trí: (0, 0, 0)</text>
+  <text x="385" y="584" text-anchor="middle" font-size="10" fill="#555555">WifiNetDevice</text>
+  <text x="385" y="598" text-anchor="middle" font-size="10" fill="#1976d2">AdhocWifiMac</text>
+
+  <!-- Ghost Node 1 -->
+  <rect x="660" y="525" width="110" height="85" rx="6" fill="#ffffff" stroke="#81c784" stroke-width="1.5"/>
+  <text x="715" y="548" text-anchor="middle" font-size="12" font-weight="bold" fill="#2e7d32">Ghost Node 1</text>
+  <text x="715" y="566" text-anchor="middle" font-size="11" fill="#333333">Vị trí: (d, 0, 0)</text>
+  <text x="715" y="584" text-anchor="middle" font-size="10" fill="#555555">WifiNetDevice</text>
+  <text x="715" y="598" text-anchor="middle" font-size="10" fill="#e65100">AdhocWifiMac</text>
+
+  <!-- TapBridge lines -->
+  <line x1="265" y1="520" x2="330" y2="550" stroke="#1565c0" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="295" y="535" text-anchor="middle" font-size="9" font-weight="bold" fill="#1565c0">UseLocal</text>
+
+  <line x1="770" y1="550" x2="835" y2="520" stroke="#e65100" stroke-width="2.5" marker-end="url(#arrow-orange)"/>
+  <text x="805" y="535" text-anchor="middle" font-size="9" font-weight="bold" fill="#e65100">UseLocal</text>
+
+  <!-- Wi-Fi Channel box -->
+  <rect x="455" y="525" width="190" height="130" rx="6" fill="#ffffff" stroke="#4caf50" stroke-width="1.5"/>
+  <text x="550" y="546" text-anchor="middle" font-size="12" font-weight="bold" fill="#1b5e20">Kênh Wi-Fi 802.11g</text>
+  <text x="550" y="564" text-anchor="middle" font-size="11" fill="#333333">Tốc độ: 6 Mbps (OFDM)</text>
+  <text x="550" y="582" text-anchor="middle" font-size="11" fill="#333333">Công suất phát: 16 dBm</text>
+  <text x="550" y="600" text-anchor="middle" font-size="11" fill="#333333">Suy hao: Log-Distance</text>
+  <text x="550" y="618" text-anchor="middle" font-size="10" fill="#666666">(Exponent = 3.0)</text>
+  <text x="550" y="636" text-anchor="middle" font-size="10" font-weight="bold" fill="#c62828">Tầng MAC gửi lại (Retry)</text>
+
+  <!-- Radio links -->
+  <path d="M 440 565 Q 447 560 455 565" stroke="#2e7d32" stroke-width="2" fill="none"/>
+  <path d="M 440 575 Q 447 570 455 575" stroke="#2e7d32" stroke-width="2" fill="none"/>
+  <path d="M 645 565 Q 652 560 660 565" stroke="#2e7d32" stroke-width="2" fill="none"/>
+  <path d="M 645 575 Q 652 570 660 575" stroke="#2e7d32" stroke-width="2" fill="none"/>
+
+  <!-- PCAP box -->
+  <rect x="420" y="670" width="260" height="45" rx="4" fill="#e8eaf6" stroke="#3f51b5" stroke-width="1"/>
+  <text x="550" y="690" text-anchor="middle" font-size="11" font-weight="bold" fill="#283593">Bắt gói PCAP (DLT_IEEE802_11_RADIO)</text>
+  <text x="550" y="705" text-anchor="middle" font-size="10" fill="#3f51b5">data/pcap/rover-wifi-*.pcap (Kiểm tra Wireshark)</text>
+
+  <!-- Packet Flow Arrows (Bottom Legend) -->
+  <rect x="40" y="725" width="260" height="20" fill="none"/>
+  <text x="45" y="738" font-size="11" font-weight="bold" fill="#1565c0">──▶ Chiều Trạm ➔ Xe:</text>
+  <text x="175" y="738" font-size="11" fill="#333333">Lệnh ARM, SETPOINT, TIMESYNC</text>
+
+  <text x="800" y="738" font-size="11" font-weight="bold" fill="#e65100">◀── Chiều Xe ➔ Trạm:</text>
+  <text x="930" y="738" font-size="11" fill="#333333">HEARTBEAT, Vị trí, ACK</text>
+</svg>

@@ -1,0 +1,70 @@
+%% =============================================================================
+%% Sơ đồ kiến trúc mạng hệ thống mô phỏng PX4 - ns-3
+%% Người thực hiện: Vũ Duy Dương (NET-01/T5)
+%% Phục vụ: Mục 3 Báo cáo cuối kỳ - Kiến trúc và thiết kế hệ thống
+%% =============================================================================
+
+flowchart TD
+    subgraph NS_GCS ["Network Namespace: ns-gcs (Trạm mặt đất)"]
+        direction TB
+        APP_GCS["Chương trình đo (run_experiment.py)<br/>hoặc Lái thử (drive_check.py)<br/>IP: 10.0.0.1 | Port: 14540 (UDP)"]
+        VETH_GCS["Cổng mạng veth-gcs<br/>IP: 10.0.0.1/24 | MAC: tự sinh"]
+        APP_GCS <-->|"Socket UDP / Linux IP Stack"| VETH_GCS
+    end
+
+    subgraph HOST ["Namespace chính của máy (Linux Host OS)"]
+        direction TB
+
+        subgraph GCS_NET ["Cầu nối mạng phía GCS"]
+            VETH_GCS_BR["Cổng veth-gcs-br"]
+            BR_GCS["Linux Bridge: br-gcs<br/>(Chuyển mạch Ethernet L2)"]
+            TAP_GCS["Cổng TAP ảo: tap-gcs<br/>(Chế độ promisc on)"]
+            VETH_GCS_BR --- BR_GCS
+            TAP_GCS --- BR_GCS
+        end
+
+        subgraph NS3_SIM ["ns-3 Realtime Simulation Engine (rover-wifi)"]
+            direction LR
+            GHOST0["Ghost Node 0 (GCS)<br/>WifiNetDevice (802.11g)<br/>Tọa độ: (0.0, 0.0, 0.0)"]
+            
+            WIFI_CH["Kênh truyền vô tuyến ns-3 (YansWifiChannel)<br/>-----------------------------------------<br/>• Chuẩn: 802.11g Ad-hoc (AdhocWifiMac)<br/>• Tốc độ: ErpOfdmRate6Mbps<br/>• Suy hao: LogDistance (Exponent = 3.0)<br/>• Trễ truyền sóng: ConstantSpeed<br/>• Khoảng cách: d = 0 đến 200+ mét<br/>• Cơ chế gửi lại: Tầng MAC (Retry Limit)"]
+            
+            GHOST1["Ghost Node 1 (Rover)<br/>WifiNetDevice (802.11g)<br/>Tọa độ: (distance, 0.0, 0.0)"]
+
+            GHOST0 <-->|"Khung vô tuyến 802.11"| WIFI_CH
+            WIFI_CH <-->|"Khung vô tuyến 802.11"| GHOST1
+        end
+
+        subgraph ROVER_NET ["Cầu nối mạng phía Rover"]
+            TAP_ROVER["Cổng TAP ảo: tap-rover<br/>(Chế độ promisc on)"]
+            BR_ROVER["Linux Bridge: br-rover<br/>(Chuyển mạch Ethernet L2)"]
+            VETH_ROVER_BR["Cổng veth-rover-br"]
+            TAP_ROVER --- BR_ROVER
+            VETH_ROVER_BR --- BR_ROVER
+        end
+
+        TAP_GCS <-->|"TapBridge (UseLocal)<br/>Chuyển khung Ethernet"| GHOST0
+        GHOST1 <-->|"TapBridge (UseLocal)<br/>Chuyển khung Ethernet"| TAP_ROVER
+    end
+
+    subgraph NS_ROVER ["Network Namespace: ns-rover (Xe Rover PX4)"]
+        direction TB
+        VETH_ROVER["Cổng mạng veth-rover<br/>IP: 10.0.0.2/24 | MAC: tự sinh"]
+        PX4_APP["PX4 SITL + Gazebo Garden (gz_r1_rover)<br/>IP: 10.0.0.2<br/>• Port 14540 (UDP Onboard - MAVLink tới GCS)<br/>• Port 14550 (UDP - Đọc trạng thái nội bộ xe)"]
+        VETH_ROVER <-->|"Socket UDP / Linux IP Stack"| PX4_APP
+    end
+
+    %% Cặp veth xuyên qua namespace
+    VETH_GCS <===>|"Cặp cáp ảo veth (veth pair)"| VETH_GCS_BR
+    VETH_ROVER_BR <===>|"Cặp cáp ảo veth (veth pair)"| VETH_ROVER
+
+    %% Định dạng màu sắc trực quan
+    classDef nsStyle fill:#e1f5fe,stroke:#0288d1,stroke-width:2px;
+    classDef hostStyle fill:#f5f5f5,stroke:#616161,stroke-width:2px;
+    classDef ns3Style fill:#e8f5e9,stroke:#388e3c,stroke-width:2px;
+    classDef appStyle fill:#fff3e0,stroke:#f57c00,stroke-width:1.5px;
+    
+    class NS_GCS,NS_ROVER nsStyle;
+    class HOST,GCS_NET,ROVER_NET hostStyle;
+    class NS3_SIM ns3Style;
+    class APP_GCS,PX4_APP appStyle;

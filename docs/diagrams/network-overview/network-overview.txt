@@ -1,0 +1,102 @@
+CHÚ THÍCH VÀ THUYẾT MINH KIẾN TRÚC MẠNG
+Tập tin sơ đồ: network-overview.mmd (nguồn Mermaid) và network-overview.svg (ảnh vector)
+Tác giả      : Vũ Duy Dương (NET-01/T5)
+Phục vụ      : Mục 3 Báo cáo cuối kỳ môn Lập trình mạng (Kiến trúc và thiết kế hệ thống)
+================================================================================
+
+1. TỔNG QUAN KIẾN TRÚC
+----------------------
+Hệ thống kết hợp mô phỏng phương tiện tự hành PX4 SITL + Gazebo và mô phỏng mạng viễn thông ns-3 trên cùng một máy Linux đơn lẻ.
+
+Để đảm bảo mọi gói tin MAVLink giữa trạm mặt đất (GCS) và xe Rover KHÔNG đi tắt qua loopback hay bảng định tuyến nội bộ của Linux kernel (127.0.0.1 / localhost), kiến trúc mạng được phân tách thành 3 không gian mạng độc lập:
+  - Network Namespace "ns-gcs": Đại diện cho máy tính trạm mặt đất, chạy các chương trình điều khiển và đo đạc.
+  - Network Namespace "ns-rover": Đại diện cho máy tính nhúng trên xe Rover, chạy autopilot PX4 SITL và môi trường vật lý Gazebo Garden.
+  - Namespace chính (Host Linux): Chạy tiến trình mô phỏng mạng ns-3 và các thiết bị cầu nối mạng ảo (Bridge, TAP, veth pair).
+
+Hai namespace "ns-gcs" và "ns-rover" không có bất kỳ tuyến định tuyến hay dây nối trực tiếp nào với nhau. Con đường duy nhất để dữ liệu đi từ trạm sang xe (và ngược lại) là đi qua mô hình vô tuyến Wi-Fi 802.11g được mô phỏng chi tiết trong ns-3.
+
+
+2. BẢNG KÝ HIỆU VÀ THÀNH PHẦN MẠNG
+----------------------------------
+Thành phần     | Không gian mạng | Địa chỉ / Cổng          | Vai trò và ý nghĩa
+---------------+-----------------+-------------------------+-------------------------------------------------------------
+ns-gcs         | Network NS      | –                       | Không gian mạng cách ly cho Trạm mặt đất
+ns-rover       | Network NS      | –                       | Không gian mạng cách ly cho Xe tự hành PX4
+veth-gcs       | ns-gcs          | 10.0.0.1/24             | Card mạng ảo của trạm mặt đất
+veth-rover     | ns-rover        | 10.0.0.2/24             | Card mạng ảo của xe tự hành PX4
+veth-gcs-br    | Host OS         | không có IP             | Đầu kia của cáp ảo veth-gcs, cắm vào br-gcs
+veth-rover-br  | Host OS         | không có IP             | Đầu kia của cáp ảo veth-rover, cắm vào br-rover
+br-gcs         | Host OS         | không có IP (bridge L2) | Linux Bridge gom veth-gcs-br và tap-gcs
+br-rover       | Host OS         | không có IP (bridge L2) | Linux Bridge gom veth-rover-br và tap-rover
+tap-gcs        | Host OS         | không có IP (tap L2)    | Cổng TAP ảo nối br-gcs vào Ghost Node 0 của ns-3
+tap-rover      | Host OS         | không có IP (tap L2)    | Cổng TAP ảo nối br-rover vào Ghost Node 1 của ns-3
+Ghost Node 0   | Trong ns-3      | (0.0, 0.0, 0.0)         | Node đại diện phía trạm trong mô phỏng không gian vô tuyến
+Ghost Node 1   | Trong ns-3      | (d, 0.0, 0.0)           | Node đại diện phía xe trong mô phỏng không gian vô tuyến (cách d mét)
+YansWifiChannel| Trong ns-3      | Kênh Wi-Fi 802.11g      | Kênh vô tuyến mô phỏng suy hao Log-distance, trễ và mất gói
+
+
+3. NGUYÊN LÝ HOẠT ĐỘNG CỦA TAPBRIDGE CHẾ ĐỘ UseLocal
+---------------------------------------------------
+- Tại sao cần TapBridge: ns-3 là trình mô phỏng sự kiện rời rạc mức phần mềm. Để đưa gói tin Ethernet từ nhân Linux thật vào mô hình mô phỏng, ns-3 cung cấp module TapBridge.
+- Tại sao dùng chế độ UseLocal:
+  + Thiết bị mạng Wi-Fi mô phỏng của ns-3 (WifiNetDevice) do bản chất vô tuyến không hỗ trợ chế độ promiscuous (bắt mọi khung MAC bất kỳ).
+  + Chế độ "UseLocal" cho phép nối một Linux Bridge vào ns-3 với điều kiện trên Linux Bridge đó chỉ có DUY NHẤT một thiết bị khác đang hoạt động (chính là đầu veth của netns tương ứng).
+  + Khi đó, TapBridge sẽ trích xuất khung Ethernet từ tap device, gán địa chỉ MAC phù hợp và đưa vào hàng đợi truyền phát của card Wi-Fi ảo mà không cần promiscuous mode.
+- Cấu hình bridge-nf: Để tránh trường hợp tường lửa iptables của host (nhất là khi máy cài Docker) lọc hoặc chặn các gói tin đi qua Linux Bridge, cần tắt bridge-nf bằng cách ghi 0 vào /proc/sys/net/bridge/bridge-nf-call-iptables.
+
+
+4. CHI TIẾT ĐƯỜNG ĐI CỦA CÁC LUỒNG GÓI TIN HAI CHIỀU
+----------------------------------------------------
+
+4.1. Luồng 1: Gói tin HEARTBEAT / Telemetry từ Xe gửi về Trạm (10.0.0.2 -> 10.0.0.1:14540)
+  1. PX4 SITL trong ns-rover sinh gói tin MAVLink HEARTBEAT định kỳ (1 Hz hoặc 10 Hz) gửi tới socket UDP 10.0.0.1:14540.
+  2. Kernel trong ns-rover đóng gói: Payload MAVLink -> UDP Header -> IP Header (Src: 10.0.0.2, Dst: 10.0.0.1) -> Ethernet Frame (Dst MAC: ARP của 10.0.0.1).
+  3. Khung Ethernet đi ra cổng veth-rover, xuất hiện tại đầu đối diện veth-rover-br trong namespace chính.
+  4. Linux Bridge br-rover nhận khung tại veth-rover-br và chuyển tiếp (forward L2) sang cổng tap-rover.
+  5. Tiến trình ns-3 (rover-wifi.cc) đọc khung Ethernet từ file descriptor của tap-rover thông qua TapBridge (chế độ UseLocal).
+  6. TapBridge đưa khung vào hàng đợi của Ghost Node 1 (WifiNetDevice 802.11g).
+  7. Tầng MAC và PHY của Ghost Node 1 chuyển đổi thành khung vô tuyến 802.11, áp dụng công suất phát (16 dBm).
+  8. Sóng vô tuyến truyền qua YansWifiChannel:
+     - Tính toán suy hao công suất thu theo khoảng cách d bằng mô hình LogDistancePropagationLossModel:
+         PL(d) = PL_0 + 10 * n * log10(d / d_0)
+     - Tính SNR tại đầu thu Ghost Node 0. Nếu SNR thấp (khoảng cách lớn), xác suất lỗi bit tăng dẫn đến hỏng khung.
+     - Tầng MAC thực hiện cơ chế gửi lại (ARQ - Retry Limit tối đa 7 lần). Nếu hết số lần thử lại mà vẫn không nhận được ACK vô tuyến, gói tin bị hủy (Packet Loss).
+  9. Nếu truyền thành công, tầng PHY và MAC của Ghost Node 0 giải mã khung vô tuyến thành khung Ethernet chuẩn.
+  10. TapBridge phía trạm ghi khung Ethernet này ra thiết bị tap-gcs.
+  11. Linux Bridge br-gcs nhận khung từ tap-gcs và forward sang cổng veth-gcs-br.
+  12. Khung xuất hiện ở đầu veth-gcs bên trong namespace ns-gcs.
+  13. Kernel của ns-gcs bóc tách Ethernet -> IP -> UDP và đẩy dữ liệu MAVLink HEARTBEAT vào socket của chương trình đo (run_experiment.py) hoặc công cụ lái thử (drive_check.py).
+
+4.2. Luồng 2: Lệnh điều khiển (ARM, SETPOINT_POSITION / VELOCITY) từ Trạm sang Xe (10.0.0.1 -> 10.0.0.2:14540)
+  1. drive_check.py hoặc run_experiment.py phát lệnh mở khóa (ARM) hoặc lệnh vận tốc điều khiển xe tiến/lùi.
+  2. Gói tin đi theo thứ tự:
+     ns-gcs (veth-gcs)
+       ──▶ veth-gcs-br (Host)
+       ──▶ br-gcs
+       ──▶ tap-gcs
+       ──▶ ns-3 Ghost Node 0 (TapBridge UseLocal)
+       ──▶ Kênh Wi-Fi 802.11g (suy hao d, gửi lại MAC)
+       ──▶ ns-3 Ghost Node 1
+       ──▶ tap-rover
+       ──▶ br-rover
+       ──▶ veth-rover-br
+       ──▶ veth-rover (ns-rover)
+       ──▶ PX4 SITL (nhận lệnh, chuyển chế độ OFFBOARD, điều khiển động cơ xe trong Gazebo).
+
+4.3. Luồng 3: Gói tin đồng bộ thời gian TIMESYNC tính trễ RTT
+  1. Chương trình đo tại trạm gửi message MAVLink TIMESYNC (tc1 = thời gian trạm phát đi, ts1 = 0).
+  2. Gói tin truyền qua chuỗi mạng mô phỏng ns-3 tới PX4.
+  3. PX4 điền ts1 = thời gian của xe và gửi ngược lại về trạm.
+  4. Trạm nhận lại gói tại thời điểm now.
+  5. Độ trễ khứ hồi tính bằng: RTT = now - tc1. Nếu trên đường Wi-Fi có nhiều lần gửi lại MAC (hoặc nghẽn hàng đợi), RTT sẽ tăng cao và dao động (sinh jitter).
+
+
+5. SO SÁNH CẤU HÌNH QUA NS-3 VÀ CẤU HÌNH LOOPBACK (BASELINE)
+-----------------------------------------------------------
+Đặc điểm               | Cấu hình Baseline (Loopback)          | Cấu hình qua ns-3 (Đề tài)
+-----------------------+---------------------------------------+---------------------------------------------------------
+Đường truyền           | Giao diện lo (127.0.0.1)              | Wi-Fi 802.11g qua 2 netns + TapBridge
+Tỷ lệ mất gói          | Luôn bằng 0%                          | Thay đổi từ 0% đến 100% phụ thuộc khoảng cách d
+Độ trễ RTT             | Cực nhỏ (&lt; 0.1 ms), không dao động  | Từ vài ms đến hàng chục/trăm ms do suy hao và MAC retry
+Phản ứng của xe Rover  | Xe phản hồi tức thì, không bị đứt kết nối | Xuất hiện hiện tượng giật cục, trễ lệnh hoặc kích hoạt Failsafe
+Ý nghĩa nghiên cứu     | Dùng làm mốc đối chứng chuẩn          | Phản ánh sát thực tế môi trường truyền sóng không dây
