@@ -141,7 +141,7 @@ T4  Hiệu chỉnh khoảng cách: tìm vùng khoảng cách mà mất gói tăn
 
     Test tự động: không
     Kiểm tay    : bảng khoảng cách – % loss – RTT trong calibration.txt, kèm tham số ns-3 đã dùng và danh sách mức đề xuất
-    Trạng thái  : TODO
+    Trạng thái  : DONE
 
 T5  Sơ đồ kiến trúc mạng
     File        : docs/diagrams/network-overview/network-overview.mmd, .svg, .txt
@@ -173,6 +173,12 @@ T5 (Dương, 2026-11-16):
   - Tạo sơ đồ docs/diagrams/network-overview/ gồm network-overview.mmd, network-overview.svg, network-overview.txt.
   - Sơ đồ thể hiện đầy đủ 2 netns (ns-gcs, ns-rover), các cổng veth/bridge/tap, ns-3 engine (Ghost node 0 & 1, kênh 802.11g, suy hao LogDistance, trễ, MAC retry), ứng dụng đo/lái và PX4+Gazebo.
   - File txt thuyết minh chi tiết nguyên lý TapBridge UseLocal, luồng gói 2 chiều MAVLink UDP 14540 (HEARTBEAT, ARM/drive, TIMESYNC) và bảng so sánh với cấu hình loopback baseline. Dùng cho mục 3 của báo cáo.
+
+T4 (Dương, 2026-11-16):
+  - Dựng mạng ảo và chạy ping giữa ns-gcs và ns-rover qua rover-wifi (ns-3).
+  - Hoàn thành bảng số liệu hiệu chỉnh khoảng cách tại docs/experiments/calibration.txt.
+  - Xác định vùng chuyển tiếp suy giảm tín hiệu mạnh nằm trong khoảng 60m - 100m.
+  - Đề xuất 7 mốc khoảng cách (10m, 50m, 60m, 70m, 80m, 90m, 100m) cho thí nghiệm NET-03 ở Sprint 02.
 
 T1 (Hoàng, 2026-11-17)
   Lệnh đã chạy:
