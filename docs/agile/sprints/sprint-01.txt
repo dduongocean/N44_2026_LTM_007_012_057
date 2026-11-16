@@ -27,7 +27,7 @@ Task         | Người   | Mô tả ngắn                                     
 -------------+---------+-------------------------------------------------------+----------------+----------------------------+------------+-------
 NET-01/T1    | Hoàng   | Script dựng / gỡ netns, bridge, tap, veth             | không          | –                          | DONE       | fb8dcdc
 NET-01/T2    | Dương   | rover-wifi.cc: 2 node Wi-Fi + TapBridge, tham số      | không          | – (chạy thử cần T1)        | DONE       | 4a8f6a5
-NET-01/T3    | Hoàng   | Spike: PX4 + Gazebo trong ns-rover, MAVLink tới .1    | không          | NET-01/T1                  | TODO       |
+NET-01/T3    | Hoàng   | Spike: PX4 + Gazebo trong ns-rover, MAVLink tới .1    | không          | NET-01/T1 (Q3 cần T2)      | DONE       |
 NET-01/T4    | Dương   | Hiệu chỉnh khoảng cách bằng ping                      | không          | NET-01/T1, T2              | DONE       |
 NET-01/T5    | Dương   | Sơ đồ kiến trúc mạng (.mmd, .svg, .txt)               | không          | NET-01/T1                  | DONE       | 25b225c
 NET-01/T6    | Phương  | Kiểm thử chấp nhận NET-01                             | không          | NET-01/T1, T2, T3          | TODO       |
@@ -65,6 +65,22 @@ LỊCH ĐỀ XUẤT
 DAILY SCRUM
 -----------
 (ngày giờ – người ghi – mỗi thành viên: đã làm / sẽ làm / đang vướng)
+
+2026-11-17 giữa ngày – Hoàng ghi (phần của Hoàng)
+  Hoàng  : Đã làm: NET-01/T1 DONE; NET-01/T3 spike DONE – PX4 + Gazebo chạy trong ns-rover (có cửa sổ),
+           network/run-px4.sh tự thêm MAVLink tới 10.0.0.1:14540, drive_check tien từ ns-gcs lái được xe qua
+           ns-3 --distance=5 (tiến +0.54 m). Kết quả Q1–Q6: NET-01.txt mục 5. Không cần phương án relay UDP.
+           Phát hiện và sửa BUG-01 (ns-3 crash ngay khi có gói: TapBridge UseLocal đổi MAC thiết bị Wi-Fi) –
+           chi tiết docs/agile/bug-log.txt.
+           Sẽ làm: hỗ trợ Phương chạy chương trình đo qua ns-3; cuối ngày NET-02/T5 (netem).
+           Đang vướng: chờ NET-02/T4.
+  CẦN BIẾT:
+  - Dương : rover-wifi.cc và setup-netns.sh đã sửa theo BUG-01 (MAC cố định 02:00:00:00:00:01/02, hàm
+            SetWifiAddress). Pull về, BUILD LẠI rover-wifi, chạy lại phần "khoảng cách rất xa" của AC2
+            (--distance=1000) trước khi làm T4. Bản cũ sẽ crash ngay khi có gói đi qua.
+  - Phương: NET-01 sẵn sàng cho T6. Cách chạy 3 terminal: README mục "Lái xe qua ns-3". Mọi lệnh ip -n /
+            ip netns exec cần sudo. Q6: PX4 phát tới 10.0.0.1 ≈ 24 kB/s, ≈ 350–415 msg/s; HEARTBEAT 1 Hz,
+            TIMESYNC 10 Hz (cho NET-02).
 
 SPRINT REVIEW
 -------------

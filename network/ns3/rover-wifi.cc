@@ -20,6 +20,26 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE("RoverWifi");
 
+// MAC của veth-gcs / veth-rover trong netns, PHẢI trùng với GCS_MAC / ROVER_MAC trong network/setup-netns.sh.
+static const char* GCS_MAC = "02:00:00:00:00:01";
+static const char* ROVER_MAC = "02:00:00:00:00:02";
+
+/*
+ * Gán MAC cho thiết bị Wi-Fi ở CẢ WifiMac lẫn FrameExchangeManager (BUG-01).
+ * TapBridge UseLocal gọi NetDevice::SetAddress(MAC của veth) khi nhận khung đầu tiên từ tap;
+ * WifiNetDevice::SetAddress chỉ đổi WifiMac, không đổi FrameExchangeManager, nên khung gửi đi có
+ * TA không khớp link nào -> NS_ASSERT linkId.has_value() trong WifiMacQueueSchedulerImpl.
+ * Gán sẵn đúng MAC đó trước khi chạy thì lệnh SetAddress của TapBridge không đổi gì nữa.
+ */
+static void
+SetWifiAddress(Ptr<NetDevice> device, Mac48Address address)
+{
+    Ptr<WifiNetDevice> wifiDevice = DynamicCast<WifiNetDevice>(device);
+    NS_ABORT_MSG_IF(!wifiDevice, "Thiết bị không phải WifiNetDevice");
+    wifiDevice->GetMac()->SetAddress(address);
+    wifiDevice->GetMac()->GetFrameExchangeManager()->SetAddress(address);
+}
+
 int
 main(int argc, char* argv[])
 {
@@ -92,6 +112,10 @@ main(int argc, char* argv[])
 
     // Gắn thiết bị Wi-Fi vào 2 ghost node
     NetDeviceContainer devices = wifi.Install(phy, mac, nodes);
+
+    // Gán sẵn MAC trùng với veth trong netns (xem SetWifiAddress, BUG-01)
+    SetWifiAddress(devices.Get(0), Mac48Address(GCS_MAC));
+    SetWifiAddress(devices.Get(1), Mac48Address(ROVER_MAC));
 
     // Cấu hình vị trí cố định: Node 0 tại (0, 0, 0), Node 1 tại (distance, 0, 0)
     MobilityHelper mobility;

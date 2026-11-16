@@ -2,7 +2,17 @@ NHẬT KÝ LỖI
 ===========
 Mã    | Ngày | Story/Task | Mô tả lỗi (lệnh chạy, kết quả thấy, kết quả mong đợi) | Trạng thái | Commit sửa
 ------+------+------------+---------------------------------------------------------+------------+-----------
-(chưa có)
+BUG-01| 2026-11-17 | NET-01/T2 (phát hiện ở T3) | Lệnh: sudo .../ns3-dev-rover-wifi-debug --distance=5 khi PX4 đang chạy trong ns-rover.
+      |      |            | Thấy: ns-3 dừng ngay ở +0.0105 s: NS_ASSERT failed, cond="linkId.has_value()"
+      |      |            | (wifi-mac-queue-scheduler-impl.h:531), từ TapBridge::ForwardToBridgedDevice -> WifiNetDevice::Send.
+      |      |            | Nguyên nhân: TapBridge UseLocal gọi SetAddress(MAC của veth) khi nhận khung đầu tiên;
+      |      |            | WifiNetDevice::SetAddress chỉ đổi WifiMac, không đổi FrameExchangeManager -> TA của khung
+      |      |            | không khớp link nào. Kiểm --distance=10 --simTime=1 không có gói nên không lộ lỗi.
+      |      |            | Mong đợi: ns-3 chạy liên tục, chuyển gói giữa tap-gcs và tap-rover.
+      |      |            | Sửa: setup-netns.sh cố định MAC veth-gcs 02:00:00:00:00:01, veth-rover 02:00:00:00:00:02 và tắt
+      |      |            | IPv6 trên bridge/tap/veth-*-br; rover-wifi.cc gán sẵn đúng MAC đó cho WifiMac và
+      |      |            | FrameExchangeManager (SetWifiAddress). Đã dựng lại lỗi bằng chương trình ns-3 nhỏ không cần tap:
+      |      |            | chưa sửa -> cùng assert; đã sửa -> 6/6 gói tới. | DA_SUA (kiểm lại 2026-11-17: ping 0% loss, drive_check tien tiến +0.54 m) | (điền sau khi commit)
 
 Trạng thái: MO (mở) | DANG_SUA | DA_SUA
 

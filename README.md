@@ -121,7 +121,7 @@ sudo network/setup-netns.sh                     # 1. dựng mạng
 # 2. chạy ns-3 (rover-wifi, NET-01/T2) ở terminal khác -> hai netns mới thông nhau
 # 3. chạy chương trình trong netns (cần sudo để vào netns, sudo -u $USER để không chạy bằng root):
 sudo ip netns exec ns-gcs   sudo -u $USER -E venv/bin/python tools/drive_check.py tien
-sudo ip netns exec ns-rover sudo -u $USER -E <lệnh chạy PX4>      # network/run-px4.sh (NET-01/T3)
+sudo -E network/run-px4.sh                      # PX4 + Gazebo trong ns-rover (NET-01/T3), xem mục dưới
 sudo network/teardown-netns.sh                  # 4. dọn
 ```
 Kiểm nhanh sau khi dựng (mọi lệnh `ip -n` / `ip netns exec` cần sudo):
@@ -133,4 +133,25 @@ sudo ip netns exec ns-gcs ping -c 5 10.0.0.2    # chưa chạy ns-3: 100% loss (
 ```
 `tap-gcs`, `tap-rover` báo `NO-CARRIER` khi ns-3 chưa chạy: bình thường.
 
-Các bước chạy ns-3, PX4 trong netns và chương trình đo sẽ được bổ sung ở đây khi các task NET-01, NET-02 xong.
+### Lái xe qua ns-3 (NET-01, AC3) – 3 terminal
+Cần trước: PX4 đã build (`cd ~/PX4-Autopilot && make px4_sitl`), ns-3 đã build `rover-wifi` (mục trên), `venv` đã cài.
+```bash
+# Terminal 1: mạng ảo + PX4 + Gazebo trong ns-rover (terminal này thành pxh>; gõ "shutdown" để dừng)
+sudo network/setup-netns.sh
+sudo -E network/run-px4.sh                # -E giữ DISPLAY để mở cửa sổ Gazebo; thêm --headless nếu không cần cửa sổ
+
+# Terminal 2: ns-3 (cần sudo để mở tap; ghi ĐƯỜNG DẪN ĐẦY ĐỦ vì với sudo "~" có thể là /root)
+sudo /home/<user>/<thư mục ns-3>/build/scratch/<tên file>-rover-wifi-<profile> --distance=5
+
+# Terminal 3: trạm mặt đất, chạy TỪ THƯ MỤC REPO
+sudo ip netns exec ns-gcs ping -c 5 10.0.0.2                                   # thông, ~0% loss
+sudo ip netns exec ns-gcs sudo -u $USER -E venv/bin/python tools/drive_check.py tien
+```
+Lưu ý:
+- Tên file ns-3 tùy máy và profile build: `ls <thư mục ns-3>/build/scratch/ | grep rover`. Ví dụ `~/ns-3-dev` profile debug: `ns3-dev-rover-wifi-debug`; `~/ns-3.49` profile default: `ns3.49-rover-wifi-default`. Sau khi sửa `rover-wifi.cc` phải build lại, đừng chạy file cũ.
+- `network/run-px4.sh` tự thêm instance MAVLink `14581 -> 10.0.0.1:14540` khi PX4 khởi động xong (thấy dòng `>>> Thêm instance MAVLink`). Kiểm bằng `mavlink status` trong `pxh>`. Đổi thư mục PX4 bằng biến `PX4_DIR`.
+- MAC của `veth-gcs` (02:00:00:00:00:01) và `veth-rover` (02:00:00:00:00:02) cố định trong `setup-netns.sh` và PHẢI trùng hằng `GCS_MAC` / `ROVER_MAC` trong `rover-wifi.cc` (BUG-01 trong `docs/agile/bug-log.txt`). Đổi một bên thì đổi cả hai.
+- Dựng lại mạng (`setup-netns.sh`) thì phải chạy lại PX4, vì netns cũ đã bị xóa.
+- Cảnh báo `sudo: unable to resolve host ...` khi vào netns là vô hại.
+
+Các bước chạy chương trình đo sẽ được bổ sung ở đây khi NET-02 xong.

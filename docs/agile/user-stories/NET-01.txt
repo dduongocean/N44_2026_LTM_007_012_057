@@ -122,7 +122,7 @@ T3  Spike: chạy PX4 + Gazebo trong ns-rover và cho PX4 gửi MAVLink tới 10
 
     Test tự động: không (spike)
     Kiểm tay    : AC3 đạt
-    Trạng thái  : TODO
+    Trạng thái  : DONE
 
 T4  Hiệu chỉnh khoảng cách: tìm vùng khoảng cách mà mất gói tăng từ 0% đến gần 100%
     File        : docs/experiments/calibration.txt
@@ -197,10 +197,32 @@ T1 (Hoàng, 2026-11-17)
 
 5. KẾT QUẢ SPIKE T3
 -------------------
-Q1:
-Q2:
-Q3:
-Q4:
-Q5:
-Q6:
+(Hoàng, 2026-11-17; PX4 v1.18.0-beta1-1267-gcd2b157682, Gazebo gz-sim 8.15.0, airframe 4009 gz_r1_rover)
+Q1: ĐẠT. PX4 + Gazebo chạy được trong ns-rover bằng user thường (sudo -E network/run-px4.sh), cửa sổ Gazebo mở
+    bình thường. Script bật multicast cho lo trong ns-rover (route 224.0.0.0/4 dev lo) và đặt GZ_IP=127.0.0.1
+    để gz-transport chạy trong netns. Cần "sudo -E" để giữ DISPLAY/XAUTHORITY; nếu không mở được cửa sổ thì dùng --headless.
+    Cảnh báo vô hại: "sudo: unable to resolve host UbuntuMSI" (trong netns không tra được tên máy).
+Q2: ĐẠT. Lệnh: mavlink start -x -u 14581 -o 14540 -t 10.0.0.1 -m onboard -r 4000000
+    PX4 báo: "mode: Onboard, data rate: 4000000 B/s on udp port 14581 remote port 14540".
+    mavlink status: instance #4, UDP (14581, remote port: 14540), partner IP: 10.0.0.1, Forwarding: Off.
+Q3: ĐẠT (sau khi sửa BUG-01). ns-3 rover-wifi --distance=5; ping ns-gcs -> 10.0.0.2: 5/5, 0% loss, RTT tb 6.9 ms.
+    drive_check tien trong ns-gcs: "Thấy xe: system 1, component 1"; COMMAND_ACK 176 (đổi MANUAL) và
+    400 (mở khóa) -> ACCEPTED; HEARTBEAT "MANUAL, ĐÃ MỞ KHÓA"; z=750 trong 1 s -> tiến +0.54 m;
+    khóa lại -> "ĐÃ KHÓA". Gói đi hai chiều qua ns-3.
+    Quan sát: lần này mất ~22 s từ lúc chạy drive_check tới HEARTBEAT đầu tiên (có thể do chạy drive_check
+    khi ns-3 / PX4 vừa khởi động lại). Chưa rõ nguyên nhân; nếu lặp lại thì ghi bug.
+Q4: Không cần gõ tay. network/run-px4.sh chờ PX4 khởi động xong rồi gọi client
+    build/px4_sitl_default/bin/px4-mavlink start ... (qua /tmp/px4-sock-0), không sửa cây PX4.
+Q5: CÒN CHẠY. instance #0: mode Normal, UDP (18570, remote port: 14550), Broadcast enabled: NO
+    (chỉ localhost bên trong ns-rover), tx ≈ 8.9 kB/s. Dùng được làm đường đọc vị trí xe không qua ns-3 cho NET-04.
+    Ngoài ra instance #1 (14580 -> 127.0.0.1:14540, Onboard) cũng vẫn chạy trong ns-rover; không đụng
+    với chương trình đo vì chương trình đo nằm ở ns-gcs.
+Q6: instance #4 (tới 10.0.0.1): tx ≈ 23 952 B/s (≈ 24 kB/s ≈ 190 kbit/s), khi chưa có trạm mặt đất nối tới.
+    "mavlink status streams" (instance #4): cộng tần số cấu hình của các stream đang phát (có cột Message Size)
+    được ≈ 415 msg/s, ≈ 28.8 kB/s (chưa tính STATUSTEXT, ADSB_VEHICLE vốn chỉ gửi khi có sự kiện).
+    tx đo thật 24 kB/s thấp hơn => một số stream không phát đủ tần số; ước lượng ≈ 350–415 msg/s,
+    trung bình ≈ 65–70 B/message. Stream lớn nhất: ATTITUDE 100 Hz, HIGHRES_IMU / ATTITUDE_QUATERNION /
+    GLOBAL_POSITION_INT 50 Hz, LOCAL_POSITION_NED / ODOMETRY 30 Hz. Đáng chú ý cho NET-02:
+    HEARTBEAT 1 Hz (ngưỡng mất kết nối 3 s = 3 HEARTBEAT), TIMESYNC 10 Hz (dùng đo RTT).
+    Số msg/s chính xác sẽ đo bằng chương trình đo của NET-02 (đếm theo seq).
 Quyết định của PO (nếu cần):
