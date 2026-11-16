@@ -159,7 +159,7 @@ T6  Viết và chạy kiểm thử chấp nhận NET-01
     Phụ thuộc   : T1, T2, T3
     Test tự động: không
     Kiểm tay    : AC1–AC4 đều Đạt; ảnh Wireshark của AC4 lưu vào docs/evidence/net-01-wireshark-tap-gcs.png
-    Trạng thái  : TODO
+    Trạng thái  : DONE
 
 4. GHI CHÚ KHI LÀM
 ------------------

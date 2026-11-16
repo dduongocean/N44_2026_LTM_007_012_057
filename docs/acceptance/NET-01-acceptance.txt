@@ -1,0 +1,82 @@
+BIÊN BẢN KIỂM THỬ CHẤP NHẬN USER STORY NET-01
+==============================================
+Tên Story      : NET-01 – Điều khiển xe khi MAVLink hai chiều đi qua Wi-Fi mô phỏng ns-3
+Ngày kiểm      : 2026-11-16
+Người kiểm     : Vũ Duy Dương
+Mã commit kiểm : 74ef9c5
+Trạng thái     : [x] ĐẠT TẤT CẢ TIÊU CHÍ (AC1 - AC4)
+
+1. PHẦN CHUẨN BỊ MÔI TRƯỜNG
+---------------------------
+- Hệ điều hành: Linux Ubuntu, Linux network namespaces (ns-gcs: 10.0.0.1, ns-rover: 10.0.0.2).
+- Cổng TapBridge: tap-gcs (br-gcs) và tap-rover (br-rover) ở namespace chính.
+- Chương trình ns-3: build/scratch/ns3.49-rover-wifi-default.
+- Mô hình xe mô phỏng: PX4 v1.18.0-beta1 SITL + Gazebo Sim (gz_r1_rover), MAVLink onboard qua UDP 14540.
+- Script dựng mạng: network/setup-netns.sh (đã tắt bridge-nf và IPv6 trên bridge/tap).
+
+2. KẾT QUẢ KIỂM THỬ TỪNG TIÊU CHÍ CHẤP NHẬN (AC)
+-------------------------------------------------
+
+[x] AC1 – Không có đường tắt
+    Mục đích   : Chứng minh hai netns (ns-gcs và ns-rover) chỉ có thể nối với nhau qua ns-3.
+    Thực hiện  :
+      1. Chạy sudo network/setup-netns.sh.
+      2. KHÔNG chạy mô phỏng ns-3.
+      3. Từ ns-gcs gửi lệnh ping sang xe:
+         sudo ip netns exec ns-gcs ping -c 5 10.0.0.2
+    Kết quả    :
+      - 5 packets transmitted, 0 received, +5 errors, 100% packet loss.
+      - "Destination Host Unreachable" do ARP không qua được khi ns-3 chưa mở tap.
+    Đánh giá   : [x] ĐẠT
+
+[x] AC2 – ns-3 đóng vai trò dây nối và khoảng cách có tác dụng
+    Mục đích   : Chứng minh tín hiệu mạng truyền hoàn toàn qua mô hình Wi-Fi 802.11g của ns-3.
+    Thực hiện  :
+      1. Khởi chạy rover-wifi với khoảng cách gần:
+         sudo /home/luffy/ns-3.49/build/scratch/ns3.49-rover-wifi-default --distance=5
+      2. Từ ns-gcs ping sang ns-rover:
+         sudo ip netns exec ns-gcs ping -c 5 10.0.0.2
+         -> Kết quả: 5 packets transmitted, 5 received, 0% packet loss, RTT tb 6.9 ms. Thông mạng hoàn toàn.
+      3. Dừng ns-3 (Ctrl+C):
+         -> Ping lập tức dừng và báo mất gói 100%.
+      4. Khởi chạy lại ns-3 với khoảng cách cực xa:
+         sudo /home/luffy/ns-3.49/build/scratch/ns3.49-rover-wifi-default --distance=1000
+         -> Ping sang 10.0.0.2: 100% packet loss do tín hiệu suy hao quá ngưỡng nhạy thu của 802.11g.
+    Đánh giá   : [x] ĐẠT
+
+[x] AC3 – Điều khiển xe qua ns-3
+    Mục đích   : Điều khiển mở khóa và lái xe rover di chuyển trong Gazebo qua luồng MAVLink đi qua ns-3.
+    Thực hiện  :
+      1. Chạy mạng ảo: sudo network/setup-netns.sh
+      2. Chạy PX4 SITL + Gazebo trong ns-rover:
+         sudo -E network/run-px4.sh
+         -> PX4 khởi động thành công, tự động mở instance MAVLink: 14581 -> 10.0.0.1:14540 (onboard).
+      3. Chạy ns-3 ở khoảng cách 5m:
+         sudo /home/luffy/ns-3.49/build/scratch/ns3.49-rover-wifi-default --distance=5
+      4. Trong ns-gcs chạy script lái thử:
+         sudo ip netns exec ns-gcs sudo -u $USER -E venv/bin/python tools/drive_check.py tien
+    Kết quả    :
+      - Script phát hiện xe: "Thấy xe: system 1, component 1".
+      - Nhận COMMAND_ACK 176 (chuyển chế độ MANUAL) và 400 (mở khóa) -> ACCEPTED.
+      - Nhận HEARTBEAT: "MANUAL, ĐÃ MỞ KHÓA".
+      - Xe trong Gazebo lăn bánh tiến lên trong 1.0 s rồi tự dừng an toàn.
+      - Dòng kết quả báo xe đã tiến được một đoạn dương (+0.54 m).
+    Đánh giá   : [x] ĐẠT
+
+[x] AC4 – Minh chứng gói tin MAVLink đi qua ns-3
+    Mục đích   : Bắt gói bằng Wireshark xác nhận lưu lượng UDP 14540 hai chiều đi qua interface tap-gcs.
+    Thực hiện  :
+      1. Mở Wireshark hoặc tcpdump bắt gói trên interface tap-gcs ở namespace chính:
+         sudo tcpdump -i tap-gcs -nn udp port 14540
+      2. Trong lúc điều khiển xe theo AC3, quan sát thấy các gói MAVLink hai chiều liên tục:
+         - Chiều xe -> trạm: 10.0.0.2:14581 -> 10.0.0.1:14540 (HEARTBEAT, telemetry, ACK).
+         - Chiều trạm -> xe: 10.0.0.1:14540 -> 10.0.0.2:14581 (lệnh ARM, MANUAL_CONTROL).
+      3. Khi tắt ns-3: Lưu lượng trên tap-gcs dừng lập tức.
+      4. Bật lại ns-3 (không cần khởi động lại PX4): Các gói UDP 14540 xuất hiện trở lại và tiếp tục điều khiển được xe.
+    Đánh giá   : [x] ĐẠT
+
+3. KẾT LUẬN
+-----------
+User Story NET-01 ĐẠT toàn bộ các tiêu chí chấp nhận AC1, AC2, AC3 và AC4.
+Hệ thống mạng mô phỏng ns-3 kết hợp TapBridge UseLocal hoạt động ổn định, đảm bảo toàn bộ luồng dữ liệu điều khiển MAVLink giữa trạm và xe phản ánh đúng chất lượng đường truyền Wi-Fi.
+Chuyển trạng thái Story NET-01: DANG_LAM -> XONG.
