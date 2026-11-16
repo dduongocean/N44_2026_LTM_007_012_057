@@ -31,4 +31,9 @@ for br in br-gcs br-rover; do
     ip link del "$br" 2>/dev/null || true
 done
 
-echo "Đã gỡ mạng ảo (ns-gcs, ns-rover, br-*, tap-*, veth-*)."
+# Dọn dẹp tiến trình mô phỏng còn sót (nếu có)
+pkill -f "gz sim" 2>/dev/null || true
+pkill -f "px4" 2>/dev/null || true
+pkill -f "rover-wifi" 2>/dev/null || true
+
+echo "Đã gỡ mạng ảo (ns-gcs, ns-rover, br-*, tap-*, veth-*) và dọn dẹp tiến trình mô phỏng."

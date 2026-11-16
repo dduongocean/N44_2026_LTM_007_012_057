@@ -36,7 +36,7 @@ NET-02/T2    | Dương, Phương | Driver: PacketSeen, TIMESYNC                 
 NET-02/T3    | Dương, Phương | RttTracker, IntervalStats (RTT, jitter)         | có (6 test)    | –                          | DONE       | f290c3c
 NET-02/T4    | Dương, Phương | tools/run_experiment.py ghi CSV                 | có (2 test)    | NET-02/T1, T2, T3          | DONE       | 74ef9c5
 NET-02/T5    | Hoàng   | Kiểm thử chấp nhận NET-02 (netem)                     | không          | NET-02/T4, NET-01/T3       | DONE       | 3814783
-S01/REPORT   | ai rảnh | Nháp mục 2 (cấp thiết) và mục 4 (mô hình) báo cáo     | không          | –                          | TODO       |
+S01/REPORT   | ai rảnh | Nháp mục 2 (cấp thiết) và mục 4 (mô hình) báo cáo     | không          | –                          | CHUYEN_S02 |
 
 Số test dự kiến cuối sprint: 35 (hiện có) + 8 + 4–5 + 6 + 1–2 = 54–56.
 
@@ -84,10 +84,33 @@ DAILY SCRUM
 
 SPRINT REVIEW
 -------------
-(story nào Đạt AC; phản hồi của PO; thay đổi backlog)
+Thời gian: 2026-11-16 20:30 (hoàn thành sớm trước thời hạn)
+Tham gia : Vũ Duy Dương, Trương Nhật Hoàng, Đinh Trần Thảo Phương
+
+1. Kết quả kiểm thử chấp nhận (Acceptance Criteria):
+   - NET-01 (8 điểm): ĐẠT AC1–AC4. Đã chứng minh không có đường tắt, tín hiệu đi qua Wi-Fi ns-3 phụ thuộc khoảng cách, điều khiển được xe lăn bánh trong Gazebo (+0.54 m), tcpdump bắt gói UDP 14540 hai chiều qua tap-gcs. Biên bản: docs/acceptance/NET-01-acceptance.txt.
+   - NET-02 (5 điểm): ĐẠT AC1–AC4. Đã kiểm chứng baseline 0% loss, kiểm chứng netem 10% loss đo được 11.53% (chuẩn 8–12%), kiểm chứng netem delay 50ms đo được RTT tăng từ 11.3ms lên 56.48ms (+45.18ms, chuẩn 40–60ms), ghi CSV chi tiết và summary.csv lặp lại được. Biên bản: docs/acceptance/NET-02-acceptance.txt.
+   - Test tự động: 56/56 unit test passed (vượt mục tiêu ban đầu 54–56 test).
+
+2. Phản hồi của Product Owner:
+   - Rất hài lòng vì giải quyết triệt để rủi ro lớn nhất (spike PX4 SITL + Gazebo chạy trong netns và khắc phục BUG-01 ns-3 TapBridge thành công).
+   - Bộ công cụ đo lường không giao diện run_experiment.py hoàn toàn đáp ứng yêu cầu đo lường định lượng và tính lặp lại của đề tài.
+
+3. Thay đổi Product Backlog:
+   - NET-01 và NET-02 chuyển sang trạng thái XONG (tổng cộng 13/13 story points Sprint 01 hoàn thành 100%).
+   - Sẵn sàng chuyển sang Sprint 02 để thực hiện NET-03 (Khảo sát khoảng cách) và NET-04 (Mất liên lạc/Failsafe) cùng các mục báo cáo cuối kỳ.
 
 SPRINT RETROSPECTIVE
 --------------------
 Điều làm tốt:
+- TDD & Kiểm thử tự động bài bản: Viết test trước ở core/linkstats và drivers giúp đảm bảo code chuẩn xác, không có lỗi hồi quy.
+- Giải quyết sự cố nhanh chóng: BUG-01 (TapBridge UseLocal đổi MAC trong ns-3.49) được phát hiện, phân tích nguyên nhân gốc và sửa dứt điểm bằng SetWifiAddress và static MAC.
+- Kiểm thử thực tế nghiêm túc: Cả 3 thành viên đều tham gia kiểm thử thực tế trên hệ thống và đối chiếu số liệu định lượng với tiêu chuẩn chấp nhận.
+
 Điều cần cải thiện:
+- Việc khởi chạy 3-4 terminal thủ công (setup-netns, ns-3, px4, run_experiment) tốn thời gian và dễ nhầm thứ tự nếu không có script gom lệnh.
+- Quản lý tiến trình nền (Gazebo gz-sim đôi khi còn sót sau khi tắt PX4) cần được xử lý dọn dẹp triệt để hơn.
+
 Cải tiến áp dụng cho Sprint 02:
+- Tự động hóa thí nghiệm quét khoảng cách (NET-03/T1) bằng script tools/run_sweep.sh tự lặp qua các mức khoảng cách và tự thu thập số liệu vào CSV.
+- Thêm lệnh dọn dẹp triệt để process (pkill -f 'gz sim') trong teardown script.
