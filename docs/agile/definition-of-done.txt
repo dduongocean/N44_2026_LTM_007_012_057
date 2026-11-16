@@ -1,0 +1,19 @@
+DEFINITION OF DONE
+==================
+Một TASK được tính là xong khi:
+1. Phần test tự động được (code Python trong rover/): test viết trước code; "pytest" báo toàn bộ passed.
+2. Phần không test tự động được (script shell, chương trình ns-3, cấu hình PX4): đã chạy kiểm tay đúng mục "Kiểm tay" trong NET-xx.txt và ghi kết quả (lệnh đã chạy, kết quả thấy) vào mục ghi chú của task.
+3. README / hướng dẫn chạy đã cập nhật nếu cách chạy thay đổi.
+4. Lỗi phát hiện mà chưa sửa đã ghi vào bug-log.txt.
+5. Trạng thái task đã cập nhật trong NET-xx.txt và sprint-xx.txt.
+6. Code đã commit với message "NET-xx/Tx: <nội dung>" hoặc "S0x/<mã>: <nội dung>"; điền mã commit vào bảng sprint ngay khi task DONE.
+7. Code chỉ phục vụ AC của story; mỗi test ghi rõ nó kiểm AC hoặc yêu cầu nào.
+8. Làm trên nhánh riêng của task (viết thường, ví dụ net-01/t1); merge vào main khi pytest toàn bộ passed.
+9. Task sinh số liệu: file CSV nằm trong data/ kèm lệnh đã chạy và tham số (ghi ở đầu file hoặc file .txt cùng tên), để chạy lại được.
+
+Một STORY được tính là xong khi:
+1. Tất cả task của story đã xong theo các điều trên.
+2. Một thành viên KHÔNG làm chính phần đó đã chạy toàn bộ tiêu chí chấp nhận theo docs/acceptance/NET-xx-acceptance.txt và đánh dấu Đạt.
+3. Trạng thái story trong product-backlog.txt chuyển sang XONG.
+4. Sơ đồ kiến trúc mạng (docs/diagrams/network-overview/: .mmd, .svg, .txt) đã cập nhật nếu story thay đổi cấu trúc hoặc luồng gói.
+5. Minh chứng dùng cho báo cáo (ảnh Wireshark, biểu đồ) đã lưu vào docs/evidence/ hoặc analysis/, có tên file nói rõ nội dung.

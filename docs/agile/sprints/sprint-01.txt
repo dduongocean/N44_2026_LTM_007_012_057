@@ -1,0 +1,77 @@
+SPRINT 01
+Thời gian    : 2026-11-17 (1 ngày)
+=========
+Mục tiêu     : Gói MAVLink hai chiều giữa trạm và xe PX4 đi qua Wi-Fi mô phỏng ns-3 (điều khiển được xe trong Gazebo), và có chương trình đo ghi tỷ lệ mất gói, RTT, jitter ra CSV, đã kiểm chứng bằng netem.
+Story chọn   : NET-01 (8 điểm), NET-02 (5 điểm). Chi tiết: docs/agile/user-stories/NET-01.txt, NET-02.txt
+
+
+PHÂN CÔNG
+---------
+Thành viên             | Việc                                                  | Lý do
+-----------------------+-------------------------------------------------------+-----------------------------------------------------------------
+Trương Nhật Hoàng      | NET-01/T1, NET-01/T3 spike; cuối: NET-02/T5           | Nắm cấu hình PX4 SITL và cổng MAVLink. Kiểm thử chấp nhận NET-02 vì không làm NET-02
+Vũ Duy Dương           | NET-01/T2 (ns-3), NET-01/T4, NET-01/T5                | Phần ns-3 C++ tách biệt với Python; hiệu chỉnh và sơ đồ cùng dựa trên chương trình ns-3 của mình
+Đinh Trần Thảo Phương  | NET-02/T1–T4; cuối: NET-01/T6                         | SeqTracker, RttTracker cùng kiểu LinkMonitor (xử lý theo thời gian, test trước). Kiểm thử chấp nhận NET-01 vì không làm NET-01
+
+QUY ƯỚC
+-------
+1. Commit message đúng mẫu "NET-xx/Tx: <nội dung>" hoặc "S01/<mã>: <nội dung>"; điền mã commit vào bảng ngay khi task DONE.
+2. Tên nhánh viết thường: net-01/t1, net-02/t1, ...
+3. Spike có giới hạn thời gian trước phần nhiều rủi ro (NET-01/T3, 3 giờ).
+4. Ghi Daily Scrum vào mục DAILY SCRUM của file này mỗi buổi (một người ghi).
+5. Kiểm thử chấp nhận do người không làm chính story đó chạy.
+
+SPRINT BACKLOG (cập nhật trạng thái mỗi khi task đổi trạng thái)
+---------------------------------------------------------------
+Task         | Người   | Mô tả ngắn                                            | Test tự động   | Phụ thuộc                  | Trạng thái | Commit
+-------------+---------+-------------------------------------------------------+----------------+----------------------------+------------+-------
+NET-01/T1    | Hoàng   | Script dựng / gỡ netns, bridge, tap, veth             | không          | –                          | TODO       |
+NET-01/T2    | Dương   | rover-wifi.cc: 2 node Wi-Fi + TapBridge, tham số      | không          | – (chạy thử cần T1)        | TODO       |
+NET-01/T3    | Hoàng   | Spike: PX4 + Gazebo trong ns-rover, MAVLink tới .1    | không          | NET-01/T1                  | TODO       |
+NET-01/T4    | Dương   | Hiệu chỉnh khoảng cách bằng ping                      | không          | NET-01/T1, T2              | TODO       |
+NET-01/T5    | Dương   | Sơ đồ kiến trúc mạng (.mmd, .svg, .txt)               | không          | NET-01/T1                  | TODO       |
+NET-01/T6    | Phương  | Kiểm thử chấp nhận NET-01                             | không          | NET-01/T1, T2, T3          | TODO       |
+NET-02/T1    | Phương  | SeqTracker: đếm mất gói theo seq                      | có (8 test)    | –                          | TODO       |
+NET-02/T2    | Phương  | Driver: PacketSeen, TIMESYNC                          | có (4–5 test)  | câu hỏi TIMESYNC           | TODO       |
+NET-02/T3    | Phương  | RttTracker, IntervalStats (RTT, jitter)               | có (6 test)    | –                          | TODO       |
+NET-02/T4    | Phương  | tools/run_experiment.py ghi CSV                       | có (1–2 test)  | NET-02/T1, T2, T3          | TODO       |
+NET-02/T5    | Hoàng   | Kiểm thử chấp nhận NET-02 (netem)                     | không          | NET-02/T4, NET-01/T3       | TODO       |
+S01/REPORT   | ai rảnh | Nháp mục 2 (cấp thiết) và mục 4 (mô hình) báo cáo     | không          | –                          | TODO       |
+
+Số test dự kiến cuối sprint: 35 (hiện có) + 8 + 4–5 + 6 + 1–2 = 54–56.
+
+THỨ TỰ VÀ CHỖ PHẢI CHỜ NHAU
+--------------------------
+Buổi sáng:
+  Hoàng : NET-01/T1 (khoảng 1 giờ, xong thì báo Dương) ──▶ NET-01/T3 spike (tối đa 3 giờ)
+  Dương : NET-01/T2 viết code ──▶ chạy thử với script của Hoàng (AC2)
+  Phương: NET-02/T1, NET-02/T3 (Python thuần, test trước, không cần PX4) ; câu hỏi TIMESYNC (PX4 localhost, 30 phút)
+Daily Scrum giữa ngày: Hoàng báo kết quả spike. Nếu spike chưa được: PO quyết định chuyển phương án dự phòng (relay UDP) cho buổi chiều.
+Buổi chiều:
+  Hoàng : hoàn tất network/run-px4.sh ; hỗ trợ Phương chạy thử chương trình đo qua ns-3 ; cuối ngày NET-02/T5
+  Dương : NET-01/T4 hiệu chỉnh ──▶ NET-01/T5 sơ đồ
+  Phương: NET-02/T2 ──▶ NET-02/T4 ; cuối ngày NET-01/T6
+  Ai xong sớm: S01/REPORT
+
+Đường găng: NET-01/T1 -> NET-01/T3 -> NET-01/T6 -> NET-02/T5 (NET-02/T5 còn cần NET-02/T4).
+Các task tầng xử lý của Phương (T1, T3) và ns-3 của Dương (T2) nằm song song, không kéo dài đường găng.
+
+LỊCH ĐỀ XUẤT
+------------
+2026-11-17 08:00  Daily Scrum (15 phút): mỗi người nói hôm nay làm task nào, đang vướng gì.
+2026-11-17 13:30  Daily Scrum giữa ngày: kết quả spike NET-01/T3, PO quyết định phương án nếu cần.
+2026-11-17 20:30  Sprint review: trình diễn AC của NET-01, NET-02 (lái xe qua ns-3; kết quả netem). Retrospective: điền 2 mục cuối file. Sau đó planning Sprint 02 (chốt mức khoảng cách từ NET-01/T4, làm rõ NET-04).
+
+DAILY SCRUM
+-----------
+(ngày giờ – người ghi – mỗi thành viên: đã làm / sẽ làm / đang vướng)
+
+SPRINT REVIEW
+-------------
+(story nào Đạt AC; phản hồi của PO; thay đổi backlog)
+
+SPRINT RETROSPECTIVE
+--------------------
+Điều làm tốt:
+Điều cần cải thiện:
+Cải tiến áp dụng cho Sprint 02:

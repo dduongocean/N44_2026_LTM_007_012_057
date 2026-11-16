@@ -1,0 +1,10 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+# File pcap của ns-3 / Wireshark có thể rất lớn; chỉ commit file đã chọn làm minh chứng vào docs/evidence/
+*.pcap
+*.pcapng
+!docs/evidence/*.pcap
+!docs/evidence/*.pcapng

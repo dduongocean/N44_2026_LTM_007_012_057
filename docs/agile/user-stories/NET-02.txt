@@ -1,0 +1,164 @@
+USER STORY NET-02 – Công cụ đo mất gói, RTT, jitter của đường MAVLink, ghi CSV
+=============================================================================
+Yêu cầu từ đề tài: "Dự án tiến hành đo lường các chỉ số mạng ..."; tiêu chí chấm mục 6: ưu tiên chỉ số định lượng (độ trễ, thông lượng, ...), có baseline.
+Người làm  : Đinh Trần Thảo Phương (T1–T4), Trương Nhật Hoàng (T5 – kiểm thử chấp nhận)
+Điểm       : 5 (mốc so sánh)
+Sprint     : S1
+
+1. STORY
+--------
+Là nhóm khảo sát, tôi có một chương trình đo chạy không cần giao diện, ghi tỷ lệ mất gói, độ trễ khứ hồi và jitter của đường MAVLink từ xe vào file CSV, để có số liệu định lượng và lặp lại được cho từng điều kiện mạng.
+
+Ngoài phạm vi story này: lái xe trong lúc đo (NET-04); hiển thị số đo trên giao diện; vẽ biểu đồ (NET-03).
+
+2. TIÊU CHÍ CHẤP NHẬN (thủ tục: docs/acceptance/NET-02-acceptance.txt, viết ở T5)
+--------------------------------------------------------------------------------
+AC1  Baseline localhost
+     Cách kiểm : PX4 chạy bình thường ở namespace chính (make px4_sitl gz_r1_rover, không netns, không ns-3); chạy tools/run_experiment.py --duration 60 --label baseline_r1
+     Đạt khi   : sinh file CSV mỗi giây một dòng và một dòng tổng kết trong data/summary.csv; tỷ lệ mất gói 0%; RTT trung bình chỉ vài ms; không có lần mất kết nối
+
+AC2  Đo mất gói đúng
+     Cách kiểm : mạng NET-01, ns-3 --distance=5; trong ns-rover chèn mất gói 10% ở chiều xe -> trạm:
+                   sudo ip netns exec ns-rover tc qdisc add dev veth-rover root netem loss 10%
+                 chạy chương trình đo 60 s; xong thì gỡ: sudo ip netns exec ns-rover tc qdisc del dev veth-rover root
+     Đạt khi   : tỷ lệ mất gói đo được trong khoảng 8%–12%
+
+AC3  Đo trễ đúng
+     Cách kiểm : như AC2 nhưng dùng "netem delay 50ms" thay cho "netem loss 10%"; so với một lần chạy không có netem
+     Đạt khi   : RTT trung bình tăng khoảng 50 ms (40–60 ms) so với lần không có netem
+
+AC4  Chạy lại được
+     Cách kiểm : đọc phần đầu file CSV và dòng trong summary.csv
+     Đạt khi   : ghi đủ nhãn lần chạy, khoảng cách, thời gian chạy, thời điểm bắt đầu, lệnh đã chạy; chạy lại cùng lệnh ra file mới, không ghi đè file cũ
+
+Vì sao kiểm bằng netem mà không dùng mô hình lỗi (RateErrorModel) của ns-3:
+  Mô hình lỗi đặt ở thiết bị Wi-Fi bên nhận làm hỏng khung, nhưng bên gửi không nhận được ACK của MAC nên gửi lại. Khung chỉ mất hẳn khi mọi lần gửi lại đều hỏng, nên 10% lỗi khung cho ra gần 0% mất gói ở tầng UDP. netem làm mất gói ở tầng IP trong netns, ngoài ns-3, nên kết quả biết trước. Hiện tượng này cũng là một ý cho mục 4 và mục 6 của báo cáo.
+
+3. TASK – YÊU CẦU TEST
+----------------------
+Trạng thái task: TODO | DOING | DONE
+Thứ tự: T1 và T3 (tầng xử lý thuần, không cần PX4) làm trước; T2 sau khi trả lời câu hỏi TIMESYNC; T4 sau T1–T3; T5 cuối cùng, cần NET-01 chạy được.
+Đường dẫn và kiểu code theo kiến trúc 4 tầng trong README: tầng 2 rover/core/ không import pymavlink hay time; thời điểm truyền vào qua tham số now.
+
+T1  Đếm mất gói theo trường seq (tầng xử lý)
+    File code   : rover/core/linkstats.py (lớp SeqTracker)
+    File test   : tests/test_linkstats.py
+    Người làm   : Phương
+
+    Kiến thức:
+      - Mỗi gói MAVLink có trường seq 1 byte; bên gửi tăng seq lên 1 sau mỗi gói, 255 thì quay về 0. seq tính riêng cho từng nguồn (system_id, component_id) trên một instance MAVLink.
+      - Bên nhận: số gói mất giữa hai gói liên tiếp = (seq_mới - seq_trước - 1) mod 256.
+      - Một datagram UDP của PX4 có thể chứa nhiều message; mất một datagram thì mất cả các message trong đó. Kỳ vọng tỷ lệ mất message vẫn bằng tỷ lệ mất datagram.
+      - Khoảng trống >= 128 không phân biệt được "mất rất nhiều gói" với "gói đến muộn / trùng". Quy ước: coi là đứt quãng (resync), không cộng vào số mất; thời gian đứt quãng đã được LinkMonitor đo riêng. Ghi quy ước này vào phần giả thiết của báo cáo.
+
+    API:
+      class SeqTracker:
+          on_packet (system_id: int, component_id: int, seq: int) -> None
+          received: int        số gói đã nhận
+          lost: int            số gói suy ra là mất
+          resyncs: int         số lần đứt quãng / gói đến sai thứ tự
+          loss_rate: float     lost / (received + lost); 0.0 khi chưa có gói
+
+    Yêu cầu test (viết trước):
+      1. Chưa có gói: received 0, lost 0, loss_rate 0.0
+      2. Dãy liên tục 0..9: received 10, lost 0
+      3. Quay vòng 254, 255, 0, 1: lost 0
+      4. Một khoảng trống 5 -> 8: lost 2
+      5. Khoảng trống qua mốc quay vòng 254 -> 1: lost 2
+      6. Hai nguồn xen kẽ (1,1) và (1,190), mỗi nguồn tự liên tục: lost 0 (đếm tách nguồn)
+      7. Gói trùng hoặc lùi seq (10 rồi 9): resyncs 1, lost không đổi
+      8. loss_rate với 90 nhận, 10 mất: 0.1
+
+    Test tự động: có (8 test)
+    Trạng thái  : TODO
+
+T2  Driver: báo mọi gói nhận được (kèm seq) và gửi / nhận TIMESYNC
+    File code   : rover/core/model.py (thêm PacketSeen, TimesyncReply vào VehicleEvent), rover/drivers/mavlink.py, rover/hal.py (thêm send_timesync)
+    File test   : tests/test_mavlink.py (thêm), tests/mavlink_sim.py (thêm gói có seq chọn trước, gói TIMESYNC)
+    Người làm   : Phương
+
+    Kiến thức:
+      - Hiện poll () chỉ trả HEARTBEAT và COMMAND_ACK của lệnh mở / khóa; mọi message khác bị bỏ. Đếm seq cần thấy TẤT CẢ message.
+      - pymavlink: msg .get_seq (), msg .get_srcSystem (), msg .get_srcComponent (); message có kiểu "BAD_DATA" là byte lỗi, bỏ qua.
+      - TIMESYNC là message MAVLink dùng đo trễ: trạm gửi TIMESYNC (tc1 = 0, ts1 = thời điểm gửi tính bằng ns); bên kia trả TIMESYNC (tc1 = giờ của nó, ts1 = giữ nguyên). RTT = thời điểm nhận - ts1. Cả hai mốc dùng cùng đồng hồ của trạm nên không cần đồng bộ giờ hai bên.
+      - PX4 cũng tự gửi TIMESYNC yêu cầu (tc1 = 0); trạm bỏ qua các gói này.
+
+    Câu hỏi phải trả lời trước khi code (tối đa 30 phút, PX4 chạy trên localhost, không cần ns-3):
+      Bản PX4 của nhóm có trả TIMESYNC không? Thử bằng một script pymavlink nhỏ. Nếu không: dùng COMMAND_LONG MAV_CMD_REQUEST_MESSAGE (yêu cầu AUTOPILOT_VERSION) và đo tới COMMAND_ACK; báo nhóm và sửa API dưới đây cho phù hợp.
+
+    API:
+      model.py:  PacketSeen (system_id, component_id, seq, msg_type)   – mọi message hợp lệ
+                 TimesyncReply (ts1_ns)                                 – chỉ gói TIMESYNC có tc1 != 0
+      VehicleLink.send_timesync (ts1_ns: int) -> None                  – chưa thấy xe thì không gửi
+
+    Yêu cầu test (viết trước; dùng giả lập UDP như các test hiện có trong tests/test_mavlink.py):
+      1. Mỗi message nhận được sinh đúng một PacketSeen với đúng seq, system_id, component_id
+      2. HEARTBEAT vẫn sinh Heartbeat như hiện nay (các test hiện có vẫn passed)
+      3. TIMESYNC có tc1 != 0 sinh TimesyncReply với đúng ts1; TIMESYNC có tc1 = 0 không sinh TimesyncReply
+      4. send_timesync gửi TIMESYNC với tc1 = 0 và đúng ts1 tới xe đã thấy gần nhất; chưa thấy xe thì không gửi
+
+    Test tự động: có (4–5 test)
+    Trạng thái  : TODO
+
+T3  Tính RTT và jitter (tầng xử lý)
+    File code   : rover/core/linkstats.py (lớp RttTracker, IntervalStats)
+    File test   : tests/test_linkstats.py (thêm)
+    Người làm   : Phương
+
+    Định nghĩa (dùng nguyên văn cho mục 4 của báo cáo):
+      - RTT của một lần đo = t_nhận - t_gửi của gói TIMESYNC (giây). Lần đo không có phản hồi sau timeout_s = 2.0 s coi là mất.
+      - Jitter HEARTBEAT = độ lệch chuẩn của khoảng thời gian giữa hai HEARTBEAT liên tiếp (PX4 gửi 1 Hz, khoảng lý tưởng 1.0 s).
+      - Jitter RTT = độ lệch chuẩn của các mẫu RTT.
+      - Độ phân giải thời gian bị giới hạn bởi chu kỳ vòng lặp của chương trình đo (10 ms); ghi vào giả thiết.
+
+    API:
+      class RttTracker:
+          on_probe_sent (probe_id: int, now: float) -> None
+          on_reply (probe_id: int, now: float) -> float | None   trả RTT; None nếu probe_id lạ hoặc đã hết hạn
+          expire (now: float) -> int                              số lần đo vừa bị tính là mất
+          sent, replied, lost: int ; samples: list [float]
+      class IntervalStats:
+          on_event (now: float) -> None
+          count: int ; mean: float | None ; stdev: float | None     None khi chưa đủ 2 khoảng
+      Hàm thống kê dùng chung: mean, stdev, percentile (p95) trên list số; list rỗng trả None.
+
+    Yêu cầu test (viết trước):
+      1. Gửi tại 1.0, nhận tại 1.05: RTT 0.05
+      2. probe_id lạ: on_reply trả None
+      3. Gửi tại 0, expire (2.5): lost 1; nhận sau đó trả None
+      4. Nhiều lần đo xen kẽ, nhận khác thứ tự: RTT đúng từng lần
+      5. IntervalStats với các mốc 0, 1, 2, 3: mean 1.0, stdev 0.0; với 0, 1, 3: mean 1.5
+      6. percentile p95 của 1..100: khoảng 95
+    Test tự động: có (6 test)
+    Trạng thái  : TODO
+
+T4  Chương trình đo chạy không giao diện, ghi CSV
+    File code   : tools/run_experiment.py ; hàm tạo dòng CSV đặt ở rover/core/linkstats.py hoặc tools/ (để test được)
+    File test   : tests/test_linkstats.py (thêm 1–2 test cho hàm tạo dòng CSV)
+    Người làm   : Phương
+    Phụ thuộc   : T1, T2, T3
+
+    Yêu cầu:
+      1. Tham số dòng lệnh: --url (mặc định udpin:0.0.0.0:14540), --duration (s, mặc định 60), --label (ví dụ d040_r1), --distance (m, chỉ để ghi vào file), --out-dir (mặc định data/raw), --probe-hz (mặc định 5).
+      2. Vòng lặp 10 ms: poll (); HEARTBEAT -> LinkMonitor + IntervalStats; PacketSeen của xe (system_id lấy từ HEARTBEAT) -> SeqTracker; TimesyncReply -> RttTracker; gửi TIMESYNC theo --probe-hz; gọi expire mỗi vòng.
+      3. Mỗi giây ghi một dòng vào data/raw/<label>.csv: t (s từ lúc bắt đầu), rx, lost, loss_rate, resyncs, probes_sent, probes_lost, rtt_mean_ms, rtt_p95_ms, rtt_jitter_ms, hb_jitter_ms, link_state, lost_events (số lần chuyển sang LOST).
+      4. Đầu file CSV: các dòng bắt đầu bằng "#" ghi lệnh đã chạy, thời điểm bắt đầu, tham số.
+      5. Kết thúc (hết thời gian hoặc Ctrl+C): in tổng kết và thêm MỘT dòng vào data/summary.csv (label, distance, duration, rx, lost, loss_rate, rtt_mean_ms, rtt_p95_ms, rtt_jitter_ms, hb_jitter_ms, probes_lost, lost_events). File đã có thì không ghi đè.
+      6. Không mở khóa, không lái xe.
+      Dùng SystemClock (rover/drivers/clock.py) và MavlinkVehicleLink.
+
+    Test tự động: có (hàm tạo dòng CSV); vòng lặp kiểm tay
+    Kiểm tay    : chạy 10 s với PX4 localhost, mở CSV thấy 10 dòng hợp lý
+    Trạng thái  : TODO
+
+T5  Viết và chạy kiểm thử chấp nhận NET-02
+    File        : docs/acceptance/NET-02-acceptance.txt
+    Người làm   : Hoàng (không làm phần nào của NET-02)
+    Phụ thuộc   : T4, NET-01 chạy được (AC2, AC3)
+    Test tự động: không
+    Kiểm tay    : AC1–AC4 Đạt; lưu file CSV của các lần kiểm vào data/raw/ với nhãn acc_*
+    Trạng thái  : TODO
+
+4. GHI CHÚ KHI LÀM
+------------------
+Kết quả câu hỏi TIMESYNC (T2):

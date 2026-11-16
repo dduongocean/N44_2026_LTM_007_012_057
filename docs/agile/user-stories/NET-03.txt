@@ -1,0 +1,28 @@
+USER STORY NET-03 – Khảo sát chất lượng đường MAVLink theo khoảng cách
+======================================================================
+Yêu cầu từ đề tài: "đánh giá tác động của chúng ... trong các điều kiện mạng khác nhau"; tiêu chí chấm mục 6 (25 điểm): kịch bản, chỉ số, kết quả, so sánh với baseline.
+Người làm  : (chốt ở planning Sprint 02) – dự kiến Hoàng + Dương chạy thí nghiệm, Phương phân tích
+Điểm       : 5
+Sprint     : S2
+
+1. STORY
+--------
+Là nhóm khảo sát, tôi có bảng số liệu và biểu đồ tỷ lệ mất gói, RTT, jitter và số lần mất kết nối của đường MAVLink theo khoảng cách trạm – xe, so với baseline không qua ns-3, để kết luận từ khoảng cách nào việc điều khiển xe không còn tin cậy.
+
+Ngoài phạm vi: thay đổi nhiều tham số cùng lúc (chỉ thay khoảng cách; các tham số khác giữ như bảng tham số).
+
+2. TIÊU CHÍ CHẤP NHẬN (dự kiến, chốt ở planning Sprint 02)
+---------------------------------------------------------
+AC1  Đủ số liệu   : mỗi mức khoảng cách trong docs/experiments/calibration.txt chạy 3 lần × 60 s; baseline localhost chạy 3 lần; mọi lần có dòng trong data/summary.csv
+AC2  Biểu đồ      : analysis/ có biểu đồ PNG: (a) tỷ lệ mất gói, (b) RTT trung bình và p95, (c) jitter, (d) số lần mất kết nối – theo khoảng cách, có điểm baseline, có thể hiện độ phân tán giữa 3 lần
+AC3  Bảng tổng hợp: một bảng CSV / bảng trong báo cáo: khoảng cách – các chỉ số (trung bình 3 lần)
+AC4  Minh chứng   : một lần chạy ở khoảng cách gần ngưỡng có pcap 802.11 (--pcap), ảnh Wireshark thấy khung có cờ Retry, lưu docs/evidence/
+AC5  Chạy lại được: một script chạy toàn bộ loạt thí nghiệm; docs/experiments/config.txt ghi bảng tham số cố định
+
+3. TASK (dự kiến)
+-----------------
+T1  Script chạy loạt: tools/run_sweep.sh – với mỗi khoảng cách × lần lặp: chạy ns-3 --distance, chờ ổn định vài giây, chạy run_experiment.py --label d<khoảng cách>_r<lần>, dừng ns-3. Thêm lần chạy baseline.
+T2  Chạy loạt thí nghiệm, kiểm số liệu thô (khoảng 8 mức × 3 lần × 70 s ≈ 30 phút, cộng baseline)
+T3  Script phân tích: analysis/plot_results.py (đọc data/summary.csv, vẽ biểu đồ AC2, xuất bảng AC3; thêm matplotlib vào requirements.txt)
+T4  pcap + ảnh Wireshark (AC4); ghi docs/experiments/config.txt (AC5)
+T5  Kiểm thử chấp nhận NET-03

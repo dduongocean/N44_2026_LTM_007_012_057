@@ -1,0 +1,46 @@
+SPRINT 02 – BẢN DỰ KIẾN (chốt ở sprint planning sau review Sprint 01)
+Thời gian    : 2026-11-18 (1 ngày)
+=========
+Mục tiêu (dự kiến) : Có số liệu và biểu đồ chất lượng đường MAVLink theo khoảng cách so với baseline, có kết quả phản ứng của xe khi mất liên lạc, và hoàn chỉnh báo cáo cuối kỳ theo 8 tiêu chí.
+Story (dự kiến)    : NET-03 (5 điểm), NET-04 (3 điểm, sau khi làm rõ), báo cáo (S02/REPORT-x)
+
+
+PHÂN CÔNG (dự kiến, theo thống nhất 2026-11-16)
+-----------------------------------------------
+Thành viên             | Việc
+-----------------------+-------------------------------------------------------------------------
+Trương Nhật Hoàng      | Chạy thí nghiệm (NET-03/T1, T2), NET-04; báo cáo mục 1, 2, 5 (phần dựng hệ thống), 7
+Vũ Duy Dương           | Chạy thí nghiệm (NET-03/T2, T4), NET-04; báo cáo mục 3, 4 (mô hình kênh Wi-Fi)
+Đinh Trần Thảo Phương  | Phân tích, vẽ biểu đồ (NET-03/T3); báo cáo mục 4 (công thức số đo), 5 (công cụ đo), 6
+Cả nhóm                | Mục 8 (trình bày), đọc chéo, thống nhất bảng đóng góp (mục 1)
+
+SPRINT BACKLOG (dự kiến)
+------------------------
+Task          | Người          | Mô tả ngắn                                              | Phụ thuộc
+--------------+----------------+---------------------------------------------------------+----------------------
+NET-03/T1     | Hoàng          | tools/run_sweep.sh chạy loạt khoảng cách × 3 lần        | NET-01, NET-02 XONG
+NET-03/T2     | Hoàng, Dương   | Chạy loạt thí nghiệm + baseline, kiểm số liệu thô       | NET-03/T1
+NET-03/T3     | Phương         | analysis/plot_results.py: biểu đồ + bảng tổng hợp       | data/summary.csv (viết trước bằng số liệu thử)
+NET-03/T4     | Dương          | pcap + ảnh Wireshark (cờ Retry), config.txt             | NET-01/T2
+NET-03/T5     | (người khác)   | Kiểm thử chấp nhận NET-03                               | NET-03/T2, T3
+NET-04/...    | (chốt sau)     | Theo NET-04.txt sau khi làm rõ Q1–Q3                    | NET-01/T3 (Q5)
+S02/REPORT-1  | Hoàng          | Mục 1 – Đóng góp thành viên                             | cuối sprint
+S02/REPORT-2  | Hoàng          | Mục 2 – Tính cấp thiết và ý nghĩa                        | –
+S02/REPORT-3  | Dương          | Mục 3 – Kiến trúc và thiết kế                            | NET-01/T5
+S02/REPORT-4  | Dương, Phương  | Mục 4 – Mô hình toán học                                 | NET-02.txt (định nghĩa số đo)
+S02/REPORT-5  | Hoàng, Phương  | Mục 5 – Triển khai                                       | NET-01, NET-02
+S02/REPORT-6  | Phương         | Mục 6 – Phân tích hiệu năng                              | NET-03/T3, NET-04
+S02/REPORT-7  | Hoàng          | Mục 7 – Kết luận và hướng phát triển                     | S02/REPORT-6
+S02/REPORT-8  | Cả nhóm        | Mục 8 – Rà soát trình bày, hình, bảng, trích dẫn         | tất cả
+
+Đường găng (dự kiến): NET-03/T1 -> NET-03/T2 -> NET-03/T3 -> S02/REPORT-6 -> S02/REPORT-7 -> S02/REPORT-8.
+Phương viết NET-03/T3 trước bằng file summary.csv mẫu để không phải chờ số liệu thật.
+
+DAILY SCRUM
+-----------
+
+SPRINT REVIEW
+-------------
+
+SPRINT RETROSPECTIVE
+--------------------

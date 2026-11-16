@@ -1,0 +1,23 @@
+USER STORY NET-04 – Đánh giá phản ứng của xe khi mất liên lạc giữa lúc chạy
+==========================================================================
+Yêu cầu từ đề tài: "đánh giá tác động ... đến khả năng phản hồi, di chuyển của Rover".
+Người làm  : (chốt ở planning Sprint 02)
+Điểm       : 3 (ước lượng thô; làm rõ ở planning Sprint 02)
+Sprint     : S2
+Trạng thái : MOI – còn câu hỏi cần làm rõ (mục 3)
+
+1. STORY (bản nháp)
+-------------------
+Là nhóm khảo sát, tôi biết xe phản ứng thế nào khi đường Wi-Fi bị mất giữa lúc xe đang chạy: sau bao lâu xe dừng và xe đi thêm bao xa, để đánh giá mức an toàn của việc điều khiển xe qua Wi-Fi.
+
+2. Ý TƯỞNG KỊCH BẢN
+-------------------
+- Xe mở khóa, chạy tiến liên tục (gửi MANUAL_CONTROL đều đặn, như tools/drive_check.py).
+- Tại thời điểm t0 đã biết, cắt đường truyền: (a) netem loss 100% trên veth-rover / veth-gcs (cắt tức thì, lặp lại được); (b) đặt xe ở khoảng cách gần ngưỡng mất gói (chập chờn).
+- Đo: thời gian từ t0 tới lúc vận tốc xe về 0; quãng đường xe đi thêm sau t0. Lặp 3 lần mỗi kịch bản.
+
+3. CÂU HỎI CẦN LÀM RÕ Ở PLANNING SPRINT 02
+-----------------------------------------
+Q1. Đọc vị trí / vận tốc xe bằng đường nào khi đường MAVLink chính đã bị cắt? Hướng dự kiến: instance MAVLink mặc định của PX4 gửi tới 127.0.0.1:14550 BÊN TRONG ns-rover (không qua ns-3) – một script ghi LOCAL_POSITION_NED chạy trong ns-rover (xem NET-01 spike Q5). tools/drive_check.py đã có đoạn đọc LOCAL_POSITION_NED.
+Q2. Khi mất MANUAL_CONTROL, PX4 rover làm gì và sau bao lâu? Đọc tham số liên quan tới mất tín hiệu điều khiển (ví dụ COM_RC_LOSS_T và hành động failsafe) trên pxh> và ghi vào báo cáo. Kịch bản "ngung-gui" của tools/drive_check.py cho thấy PX4 phản ứng thế nào khi ngừng gửi lệnh (không mất mạng).
+Q3. Hai đồng hồ của hai script (ns-gcs và ns-rover) có so sánh được không? CLOCK_MONOTONIC dùng chung cho mọi netns trên cùng máy, nên ghi time.monotonic () ở cả hai là ghép được.

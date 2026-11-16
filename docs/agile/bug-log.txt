@@ -1,0 +1,10 @@
+NHẬT KÝ LỖI
+===========
+Mã    | Ngày | Story/Task | Mô tả lỗi (lệnh chạy, kết quả thấy, kết quả mong đợi) | Trạng thái | Commit sửa
+------+------+------------+---------------------------------------------------------+------------+-----------
+(chưa có)
+
+Trạng thái: MO (mở) | DANG_SUA | DA_SUA
+
+Hạn chế đã biết của code hiện có (chưa phải lỗi cần sửa trong sprint, ghi để không quên):
+- ArmControl dùng một biến _last_arm_request để gắn ACK với lệnh; khi nhiều lệnh mở / khóa chưa được xác nhận (mất gói), thông báo có thể gắn nhầm. Không ảnh hưởng số đo vì RTT của NET-02 đo bằng TIMESYNC, không dựa vào ArmControl.

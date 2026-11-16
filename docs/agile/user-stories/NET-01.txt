@@ -1,0 +1,176 @@
+USER STORY NET-01 – Điều khiển xe khi MAVLink hai chiều đi qua Wi-Fi mô phỏng ns-3
+==================================================================================
+Yêu cầu từ đề tài: "Dữ liệu điều khiển MAVLink giữa trạm mặt đất và PX4 được truyền qua mạng mô phỏng thông qua Tap Bridge."
+Người làm  : Trương Nhật Hoàng (T1, T3), Vũ Duy Dương (T2, T4, T5), Đinh Trần Thảo Phương (T6 – kiểm thử chấp nhận)
+Điểm       : 8
+Sprint     : S1
+
+1. STORY
+--------
+Là nhóm khảo sát, tôi có thể điều khiển xe PX4 trong Gazebo khi toàn bộ gói MAVLink hai chiều giữa trạm mặt đất và xe đi qua mạng Wi-Fi mô phỏng bằng ns-3, để mọi số đo sau này phản ánh đúng đường truyền Wi-Fi chứ không phải loopback.
+
+Ngoài phạm vi story này: đo chỉ số mạng (NET-02); node trên xe di chuyển theo vị trí xe thật; nhiều trạm trên cùng kênh Wi-Fi.
+
+2. TIÊU CHÍ CHẤP NHẬN (thủ tục: docs/acceptance/NET-01-acceptance.txt, viết ở T6)
+--------------------------------------------------------------------------------
+AC1  Không có đường tắt
+     Cách kiểm : chạy network/setup-netns.sh; KHÔNG chạy ns-3; từ ns-gcs: ping -c 5 10.0.0.2
+     Đạt khi   : 100% packet loss (chứng minh hai netns chỉ nối với nhau qua ns-3)
+
+AC2  ns-3 là dây nối, và khoảng cách có tác dụng
+     Cách kiểm : chạy rover-wifi với --distance=5, lặp lại ping như AC1; dừng ns-3, chạy lại với khoảng cách rất xa (ví dụ --distance=1000)
+     Đạt khi   : ở 5 m ping thông (0% hoặc gần 0% loss); ở khoảng cách rất xa ping mất gần như toàn bộ; dừng ns-3 thì ping dừng ngay
+
+AC3  Điều khiển xe qua ns-3
+     Cách kiểm : ns-3 --distance=5; PX4 + Gazebo chạy trong ns-rover (network/run-px4.sh); trong ns-gcs chạy: python tools/drive_check.py tien
+     Đạt khi   : script in "Thấy xe"; HEARTBEAT báo "ĐÃ MỞ KHÓA" sau lệnh mở khóa; xe trong Gazebo chạy tới khoảng 1 s rồi dừng; dòng KẾT QUẢ báo tiến một đoạn dương
+
+AC4  Minh chứng gói đi qua ns-3
+     Cách kiểm : (a) Wireshark bắt trên tap-gcs (namespace chính) trong lúc làm AC3; (b) vẫn bắt Wireshark, dừng ns-3; (c) chạy lại ns-3 (không khởi động lại PX4), chạy lại drive_check tien
+     Đạt khi   : (a) thấy gói UDP 10.0.0.2 -> 10.0.0.1:14540 và chiều ngược lại; ảnh chụp lưu vào docs/evidence/; (b) gói 14540 trên tap-gcs dừng ngay; (c) gói xuất hiện lại và lái được như AC3
+
+3. TASK – YÊU CẦU TEST
+----------------------
+Trạng thái task: TODO | DOING | DONE
+Thứ tự: T1 và T2 bắt đầu cùng lúc; T3 sau T1; T4 sau T1 + T2; T5 bất cứ lúc nào sau T1; T6 cuối cùng.
+Mọi lệnh "ip netns", "ip link", "tc" cần sudo.
+
+T1  Script dựng / gỡ mạng ảo: 2 netns, 2 bridge, 2 tap, 2 cặp veth
+    File        : network/setup-netns.sh, network/teardown-netns.sh
+    Người làm   : Hoàng
+    Phụ thuộc   : –
+
+    Kiến thức:
+      - ns-3 chạy ở namespace chính và mở tap theo TÊN. Linux tìm tên interface trong netns của tiến trình đang gọi, nên tap-gcs và tap-rover phải nằm ở namespace chính, không chuyển vào netns được.
+      - Netns nối với tap bằng: cặp veth (một đầu trong netns, có IP; một đầu ở namespace chính) + một Linux bridge (tầng 2) chứa đầu veth đó và tap. Ví dụ src/tap-bridge/examples/tap-wifi-virtual-machine.cc + virtual-network-setup.sh của ns-3 làm đúng cách này với LXC; nhóm thay LXC bằng netns.
+      - Netns mới có interface lo ở trạng thái DOWN. PX4 và Gazebo trong ns-rover nói chuyện với nhau qua lo, nên phải bật lo của cả hai netns.
+      - Gói đi qua bridge có thể bị iptables chặn (ví dụ khi máy có Docker). Ví dụ ns-3 tắt bridge-nf (modprobe br_netfilter rồi ghi 0 vào /proc/sys/net/bridge/bridge-nf-*).
+      - Tên interface tối đa 15 ký tự.
+
+    Cách làm gợi ý (setup-netns.sh, chạy bằng sudo; gọi teardown trước để chạy lại nhiều lần không lỗi):
+      1. ip netns add ns-gcs ; ip netns add ns-rover ; bật lo trong mỗi netns (ip -n <ns> link set lo up)
+      2. ip link add br-gcs type bridge ; ip link add br-rover type bridge
+      3. ip tuntap add dev tap-gcs mode tap ; tương tự tap-rover ; mỗi tap: promisc on, master <bridge>, up
+      4. ip link add veth-gcs-br type veth peer name veth-gcs ; ip link set veth-gcs netns ns-gcs ; veth-gcs-br: master br-gcs, up
+         Tương tự veth-rover-br / veth-rover cho ns-rover
+      5. ip -n ns-gcs addr add 10.0.0.1/24 dev veth-gcs ; ip -n ns-rover addr add 10.0.0.2/24 dev veth-rover ; bật hai veth trong netns; bật hai bridge
+      6. Tắt bridge-nf như ví dụ ns-3
+      teardown-netns.sh: xóa 2 netns (veth trong đó tự mất theo), xóa 2 bridge, 2 tap; không báo lỗi nếu chưa có.
+
+    Test tự động: không (script shell)
+    Kiểm tay    : sau setup: ip -n ns-gcs addr và ip -n ns-rover addr thấy đúng IP; ip link thấy tap-gcs, tap-rover nằm trong bridge (master br-gcs / br-rover); AC1 đạt. Chạy setup 2 lần liên tiếp không lỗi; teardown xong thì ip netns list trống.
+    Trạng thái  : TODO
+
+T2  Chương trình ns-3: 2 node Wi-Fi ad-hoc nối hai tap, khoảng cách chỉnh được
+    File        : network/ns3/rover-wifi.cc (tạo symlink hoặc chép vào ~/ns-3-dev/scratch/rover-wifi.cc để build)
+    Người làm   : Dương
+    Phụ thuộc   : – (viết song song T1; chạy thử cần T1)
+
+    Kiến thức:
+      - Bản ns-3 trên máy: ~/ns-3-dev (nhánh phát triển, hệ build ./ns3). Khi tra API, đối chiếu với file ví dụ trong cây nguồn trên máy, không lấy theo tài liệu web của bản khác.
+      - Khung lấy từ src/tap-bridge/examples/tap-wifi-virtual-machine.cc: RealtimeSimulatorImpl + ChecksumEnabled (bắt buộc khi nói chuyện với tiến trình thật), 2 "ghost node", WifiNetDevice, TapBridge chế độ UseLocal.
+      - Vì sao UseLocal: thiết bị Wi-Fi của ns-3 không hỗ trợ promiscuous; UseLocal cho phép nối một Linux bridge vào ns-3 khi trên bridge chỉ có MỘT thiết bị khác nói chuyện (ở đây là đầu veth của netns).
+      - Phần kênh lấy theo examples/wireless/wifi-simple-adhoc.cc, đổi FixedRssLossModel thành LogDistancePropagationLossModel.
+      - ARP là gói broadcast: phải đặt cả ControlMode và Config "ns3::WifiRemoteStationManager::NonUnicastMode" bằng phyMode như wifi-simple-adhoc.cc, nếu không ARP đi ở tốc độ khác dữ liệu.
+      - Không cần InternetStack trên ghost node: ns-3 chỉ chuyển khung Ethernet, IP/UDP do kernel hai netns xử lý.
+
+    Yêu cầu chương trình:
+      1. Tham số CommandLine (in toàn bộ giá trị ra màn hình khi khởi động, để ghi vào log thí nghiệm):
+           --distance  (m, mặc định 5)        khoảng cách node 0 (0,0,0) – node 1 (distance,0,0), ConstantPositionMobilityModel
+           --simTime   (s, mặc định 3600)     thời gian chạy
+           --phyMode   (mặc định "ErpOfdmRate6Mbps")  DataMode, ControlMode, NonUnicastMode
+           --txPower   (dBm, mặc định 16)     TxPowerStart = TxPowerEnd
+           --exponent  (mặc định 3.0)         Exponent của LogDistancePropagationLossModel
+           --pcap      (mặc định false)       bật pcap 802.11 (DLT_IEEE802_11_RADIO) ra data/pcap/ để mở bằng Wireshark
+      2. WIFI_STANDARD_80211g, AdhocWifiMac, ConstantRateWifiManager, ConstantSpeedPropagationDelayModel.
+      3. TapBridge UseLocal: "tap-gcs" gắn node 0 (trạm mặt đất), "tap-rover" gắn node 1 (xe).
+
+    Cách build / chạy (thử theo thứ tự):
+      - Build bằng user thường: cd ~/ns-3-dev && ./ns3 build scratch/rover-wifi ; file chạy nằm trong build/scratch/ (xem tên bằng ls build/scratch/).
+      - Mở tap cần quyền: cách 1 chạy file thực thi bằng sudo; cách 2 (nếu báo lỗi về tap-creator) ./ns3 configure --enable-sudo rồi build lại. Ghi cách chạy được vào README.
+      - Không chạy "sudo ./ns3 build": thư mục build sẽ thuộc root.
+
+    Test tự động: không (chương trình C++ chạy với tap thật)
+    Kiểm tay    : cùng T1: AC2 đạt; khi khởi động in đúng các tham số đã truyền.
+    Trạng thái  : TODO
+
+T3  Spike: chạy PX4 + Gazebo trong ns-rover và cho PX4 gửi MAVLink tới 10.0.0.1 (giới hạn 3 giờ)
+    File        : network/run-px4.sh (script chạy PX4 trong ns-rover); kết quả ghi vào mục 5 của file này
+    Người làm   : Hoàng
+    Phụ thuộc   : T1
+
+    Kiến thức:
+      - Spike (XP): task giới hạn thời gian để THỬ và TRẢ LỜI câu hỏi kỹ thuật. Đây là rủi ro lớn nhất của sprint.
+      - "ip netns exec" cần root; PX4 không nên chạy bằng root. Mẫu: sudo ip netns exec ns-rover sudo -u $USER -E <lệnh>.
+      - Build PX4 trước ở namespace chính (make px4_sitl) để trong netns chỉ còn bước chạy.
+      - PX4 SITL và Gazebo nói chuyện qua gz-transport (dùng lo và multicast trong netns của chúng); chạy CẢ HAI trong ns-rover.
+      - Mặc định PX4 SITL gửi MAVLink tới 127.0.0.1. Instance cho chương trình trạm mặt đất nằm ở cổng 14580 -> 14540 (Onboard). Muốn gửi tới 10.0.0.1 phải thêm một instance có đích 10.0.0.1.
+
+    Câu hỏi spike phải trả lời (ghi vào mục 5):
+      Q1. PX4 + Gazebo có chạy được trong ns-rover không? Cửa sổ Gazebo có mở được không (biến DISPLAY, XAUTHORITY)? Nếu không, chạy không giao diện (HEADLESS=1) có ổn không?
+      Q2. Lệnh mavlink start nào làm PX4 gửi tới 10.0.0.1:14540? Gợi ý: trong pxh> gõ "mavlink status" để xem các instance; thử "mavlink start -u 14581 -o 14540 -t 10.0.0.1 -m onboard -r 4000000"; gõ "mavlink start" không tham số để xem trợ giúp và kiểm tra cờ trên bản PX4 của nhóm.
+      Q3. Từ ns-gcs, python tools/drive_check.py tien (nghe udpin:0.0.0.0:14540) có thấy xe không? Lệnh mở khóa có tới PX4 (xe hiện ĐÃ MỞ KHÓA) và xe có chạy không?
+      Q4. Lệnh ở Q2 phải gõ tay mỗi lần hay đưa vào lúc khởi động được? Ghi cách làm vào network/run-px4.sh.
+      Q5. Instance mặc định của PX4 (gửi tới 127.0.0.1:14550 BÊN TRONG ns-rover) có còn chạy không? Đây là đường đọc vị trí xe không đi qua ns-3, cần cho NET-04.
+      Q6. Instance gửi tới 10.0.0.1 phát bao nhiêu message mỗi giây (xem "mavlink status")? NET-02 cần con số này.
+
+    Cách làm gợi ý:
+      1. sudo network/setup-netns.sh ; chạy ns-3 --distance=5 (T2) hoặc, nếu T2 chưa xong, chỉ kiểm Q1 trước.
+      2. Chạy PX4 trong ns-rover; trả lời Q1.
+      3. Trong pxh>, thêm instance theo Q2; ở terminal khác chạy drive_check trong ns-gcs (sudo ip netns exec ns-gcs sudo -u $USER -E venv/bin/python tools/drive_check.py tien); trả lời Q3.
+      4. Hết 3 giờ mà Q1 hoặc Q3 chưa được: dừng, ghi những gì đã biết vào mục 5, báo nhóm ở Daily Scrum giữa ngày để PO quyết định chuyển sang phương án dự phòng (relay UDP).
+
+    Test tự động: không (spike)
+    Kiểm tay    : AC3 đạt
+    Trạng thái  : TODO
+
+T4  Hiệu chỉnh khoảng cách: tìm vùng khoảng cách mà mất gói tăng từ 0% đến gần 100%
+    File        : docs/experiments/calibration.txt
+    Người làm   : Dương
+    Phụ thuộc   : T1, T2
+
+    Kiến thức:
+      - Ở gần, tầng MAC của 802.11 gửi lại khung hỏng (tối đa vài lần) nên gần như không mất gói; chỉ khi SNR đủ thấp thì gửi lại cũng hỏng và gói mới mất. Vùng chuyển tiếp này khá hẹp, nên phải dò trước để chọn mức khoảng cách cho NET-03.
+      - Ước lượng sơ bộ với tham số mặc định (6 Mbit/s, 16 dBm, exponent 3): vùng chuyển tiếp ở khoảng vài chục đến hơn 100 m. Đây chỉ là ước lượng; con số thật lấy từ task này.
+
+    Cách làm:
+      1. Với mỗi khoảng cách (ví dụ 10, 20, 40, 60, 80, 100, 120, 150, 200 m): chạy ns-3 --distance=<d>; từ ns-gcs: ping -c 200 -i 0.05 10.0.0.2; ghi % loss và RTT trung bình.
+      2. Dò mịn hơn quanh vùng loss tăng nhanh.
+      3. Đề xuất 6–8 mức khoảng cách cho NET-03: 1 mức chắc chắn 0%, các mức trải từ bắt đầu mất gói đến gần mất hết.
+      Lưu ý: ping là gói ICMP 84 byte, gói MAVLink có kích thước khác; đây chỉ là hiệu chỉnh thô.
+
+    Test tự động: không
+    Kiểm tay    : bảng khoảng cách – % loss – RTT trong calibration.txt, kèm tham số ns-3 đã dùng và danh sách mức đề xuất
+    Trạng thái  : TODO
+
+T5  Sơ đồ kiến trúc mạng
+    File        : docs/diagrams/network-overview/network-overview.mmd, .svg, .txt
+    Người làm   : Dương
+    Phụ thuộc   : T1 (tên interface, IP đã chốt)
+
+    Yêu cầu: theo quy ước sơ đồ trong README (Mermaid; .txt chú thích ký hiệu và luồng). Thể hiện: 2 netns, veth, bridge, tap, 2 ghost node + kênh Wi-Fi của ns-3, PX4 + Gazebo trong ns-rover, chương trình đo / drive_check trong ns-gcs; luồng gói hai chiều (HEARTBEAT, telemetry, ACK từ xe; lệnh, TIMESYNC từ trạm); IP và cổng. Dùng cho mục 3 của báo cáo.
+    Test tự động: không
+    Kiểm tay    : người khác trong nhóm đọc sơ đồ + chú thích mà giải thích lại được đường đi của một gói HEARTBEAT
+    Trạng thái  : TODO
+
+T6  Viết và chạy kiểm thử chấp nhận NET-01
+    File        : docs/acceptance/NET-01-acceptance.txt (gồm: thông tin lần kiểm – ngày, người kiểm, mã commit; phần chuẩn bị; từng AC với các bước và ô [v] Đạt)
+    Người làm   : Phương (không làm chính phần nào của NET-01)
+    Phụ thuộc   : T1, T2, T3
+    Test tự động: không
+    Kiểm tay    : AC1–AC4 đều Đạt; ảnh Wireshark của AC4 lưu vào docs/evidence/net-01-wireshark-tap-gcs.png
+    Trạng thái  : TODO
+
+4. GHI CHÚ KHI LÀM
+------------------
+(mỗi task ghi lệnh đã chạy, kết quả thấy, vấn đề gặp phải)
+
+5. KẾT QUẢ SPIKE T3
+-------------------
+Q1:
+Q2:
+Q3:
+Q4:
+Q5:
+Q6:
+Quyết định của PO (nếu cần):
