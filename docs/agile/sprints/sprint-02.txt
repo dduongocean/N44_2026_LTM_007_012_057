@@ -18,7 +18,7 @@ SPRINT BACKLOG
 --------------
 Task          | Người          | Mô tả ngắn                                              | Phụ thuộc              | Trạng thái | Commit
 --------------+----------------+---------------------------------------------------------+------------------------+------------+-------
-NET-03/T1     | Hoàng          | tools/run_sweep.sh chạy loạt khoảng cách × 3 lần        | NET-01, NET-02 XONG    | DOING      |
+NET-03/T1     | Hoàng          | tools/run_sweep.sh chạy loạt khoảng cách × 3 lần        | NET-01, NET-02 XONG    | DONE       |
 NET-03/T2     | Hoàng, Dương   | Chạy loạt thí nghiệm + baseline, kiểm số liệu thô       | NET-03/T1              | TODO       |
 NET-03/T3     | Phương         | analysis/plot_results.py: biểu đồ + bảng tổng hợp       | data/summary.csv       | TODO       |
 NET-03/T4     | Dương          | pcap + ảnh Wireshark (cờ Retry), config.txt             | NET-01/T2              | TODO       |

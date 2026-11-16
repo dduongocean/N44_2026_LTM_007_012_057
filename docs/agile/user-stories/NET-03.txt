@@ -19,10 +19,19 @@ AC3  Bảng tổng hợp: một bảng CSV / bảng trong báo cáo: khoảng c�
 AC4  Minh chứng   : một lần chạy ở khoảng cách gần ngưỡng có pcap 802.11 (--pcap), ảnh Wireshark thấy khung có cờ Retry, lưu docs/evidence/
 AC5  Chạy lại được: một script chạy toàn bộ loạt thí nghiệm; docs/experiments/config.txt ghi bảng tham số cố định
 
-3. TASK (dự kiến)
------------------
+3. TASK
+-------
 T1  Script chạy loạt: tools/run_sweep.sh – với mỗi khoảng cách × lần lặp: chạy ns-3 --distance, chờ ổn định vài giây, chạy run_experiment.py --label d<khoảng cách>_r<lần>, dừng ns-3. Thêm lần chạy baseline.
+    Trạng thái: DONE
+
 T2  Chạy loạt thí nghiệm, kiểm số liệu thô (khoảng 8 mức × 3 lần × 70 s ≈ 30 phút, cộng baseline)
+    Trạng thái: TODO
+
 T3  Script phân tích: analysis/plot_results.py (đọc data/summary.csv, vẽ biểu đồ AC2, xuất bảng AC3; thêm matplotlib vào requirements.txt)
+    Trạng thái: TODO
+
 T4  pcap + ảnh Wireshark (AC4); ghi docs/experiments/config.txt (AC5)
+    Trạng thái: TODO
+
 T5  Kiểm thử chấp nhận NET-03
+    Trạng thái: TODO
