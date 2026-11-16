@@ -31,7 +31,7 @@ T3  Script phân tích: analysis/plot_results.py (đọc data/summary.csv, vẽ 
     Trạng thái: DONE
 
 T4  pcap + ảnh Wireshark (AC4); ghi docs/experiments/config.txt (AC5)
-    Trạng thái: TODO
+    Trạng thái: DONE
 
 T5  Kiểm thử chấp nhận NET-03
     Trạng thái: TODO
