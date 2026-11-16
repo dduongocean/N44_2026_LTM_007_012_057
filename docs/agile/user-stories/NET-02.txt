@@ -130,7 +130,7 @@ T3  Tính RTT và jitter (tầng xử lý)
       5. IntervalStats với các mốc 0, 1, 2, 3: mean 1.0, stdev 0.0; với 0, 1, 3: mean 1.5
       6. percentile p95 của 1..100: khoảng 95
     Test tự động: có (6 test)
-    Trạng thái  : TODO
+    Trạng thái  : DONE
 
 T4  Chương trình đo chạy không giao diện, ghi CSV
     File code   : tools/run_experiment.py ; hàm tạo dòng CSV đặt ở rover/core/linkstats.py hoặc tools/ (để test được)
