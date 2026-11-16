@@ -241,6 +241,9 @@ def main () -> None:
         final_rtt_jitter = calc_stdev (all_rtt_ms)
         final_hb_jitter = (hb_stats .stdev * 1000.0) if hb_stats .stdev is not None else None
 
+        # Nếu không nhận được bất kỳ gói nào trong suốt phiên đo, tỷ lệ mất gói là 100% (1.0)
+        effective_loss_rate = 1.0 if seq_tracker.received == 0 else seq_tracker.loss_rate
+
         # Ghi vào file summary.csv
         write_summary_header = not os .path .exists (args .summary_file) or os .path .getsize (args .summary_file) == 0
         with open (args .summary_file, "a", encoding = "utf-8") as f_sum:
@@ -253,7 +256,7 @@ def main () -> None:
                     duration = total_elapsed,
                     rx = seq_tracker .received,
                     lost = seq_tracker .lost,
-                    loss_rate = seq_tracker .loss_rate,
+                    loss_rate = effective_loss_rate,
                     rtt_mean_ms = final_rtt_mean,
                     rtt_p95_ms = final_rtt_p95,
                     rtt_jitter_ms = final_rtt_jitter,

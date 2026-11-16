@@ -80,6 +80,10 @@ for f in /proc/sys/net/bridge/bridge-nf-*; do
     [[ -e "$f" ]] && echo 0 > "$f"
 done
 
+# 7. Gán ARP tĩnh hai chiều để tránh mất gói do ARP broadcast không có MAC ACK trong Wi-Fi
+ip -n ns-gcs neigh replace 10.0.0.2 lladdr "$ROVER_MAC" dev veth-gcs
+ip -n ns-rover neigh replace 10.0.0.1 lladdr "$GCS_MAC" dev veth-rover
+
 echo "Đã dựng mạng ảo:"
 echo "  ns-gcs   : veth-gcs   10.0.0.1/24 ($GCS_MAC) -> br-gcs   + tap-gcs"
 echo "  ns-rover : veth-rover 10.0.0.2/24 ($ROVER_MAC) -> br-rover + tap-rover"

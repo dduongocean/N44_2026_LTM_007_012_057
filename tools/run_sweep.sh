@@ -108,7 +108,7 @@ CURRENT_NS3_PID=""
 cleanup() {
     if [[ -n "$CURRENT_NS3_PID" ]]; then
         echo -e "\n[Dọn dẹp] Dừng tiến trình ns-3 (PID: $CURRENT_NS3_PID)..."
-        kill -INT "$CURRENT_NS3_PID" 2>/dev/null || kill -TERM "$CURRENT_NS3_PID" 2>/dev/null || true
+        kill -9 "$CURRENT_NS3_PID" 2>/dev/null || true
         wait "$CURRENT_NS3_PID" 2>/dev/null || true
         CURRENT_NS3_PID=""
     fi
@@ -119,6 +119,9 @@ trap cleanup INT TERM EXIT
 USE_NETNS=false
 if ip netns list | grep -qw "ns-gcs"; then
     USE_NETNS=true
+    # Đảm bảo bảng ARP tĩnh luôn sẵn sàng tránh bị drop ARP broadcast trong Wi-Fi
+    ip -n ns-gcs neigh replace 10.0.0.2 lladdr 02:00:00:00:00:02 dev veth-gcs 2>/dev/null || true
+    ip -n ns-rover neigh replace 10.0.0.1 lladdr 02:00:00:00:00:01 dev veth-rover 2>/dev/null || true
 fi
 
 echo "========================================================================"
@@ -136,6 +139,10 @@ echo "========================================================================"
 mkdir -p "$OUT_DIR"
 mkdir -p "$(dirname "$SUMMARY_FILE")"
 
+# Dọn dẹp tiến trình ns-3 cũ nếu còn chạy để tránh xung đột cổng tap
+pkill -9 -f "rover-wifi" 2>/dev/null || true
+sleep 1
+
 run_single_test() {
     local label="$1"
     local dist="$2"
@@ -148,6 +155,8 @@ run_single_test() {
 
     # Nếu dùng netns, khởi động ns-3 với khoảng cách tương ứng
     if [[ "$USE_NETNS" == true ]]; then
+        pkill -9 -f "rover-wifi" 2>/dev/null || true
+        sleep 0.5
         echo "[ns-3] Khởi chạy mô phỏng Wi-Fi: --distance=${dist}..."
         "$NS3_BIN" --distance="$dist" > /dev/null 2>&1 &
         CURRENT_NS3_PID=$!
@@ -182,7 +191,7 @@ run_single_test() {
     # Dừng ns-3 nếu đang chạy
     if [[ -n "$CURRENT_NS3_PID" ]]; then
         echo "[ns-3] Dừng mô phỏng (PID $CURRENT_NS3_PID)..."
-        kill -INT "$CURRENT_NS3_PID" 2>/dev/null || kill -TERM "$CURRENT_NS3_PID" 2>/dev/null || true
+        kill -9 "$CURRENT_NS3_PID" 2>/dev/null || true
         wait "$CURRENT_NS3_PID" 2>/dev/null || true
         CURRENT_NS3_PID=""
     fi

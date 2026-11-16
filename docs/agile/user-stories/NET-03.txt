@@ -25,10 +25,10 @@ T1  Script chạy loạt: tools/run_sweep.sh – với mỗi khoảng cách × l
     Trạng thái: DONE
 
 T2  Chạy loạt thí nghiệm, kiểm số liệu thô (khoảng 8 mức × 3 lần × 70 s ≈ 30 phút, cộng baseline)
-    Trạng thái: TODO
+    Trạng thái: DONE
 
 T3  Script phân tích: analysis/plot_results.py (đọc data/summary.csv, vẽ biểu đồ AC2, xuất bảng AC3; thêm matplotlib vào requirements.txt)
-    Trạng thái: TODO
+    Trạng thái: DONE
 
 T4  pcap + ảnh Wireshark (AC4); ghi docs/experiments/config.txt (AC5)
     Trạng thái: TODO

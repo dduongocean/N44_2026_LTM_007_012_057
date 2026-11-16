@@ -1,0 +1,53 @@
+BẢNG CẤU HÌNH THAM SỐ THỰC NGHIỆM CỐ ĐỊNH (NET-03/T4)
+=====================================================
+Ngày cập nhật : 2026-11-18
+Tài liệu liên quan: docs/experiments/calibration.txt, network/ns3/rover-wifi.cc
+
+1. CẤU HÌNH TẦNG VẬT LÝ VÀ LIÊN KẾT DỮ LIỆU (NS-3 WI-FI 802.11g)
+---------------------------------------------------------------
+- Chuẩn Wi-Fi                : IEEE 802.11g Ad-hoc (WIFI_STANDARD_80211g)
+- Tần số sóng mang            : 2.412 GHz (Kênh 1)
+- Tốc độ truyền PHY (DataMode): ErpOfdmRate6Mbps (OFDM BPSK, mã sửa lỗi 1/2)
+- Tốc độ điều khiển (Control) : ErpOfdmRate6Mbps
+- NonUnicastMode (Broadcast) : ErpOfdmRate6Mbps
+- Công suất phát (TxPower)   : 16.0 dBm (cố định TxPowerStart = TxPowerEnd = 16 dBm)
+- Ngưỡng nhạy thu (RxSensitivity): Mặc định của ns-3 YansWifiPhy (-82 dBm đối với 6 Mbps)
+- Antenna Model              : Isotropic antenna (Gain = 0 dBi)
+
+2. CẤU HÌNH KÊNH TRUYỀN SÓNG (PROPAGATION CHANNEL)
+--------------------------------------------------
+- Mô hình suy hao công suất   : ns3::LogDistancePropagationLossModel
+- Hệ số suy hao môi trường (n): Exponent = 3.0 (phù hợp môi trường ngoài trời có che chắn / phản xạ gần mặt đất)
+- Suy hao mốc 1 mét (L0)     : 40.046 dB (theo bước sóng 2.412 GHz)
+- Mô hình độ trễ lan truyền   : ns3::ConstantSpeedPropagationDelayModel (vận tốc ánh sáng c ≈ 3e8 m/s)
+
+3. CẤU HÌNH MẠNG VÀ TAPBRIDGE LINUX
+------------------------------------
+- Simulator Engine           : ns3::RealtimeSimulatorImpl (đồng bộ thời gian thực)
+- Checksum tầng mạng          : Bật (ChecksumEnabled = true)
+- Chế độ TapBridge           : UseLocal (chuyển tiếp Ethernet frame hai chiều ở tầng MAC)
+- MAC Address cố định        :
+    + GCS veth-gcs (Node 0)   : 02:00:00:00:00:01
+    + Rover veth-rover (Node 1): 02:00:00:00:00:02
+- Địa chỉ IP subnet          : 10.0.0.0/24
+    + Trạm mặt đất (ns-gcs)   : 10.0.0.1
+    + Xe Rover (ns-rover)     : 10.0.0.2
+
+4. CẤU HÌNH GIAO THỨC ĐIỀU KHIỂN VÀ ĐO LƯỜNG (MAVLINK)
+------------------------------------------------------
+- Phiên bản giao thức        : MAVLink v2
+- Cổng truyền thông          :
+    + ns-gcs (Trạm)          : UDP port 14540
+    + ns-rover (PX4 SITL)     : UDP port 14581 -> 10.0.0.1:14540 (onboard stream)
+- Lưu lượng MAVLink từ xe    : ~24 kB/s, ~350 - 415 messages/s
+- Chu kỳ gửi HEARTBEAT       : 1 Hz (1 lần/giây, định kỳ từ PX4)
+- Tần số phát probe TIMESYNC : 5 Hz (5 lần/giây, từ công cụ run_experiment.py)
+- Thời gian chờ RTT timeout   : 2.0 giây
+- Tiêu chuẩn mất liên lạc     : Quá 3.0 giây không nhận được HEARTBEAT (chuyển sang LOST)
+
+5. THIẾT KẾ CÁC MỐC KHOẢNG CÁCH THỰC NGHIỆM
+-------------------------------------------
+- Mốc Baseline: Localhost (hoặc cự ly 0 m không suy hao), không trễ mô phỏng.
+- 8 Mốc cự ly Wi-Fi: 10m, 50m, 60m, 70m, 80m, 90m, 100m, 120m.
+- Số lần lặp lại: 3 lần cho mỗi mốc (r1, r2, r3), mỗi lần đo 60 giây.
+- Tổng thời gian đo mỗi mốc: 180 giây dữ liệu chi tiết (3 file CSV trong data/raw/).

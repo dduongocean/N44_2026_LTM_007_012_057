@@ -1,2 +1,4 @@
 pymavlink>=2.4.41
 pytest>=8.0
+matplotlib>=3.8
+pandas>=2.0
