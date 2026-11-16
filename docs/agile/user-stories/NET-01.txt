@@ -92,7 +92,7 @@ T2  Chương trình ns-3: 2 node Wi-Fi ad-hoc nối hai tap, khoảng cách ch�
 
     Test tự động: không (chương trình C++ chạy với tap thật)
     Kiểm tay    : cùng T1: AC2 đạt; khi khởi động in đúng các tham số đã truyền.
-    Trạng thái  : TODO
+    Trạng thái  : DONE
 
 T3  Spike: chạy PX4 + Gazebo trong ns-rover và cho PX4 gửi MAVLink tới 10.0.0.1 (giới hạn 3 giờ)
     File        : network/run-px4.sh (script chạy PX4 trong ns-rover); kết quả ghi vào mục 5 của file này
@@ -163,7 +163,11 @@ T6  Viết và chạy kiểm thử chấp nhận NET-01
 
 4. GHI CHÚ KHI LÀM
 ------------------
-(mỗi task ghi lệnh đã chạy, kết quả thấy, vấn đề gặp phải)
+T2 (Dương, 2026-11-16):
+  - Viết network/ns3/rover-wifi.cc theo chuẩn 802.11g ad-hoc, LogDistancePropagationLossModel (exponent=3.0), ConstantRateWifiManager (ErpOfdmRate6Mbps), TapBridge chế độ UseLocal nối tap-gcs và tap-rover.
+  - Hỗ trợ CommandLine: --distance, --simTime, --phyMode, --txPower, --exponent, --pcap.
+  - Symlink vào ~/ns-3.49/scratch/rover-wifi.cc, biên dịch bằng "ninja -C cmake-cache scratch_rover-wifi" thành công, file thực thi tại build/scratch/ns3.49-rover-wifi-default.
+  - Kiểm tra --help và chạy thử --distance=10 --simTime=1 in đúng các tham số ra màn hình.
 
 T1 (Hoàng, 2026-11-17)
   Lệnh đã chạy:

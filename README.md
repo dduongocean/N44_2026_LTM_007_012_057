@@ -88,6 +88,21 @@ source venv/bin/activate
 pip install -r requirements.txt
 pytest
 ```
+Biên dịch và chạy mô phỏng mạng ns-3 (NET-01/T2):
+```bash
+# Liên kết file mã nguồn vào scratch của ns-3 (trên máy là ~/ns-3.49)
+ln -sf $(pwd)/network/ns3/rover-wifi.cc ~/ns-3.49/scratch/rover-wifi.cc
+
+# Biên dịch bằng user thường
+cd ~/ns-3.49
+ninja -C cmake-cache scratch_rover-wifi
+# (hoặc ./ns3 build scratch/rover-wifi)
+
+# Chạy thử kiểm tra tham số
+./build/scratch/ns3.49-rover-wifi-default --help
+./build/scratch/ns3.49-rover-wifi-default --distance=10 --simTime=1
+```
+
 Lái thử khi PX4 SITL đang chạy (chưa qua ns-3):
 ```
 make px4_sitl gz_r1_rover          # trong thư mục PX4-Autopilot, terminal khác
