@@ -81,6 +81,14 @@ def command_ack_bytes (command, result, system_id = 1, component_id = 1):
     return bytes (msg .pack (sender))
 
 
+def timesync_bytes (tc1, ts1, system_id = 1, component_id = 1, seq = 0):
+    """Đóng gói một TIMESYNC thành dãy byte MAVLink 2 với số hiệu seq tùy chọn."""
+    sender = mavlink .MAVLink (file = None, srcSystem = system_id, srcComponent = component_id)
+    sender .seq = seq
+    msg = sender .timesync_encode (tc1 = tc1, ts1 = ts1)
+    return bytes (msg .pack (sender))
+
+
 class TwoWayVehicleSimulator:
     """Giả lập xe PX4 hai chiều trên một socket UDP: vừa gửi HEARTBEAT/COMMAND_ACK tới chương trình, vừa đọc COMMAND_LONG và MANUAL_CONTROL chương trình gửi về."""
 
@@ -91,6 +99,8 @@ class TwoWayVehicleSimulator:
         self .received_commands = []
         # MANUAL_CONTROL chương trình gửi (lệnh lái).
         self .received_manual = []
+        # TIMESYNC chương trình gửi (đo RTT).
+        self .received_timesync = []
         self ._lock = threading .Lock ()
         self ._stop = threading .Event ()
         self ._thread = threading .Thread (target = self ._run, daemon = True)
@@ -125,6 +135,8 @@ class TwoWayVehicleSimulator:
                             self .received_commands .append (msg)
                         elif msg .get_type () == "MANUAL_CONTROL":
                             self .received_manual .append (msg)
+                        elif msg .get_type () == "TIMESYNC":
+                            self .received_timesync .append (msg)
 
     def wait_commands (self, count = 1, timeout = 1.0):
         """Chờ tối đa timeout giây cho tới khi giả lập nhận đủ count lệnh COMMAND_LONG từ chương trình."""
@@ -133,6 +145,10 @@ class TwoWayVehicleSimulator:
     def wait_manual (self, count = 1, timeout = 1.0):
         """Chờ tối đa timeout giây cho tới khi giả lập nhận đủ count gói MANUAL_CONTROL từ chương trình."""
         return self ._wait (self .received_manual, count, timeout)
+
+    def wait_timesync (self, count = 1, timeout = 1.0):
+        """Chờ tối đa timeout giây cho tới khi giả lập nhận đủ count gói TIMESYNC từ chương trình."""
+        return self ._wait (self .received_timesync, count, timeout)
 
     def _wait (self, received, count, timeout):
         """Chờ tới khi danh sách received có ít nhất count phần tử hoặc hết timeout giây; trả bản sao danh sách."""

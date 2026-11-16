@@ -10,7 +10,7 @@ from pymavlink import mavutil
 # Bộ định nghĩa MAVLink 2, tập message chung "common"; dùng để lấy các hằng số (ví dụ MAV_AUTOPILOT_INVALID) và bảng tra số -> tên.
 from pymavlink .dialects .v20 import common as mavlink
 
-from rover .core .model import ArmAck, Heartbeat, VehicleEvent, VehicleInfo
+from rover .core .model import ArmAck, Heartbeat, PacketSeen, TimesyncReply, VehicleEvent, VehicleInfo
 
 # Địa chỉ mặc định: nghe (udpin) trên mọi địa chỉ của máy, cổng 14540, là cổng PX4 SITL gửi MAVLink cho ứng dụng (instance mode Onboard).
 DEFAULT_URL = "udpin:0.0.0.0:14540"
@@ -70,19 +70,35 @@ class MavlinkVehicleLink:
                 break
 
             msg_type = msg .get_type ()
+            if msg_type == "BAD_DATA":
+                continue
+
             if msg_type == "HEARTBEAT":
                 info = parse_heartbeat (msg)
                 # Bỏ qua gói không phải từ xe (ví dụ QGroundControl có autopilot = INVALID).
-                if info is not None:
-                    self .last_system_id = info .system_id
-                    self .last_component_id = info .component_id
-                    armed = bool (msg .base_mode & mavlink .MAV_MODE_FLAG_SAFETY_ARMED)
-                    events .append (Heartbeat (info = info, armed = armed))
+                if info is None:
+                    continue
+                self .last_system_id = info .system_id
+                self .last_component_id = info .component_id
+                armed = bool (msg .base_mode & mavlink .MAV_MODE_FLAG_SAFETY_ARMED)
+                events .append (Heartbeat (info = info, armed = armed))
             elif msg_type == "COMMAND_ACK":
                 # Chỉ chuyển đổi phản hồi của lệnh mở / khóa (MAV_CMD_COMPONENT_ARM_DISARM = 400); bỏ qua ACK lệnh khác.
                 if msg .command == mavlink .MAV_CMD_COMPONENT_ARM_DISARM:
                     accepted = msg .result == mavlink .MAV_RESULT_ACCEPTED
                     events .append (ArmAck (accepted = accepted))
+            elif msg_type == "TIMESYNC":
+                # Chỉ gói TIMESYNC có tc1 != 0 (do xe phản hồi trạm) mới sinh TimesyncReply.
+                if getattr (msg, "tc1", 0) != 0:
+                    events .append (TimesyncReply (ts1_ns = msg .ts1))
+
+            # Mọi message hợp lệ của xe đều sinh PacketSeen kèm seq và nguồn để đếm mất gói
+            events .append (PacketSeen (
+                system_id = msg .get_srcSystem (),
+                component_id = msg .get_srcComponent (),
+                seq = msg .get_seq (),
+                msg_type = msg_type,
+            ))
 
         return events
 
@@ -137,6 +153,16 @@ class MavlinkVehicleLink:
             param5 = 0,
             param6 = 0,
             param7 = 0,
+        )
+
+    def send_timesync (self, ts1_ns: int) -> None:
+        """Gửi gói TIMESYNC (tc1 = 0, ts1 = ts1_ns) tới xe đã thấy gần nhất; chưa thấy xe thì không gửi."""
+        if self .last_system_id is None:
+            return
+
+        self .conn .mav .timesync_send (
+            tc1 = 0,
+            ts1 = ts1_ns,
         )
 
     def close (self) -> None:

@@ -98,7 +98,7 @@ T2  Driver: báo mọi gói nhận được (kèm seq) và gửi / nhận TIMESY
       4. send_timesync gửi TIMESYNC với tc1 = 0 và đúng ts1 tới xe đã thấy gần nhất; chưa thấy xe thì không gửi
 
     Test tự động: có (4–5 test)
-    Trạng thái  : TODO
+    Trạng thái  : DONE
 
 T3  Tính RTT và jitter (tầng xử lý)
     File code   : rover/core/linkstats.py (lớp RttTracker, IntervalStats)
@@ -162,3 +162,7 @@ T5  Viết và chạy kiểm thử chấp nhận NET-02
 4. GHI CHÚ KHI LÀM
 ------------------
 Kết quả câu hỏi TIMESYNC (T2):
+  - Xác nhận từ spike NET-01/T3: PX4 phát TIMESYNC ở tần số 10 Hz và phản hồi các gói TIMESYNC gửi tới.
+  - Đã thêm PacketSeen và TimesyncReply vào VehicleEvent trong rover/core/model.py.
+  - Đã thêm send_timesync(ts1_ns) vào interface VehicleLink (rover/hal.py) và MavlinkVehicleLink (rover/drivers/mavlink.py).
+  - 5 unit tests mới trong tests/test_mavlink.py (test 16 đến 20) kiểm thử giả lập UDP đều passed 100%.

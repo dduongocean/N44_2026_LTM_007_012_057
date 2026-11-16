@@ -26,6 +26,7 @@ class FakeVehicleLink:
         self .sent_arm: list[bool] = []
         self .sent_drive: list[tuple[float, float]] = []
         self .manual_mode_requests: int = 0
+        self .sent_timesync: list[int] = []
         self .closed = False
 
     def push (self, event: VehicleEvent) -> None:
@@ -49,6 +50,10 @@ class FakeVehicleLink:
     def send_manual_mode (self) -> None:
         """Đếm số lần yêu cầu xe chuyển sang chế độ Manual."""
         self .manual_mode_requests += 1
+
+    def send_timesync (self, ts1_ns: int) -> None:
+        """Ghi lại gói timesync đã gửi để test kiểm tra."""
+        self .sent_timesync .append (ts1_ns)
 
     def close (self) -> None:
         """Đánh dấu link giả lập đã được đóng."""

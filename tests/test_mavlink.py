@@ -4,7 +4,7 @@ import time
 
 from pymavlink .dialects .v20 import common as mavlink
 
-from rover .core .model import ArmAck, Heartbeat, VehicleInfo
+from rover .core .model import ArmAck, Heartbeat, PacketSeen, TimesyncReply, VehicleInfo
 from rover .drivers .mavlink import MavlinkVehicleLink, parse_heartbeat
 from tests .mavlink_sim import (
     GCS_HEARTBEAT,
@@ -14,6 +14,7 @@ from tests .mavlink_sim import (
     command_ack_bytes,
     find_free_port,
     heartbeat_bytes,
+    timesync_bytes,
 )
 
 
@@ -116,10 +117,10 @@ def test_5_vehicle_heartbeat_returns_heartbeat_event ():
             time .sleep (0.3)
             events = link .poll ()
 
-        # Mong đợi: danh sách khác rỗng; mọi phần tử là Heartbeat với đúng thông tin xe và armed = False.
-        assert len (events) > 0
-        for ev in events:
-            assert isinstance (ev, Heartbeat)
+        # Mong đợi: sinh Heartbeat với đúng thông tin xe và armed = False.
+        heartbeats = [ev for ev in events if isinstance (ev, Heartbeat)]
+        assert len (heartbeats) > 0
+        for ev in heartbeats:
             assert ev .info == VehicleInfo (
                 system_id = 1,
                 component_id = 1,
@@ -331,5 +332,128 @@ def test_15_send_manual_mode_sends_set_mode_command ():
         assert cmds [0] .param2 == 1
         assert cmds [0] .target_system == 1
         assert cmds [0] .target_component == 1
+    finally:
+        link .close ()
+
+
+def test_16_each_valid_message_emits_packet_seen ():
+    # Đầu vào: một luồng gửi HEARTBEAT từ xe; poll () phải sinh PacketSeen kèm seq, system_id, component_id và cả Heartbeat.
+    port = find_free_port ()
+    link = MavlinkVehicleLink (url = f"udpin:127.0.0.1:{port}")
+    try:
+        with HeartbeatSimulator (port, [(VEHICLE_HEARTBEAT, 0.3)]):
+            deadline = time .monotonic () + 1.0
+            seen_packet = None
+            seen_hb = None
+            while time .monotonic () < deadline:
+                for event in link .poll ():
+                    if isinstance (event, PacketSeen):
+                        seen_packet = event
+                    elif isinstance (event, Heartbeat):
+                        seen_hb = event
+                if seen_packet is not None and seen_hb is not None:
+                    break
+                time .sleep (0.02)
+
+        # Mong đợi: nhận được PacketSeen với đúng nguồn của xe và kiểu "HEARTBEAT"
+        assert seen_packet is not None
+        assert seen_packet .system_id == 1
+        assert seen_packet .component_id == 1
+        assert seen_packet .msg_type == "HEARTBEAT"
+        assert isinstance (seen_packet .seq, int)
+        # Heartbeat vẫn được giải mã đầy đủ
+        assert seen_hb is not None
+        assert seen_hb .info .autopilot == "PX4"
+    finally:
+        link .close ()
+
+
+def test_17_timesync_reply_only_when_tc1_nonzero ():
+    # Đầu vào: gói TIMESYNC có tc1 != 0 (do xe phản hồi trạm).
+    port = find_free_port ()
+    link = MavlinkVehicleLink (url = f"udpin:127.0.0.1:{port}")
+    pkt = timesync_bytes (tc1 = 123456789, ts1 = 987654321, system_id = 1, component_id = 1, seq = 15)
+    try:
+        with HeartbeatSimulator (port, [(pkt, 0.3)]):
+            deadline = time .monotonic () + 1.0
+            seen_reply = None
+            seen_pkt = None
+            while time .monotonic () < deadline:
+                for event in link .poll ():
+                    if isinstance (event, TimesyncReply):
+                        seen_reply = event
+                    elif isinstance (event, PacketSeen):
+                        seen_pkt = event
+                if seen_reply is not None and seen_pkt is not None:
+                    break
+                time .sleep (0.02)
+
+        # Mong đợi: sinh TimesyncReply với đúng ts1_ns và sinh PacketSeen
+        assert seen_reply is not None
+        assert seen_reply .ts1_ns == 987654321
+        assert seen_pkt is not None
+        assert seen_pkt .msg_type == "TIMESYNC"
+        assert seen_pkt .seq == 15
+    finally:
+        link .close ()
+
+
+def test_18_timesync_with_tc1_zero_does_not_emit_timesync_reply ():
+    # Đầu vào: gói TIMESYNC có tc1 = 0 (PX4 tự gửi yêu cầu đồng bộ, không phải phản hồi của trạm).
+    port = find_free_port ()
+    link = MavlinkVehicleLink (url = f"udpin:127.0.0.1:{port}")
+    pkt = timesync_bytes (tc1 = 0, ts1 = 987654321, system_id = 1, component_id = 1, seq = 20)
+    try:
+        with HeartbeatSimulator (port, [(pkt, 0.3)]):
+            deadline = time .monotonic () + 1.0
+            replies = []
+            seen_pkts = []
+            while time .monotonic () < deadline:
+                for event in link .poll ():
+                    if isinstance (event, TimesyncReply):
+                        replies .append (event)
+                    elif isinstance (event, PacketSeen):
+                        seen_pkts .append (event)
+                if seen_pkts:
+                    break
+                time .sleep (0.02)
+
+        # Mong đợi: sinh PacketSeen nhưng KHÔNG sinh TimesyncReply
+        assert len (seen_pkts) > 0
+        assert replies == []
+    finally:
+        link .close ()
+
+
+def test_19_send_timesync_sends_to_vehicle_seen ():
+    # Đầu vào: giả lập gửi HEARTBEAT; link poll () thấy xe; gọi send_timesync (ts1_ns = 555555555).
+    port = find_free_port ()
+    link = MavlinkVehicleLink (url = f"udpin:127.0.0.1:{port}")
+    try:
+        with TwoWayVehicleSimulator (port) as sim:
+            _wait_for_heartbeat (link)
+            link .send_timesync (ts1_ns = 555555555)
+            timesync_msgs = sim .wait_timesync (count = 1, timeout = 1.0)
+
+        # Mong đợi: giả lập nhận được gói TIMESYNC với tc1 = 0 và đúng ts1
+        assert len (timesync_msgs) == 1
+        assert timesync_msgs [0] .tc1 == 0
+        assert timesync_msgs [0] .ts1 == 555555555
+    finally:
+        link .close ()
+
+
+def test_20_send_timesync_does_nothing_if_no_vehicle_seen ():
+    # Đầu vào: chưa thấy xe nào; gọi send_timesync ().
+    port = find_free_port ()
+    link = MavlinkVehicleLink (url = f"udpin:127.0.0.1:{port}")
+    try:
+        with TwoWayVehicleSimulator (port) as sim:
+            link .send_timesync (ts1_ns = 555555555)
+            time .sleep (0.3)
+            timesync_msgs = sim .wait_timesync (count = 1, timeout = 0.1)
+
+        # Mong đợi: không gửi gói TIMESYNC nào khi chưa thấy xe
+        assert timesync_msgs == []
     finally:
         link .close ()

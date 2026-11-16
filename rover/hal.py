@@ -28,6 +28,10 @@ class VehicleLink (Protocol):
         """Yêu cầu xe đã thấy gần nhất chuyển sang chế độ Manual để nhận lệnh lái; chưa thấy xe thì không gửi."""
         ...
 
+    def send_timesync (self, ts1_ns: int) -> None:
+        """Gửi gói TIMESYNC (tc1 = 0, ts1 = ts1_ns) tới xe đã thấy gần nhất; chưa thấy xe thì không gửi."""
+        ...
+
     def close (self) -> None:
         """Đóng cổng kết nối."""
         ...

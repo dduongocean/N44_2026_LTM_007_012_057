@@ -54,5 +54,22 @@ class ArmAck:
     accepted: bool  # True nếu xe chấp nhận lệnh (result = MAV_RESULT_ACCEPTED); False nếu từ chối
 
 
-# Kiểu của mỗi phần tử mà VehicleLink .poll () trả về: hoặc một Heartbeat, hoặc một ArmAck.
-VehicleEvent = Heartbeat | ArmAck
+@dataclass (frozen = True)
+class PacketSeen:
+    """Báo một gói MAVLink hợp lệ vừa nhận được (kèm seq và nguồn), dùng đếm mất gói."""
+
+    system_id: int
+    component_id: int
+    seq: int
+    msg_type: str
+
+
+@dataclass (frozen = True)
+class TimesyncReply:
+    """Gói TIMESYNC do xe trả về (tc1 != 0), chứa ts1_ns ban đầu mà trạm đã gửi."""
+
+    ts1_ns: int
+
+
+# Kiểu của mỗi phần tử mà VehicleLink .poll () trả về: Heartbeat, ArmAck, PacketSeen hoặc TimesyncReply.
+VehicleEvent = Heartbeat | ArmAck | PacketSeen | TimesyncReply
