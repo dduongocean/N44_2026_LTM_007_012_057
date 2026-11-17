@@ -1,187 +1,95 @@
 #!/usr/bin/env python3
-# tools/run_failsafe_experiment.py
-"""
-Thực nghiệm đánh giá phản ứng Failsafe của xe Rover khi mất liên lạc (NET-04).
-Kịch bản:
-  1. Kết nối xe MAVLink, chuyển chế độ MANUAL và Mở khóa (ARM).
-  2. Gửi lệnh lái xe tiến (z=700) đều đặn trong vài giây để xe đạt vận tốc ổn định.
-  3. Tại thời điểm t0: Ngừng gửi lệnh điều khiển (mất tín hiệu RC/Manual control).
-  4. Quan sát và ghi nhận:
-     - Thời gian từ t0 đến khi xe dừng hẳn (v < 0.05 m/s).
-     - Quãng đường xe trôi thêm sau t0.
-     - Cảnh báo của PX4 (STATUSTEXT) và thay đổi chế độ bay/chế độ an toàn.
-  5. Xuất kết quả ra file data/failsafe_summary.csv.
+"""Script lái xe cho thực nghiệm failsafe NET-04 – chạy trong ns-gcs, gửi lệnh qua đường MAVLink chính (qua ns-3).
+
+Hai kịch bản (--scenario):
+  stopcmd : mạng vẫn tốt; lái tiến --drive-time giây rồi NGỪNG gửi MANUAL_CONTROL tại t0 (script tự ghi t0).
+  cut     : lái tiến LIÊN TỤC suốt --drive-time + --observe-time + --recover-time giây; đường truyền bị cắt TỪ BÊN NGOÀI
+            (tools/run_failsafe.sh đặt netem loss 100% và ghi t0). Khi mạng có lại, lệnh lái lại tới xe.
+Cuối cùng gửi ga 0 rồi khóa xe. Vị trí xe do tools/failsafe_logger.py ghi trong ns-rover (không qua ns-3).
+
+Mốc thời gian ghi vào --events (CSV "event,t", t = time.time ()): drive_start, t0 (chỉ stopcmd), end.
 """
 
 import argparse
-import datetime
-import math
 import os
 import sys
 import time
 
-os.environ["MAVLINK20"] = "1"
-from pymavlink import mavutil
-from pymavlink.dialects.v20 import common as mavlink
+os .environ ["MAVLINK20"] = "1"
+from pymavlink import mavutil                      # noqa: E402
+from pymavlink .dialects .v20 import common as mavlink  # noqa: E402
 
-MAIN_MODES = {1: "MANUAL", 2: "ALTCTL", 3: "POSCTL", 4: "AUTO", 5: "ACRO", 6: "OFFBOARD", 7: "STABILIZED"}
-
-
-def parse_args():
-    parser = argparse.ArgumentParser(description="Thực nghiệm Failsafe mất liên lạc NET-04")
-    parser.add_argument("--url", default="udpin:0.0.0.0:14540", help="Địa chỉ nghe MAVLink UDP")
-    parser.add_argument("--drive-time", type=float, default=2.5, help="Thời gian lái xe tiến trước khi ngắt (s)")
-    parser.add_argument("--observe-time", type=float, default=6.0, help="Thời gian quan sát sau ngắt (s)")
-    parser.add_argument("--throttle", type=int, default=700, help="Giá trị ga (z > 500 tiến, ví dụ 700)")
-    parser.add_argument("--label", default="failsafe_r1", help="Nhãn lần thử")
-    parser.add_argument("--out-file", default="data/failsafe_summary.csv", help="File CSV tổng hợp kết quả failsafe")
-    return parser.parse_args()
+MANUAL = 1          # main mode MANUAL của PX4 (custom_mode byte 3)
+SEND_PERIOD = 0.05  # gửi MANUAL_CONTROL 20 lần/giây
 
 
-def mode_name(custom_mode):
-    main = (custom_mode >> 16) & 0xFF
-    return MAIN_MODES.get(main, f"?{main}")
+def parse_args ():
+    p = argparse .ArgumentParser (description = "Lái xe cho thực nghiệm failsafe NET-04")
+    p .add_argument ("--url", default = "udpin:0.0.0.0:14540", help = "Địa chỉ nghe MAVLink UDP")
+    p .add_argument ("--scenario", choices = ["stopcmd", "cut"], required = True)
+    p .add_argument ("--drive-time", type = float, default = 4.0, help = "Lái tiến bao lâu trước t0 (s)")
+    p .add_argument ("--observe-time", type = float, default = 15.0, help = "Quan sát sau t0 (s)")
+    p .add_argument ("--recover-time", type = float, default = 3.0, help = "cut: tiếp tục gửi lệnh sau khi có lại mạng (s)")
+    p .add_argument ("--throttle", type = int, default = 750, help = "Ga MANUAL_CONTROL z (500 = đứng, > 500 tiến)")
+    p .add_argument ("--events", required = True, help = "File CSV ghi mốc thời gian")
+    return p .parse_args ()
 
 
-def main():
-    args = parse_args()
-    print("=" * 72)
-    print(f" THỰC NGHIỆM FAILSAFE KHI MẤT LIÊN LẠC (NET-04): {args.label}")
-    print(f" URL MAVLink      : {args.url}")
-    print(f" Thời gian lái    : {args.drive_time} s (Ga: {args.throttle})")
-    print(f" Thời gian quan sát: {args.observe_time} s")
-    print("=" * 72)
+def main ():
+    args = parse_args ()
+    os .makedirs (os .path .dirname (args .events) or ".", exist_ok = True)
+    ev = open (args .events, "w", encoding = "utf-8")
+    ev .write ("event,t\n")
 
-    conn = mavutil.mavlink_connection(args.url, dialect="common")
-    start_mono = time.monotonic()
+    def mark (name):
+        ev .write (f"{name},{time .time ():.3f}\n")
+        ev .flush ()
+        print (f"[{name}] {time .strftime ('%H:%M:%S')}", flush = True)
 
-    def log(text):
-        print(f"[{time.monotonic() - start_mono:6.2f} s] {text}", flush=True)
-
-    log("Đang đợi xe gửi HEARTBEAT...")
-    sys_id = comp_id = None
-    while True:
-        msg = conn.recv_match(type="HEARTBEAT", blocking=True, timeout=5)
-        if msg and msg.autopilot != mavlink.MAV_AUTOPILOT_INVALID:
-            sys_id = msg.get_srcSystem()
-            comp_id = msg.get_srcComponent()
-            log(f"Thấy xe PX4: system {sys_id}, component {comp_id}")
+    conn = mavutil .mavlink_connection (args .url, dialect = "common")
+    print ("Chờ HEARTBEAT của xe ...", flush = True)
+    hb = None
+    deadline = time .time () + 30
+    while time .time () < deadline:
+        m = conn .recv_match (type = "HEARTBEAT", blocking = True, timeout = 1)
+        if m and m .autopilot != mavlink .MAV_AUTOPILOT_INVALID:
+            hb = m
             break
+    if hb is None:
+        print ("LỖI: 30 s không thấy xe (ns-3, PX4 đã chạy chưa?)", file = sys .stderr)
+        sys .exit (1)
+    sys_id, comp_id = hb .get_srcSystem (), hb .get_srcComponent ()
+    print (f"Thấy xe: system {sys_id}, component {comp_id}", flush = True)
 
-    pose = {"x": 0.0, "y": 0.0, "vx": 0.0, "vy": 0.0, "speed": 0.0, "yaw": 0.0}
-    status_texts = []
-    mode_history = []
+    def drive (z, seconds):
+        end = time .time () + seconds
+        while time .time () < end:
+            conn .mav .manual_control_send (sys_id, 0, 0, z, 0, 0)
+            conn .recv_match (blocking = False)          # đọc bỏ bớt để bộ đệm không đầy
+            time .sleep (SEND_PERIOD)
 
-    def handle(m):
-        nonlocal sys_id
-        mtype = m.get_type()
-        if mtype == "LOCAL_POSITION_NED":
-            pose["x"], pose["y"] = m.x, m.y
-            pose["vx"], pose["vy"] = m.vx, m.vy
-            pose["speed"] = math.hypot(m.vx, m.vy)
-        elif mtype == "ATTITUDE":
-            pose["yaw"] = math.degrees(m.yaw)
-        elif mtype == "STATUSTEXT":
-            status_texts.append(m.text)
-            log(f"STATUSTEXT: {m.text}")
-        elif mtype == "HEARTBEAT":
-            if m.autopilot != mavlink.MAV_AUTOPILOT_INVALID:
-                armed = bool(m.base_mode & mavlink.MAV_MODE_FLAG_SAFETY_ARMED)
-                cur_mode = mode_name(m.custom_mode)
-                state_desc = f"{cur_mode} ({'ARMED' if armed else 'DISARMED'})"
-                if not mode_history or mode_history[-1] != state_desc:
-                    mode_history.append(state_desc)
-                    log(f"Chế độ xe: {state_desc}")
+    # MANUAL + mở khóa; vừa gửi ga đứng (500) để PX4 thấy có tín hiệu điều khiển
+    conn .mav .command_long_send (sys_id, comp_id, mavlink .MAV_CMD_DO_SET_MODE, 0,
+                                  mavlink .MAV_MODE_FLAG_CUSTOM_MODE_ENABLED, MANUAL, 0, 0, 0, 0, 0)
+    drive (500, 1.0)
+    conn .mav .command_long_send (sys_id, comp_id, mavlink .MAV_CMD_COMPONENT_ARM_DISARM, 0, 1, 0, 0, 0, 0, 0, 0)
+    drive (500, 1.0)
 
-    def pump():
-        while True:
-            m = conn.recv_match(blocking=False)
-            if not m:
-                break
-            handle(m)
-
-    # Chờ 1 giây để đọc vị trí ban đầu
-    settle = time.monotonic() + 1.0
-    while time.monotonic() < settle:
-        pump()
-        time.sleep(0.02)
-
-    # Chuyển MANUAL và Mở khóa
-    log("Chuyển chế độ MANUAL và Mở khóa xe...")
-    conn.mav.command_long_send(sys_id, comp_id, mavlink.MAV_CMD_DO_SET_MODE, 0,
-                               mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED, 1, 0, 0, 0, 0, 0)
-    time.sleep(0.2)
-    conn.mav.command_long_send(sys_id, comp_id, mavlink.MAV_CMD_COMPONENT_ARM_DISARM, 0, 1, 0, 0, 0, 0, 0, 0)
-    time.sleep(0.5)
-
-    # Giai đoạn 1: Lái xe tiến
-    log(f">>> GIAI ĐOẠN 1: Lái xe tiến trong {args.drive_time} s với z={args.throttle}...")
-    drive_end = time.monotonic() + args.drive_time
-    while time.monotonic() < drive_end:
-        conn.mav.manual_control_send(sys_id, 0, 0, args.throttle, 0, 0)
-        pump()
-        time.sleep(0.05)
-
-    # Thời điểm t0: Ngắt gửi lệnh điều khiển
-    t0 = time.monotonic()
-    pump()
-    p0_x, p0_y = pose["x"], pose["y"]
-    v0 = pose["speed"]
-    log(f">>> [t0 = {t0 - start_mono:.2f} s] NGẮT GỬI LỆNH ĐIỀU KHIỂN! (Vận tốc lúc ngắt: {v0:.2f} m/s)")
-
-    # Giai đoạn 2: Quan sát xe phản ứng và dừng lại
-    t_stop = None
-    drift_distance = 0.0
-    observe_end = t0 + args.observe_time
-
-    while time.monotonic() < observe_end:
-        pump()
-        cur_t = time.monotonic()
-        cur_speed = pose["speed"]
-
-        if t_stop is None and (cur_t - t0 > 0.2) and cur_speed < 0.05:
-            t_stop = cur_t
-            drift_distance = math.hypot(pose["x"] - p0_x, pose["y"] - p0_y)
-            log(f">>> [XE DỪNG HẲN] tại t = {t_stop - t0:.2f} s sau khi mất lệnh!")
-            log(f">>> Quãng đường xe trôi thêm: {drift_distance:.2f} m")
-
-        time.sleep(0.02)
-
-    if t_stop is None:
-        t_stop = time.monotonic()
-        drift_distance = math.hypot(pose["x"] - p0_x, pose["y"] - p0_y)
-        stop_time_sec = t_stop - t0
-        log(f">>> Xe chưa dừng hẳn trong thời gian quan sát! Vận tốc cuối: {pose['speed']:.2f} m/s")
+    mark ("drive_start")
+    if args .scenario == "stopcmd":
+        drive (args .throttle, args .drive_time)
+        mark ("t0")
+        time .sleep (args .observe_time)              # KHÔNG gửi gì: mất tín hiệu điều khiển, mạng vẫn tốt
     else:
-        stop_time_sec = t_stop - t0
+        drive (args .throttle, args .drive_time + args .observe_time + args .recover_time)
 
-    # Khóa xe an toàn
-    log("Khóa xe (DISARM) kết thúc thực nghiệm...")
-    conn.mav.command_long_send(sys_id, comp_id, mavlink.MAV_CMD_COMPONENT_ARM_DISARM, 0, 0, 0, 0, 0, 0, 0, 0)
-    time.sleep(0.5)
-    conn.close()
-
-    # Ghi kết quả vào CSV
-    os.makedirs(os.path.dirname(args.out_file), exist_ok=True)
-    write_header = not os.path.exists(args.out_file) or os.path.getsize(args.out_file) == 0
-    with open(args.out_file, "a", encoding="utf-8") as f:
-        if write_header:
-            f.write("timestamp,label,v0_mps,stop_time_s,drift_distance_m,final_mode,statustext\n")
-        now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        status_joined = " | ".join(status_texts).replace(",", ";")
-        final_mode = mode_history[-1] if mode_history else "UNKNOWN"
-        f.write(f"{now_str},{args.label},{v0:.2f},{stop_time_sec:.2f},{drift_distance:.2f},{final_mode},{status_joined}\n")
-
-    print("=" * 72)
-    print(" KẾT QUẢ FAILSAFE:")
-    print(f"  Vận tốc ban đầu tại t0 : {v0:.2f} m/s")
-    print(f"  Thời gian phản ứng/dừng: {stop_time_sec:.2f} s")
-    print(f"  Quãng đường trôi thêm  : {drift_distance:.2f} m")
-    print(f"  Chế độ kết thúc        : {final_mode}")
-    print(f"  Cảnh báo PX4           : {status_joined if status_joined else '(Không có)'}")
-    print(f"  Đã ghi vào             : {args.out_file}")
-    print("=" * 72)
+    drive (500, 1.0)
+    conn .mav .command_long_send (sys_id, comp_id, mavlink .MAV_CMD_COMPONENT_ARM_DISARM, 0, 0, 0, 0, 0, 0, 0, 0)
+    drive (500, 0.5)
+    mark ("end")
+    ev .close ()
+    conn .close ()
 
 
 if __name__ == "__main__":
-    main()
+    main ()

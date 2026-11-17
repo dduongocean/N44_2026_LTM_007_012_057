@@ -1,0 +1,7 @@
+label,scenario,v0_mps,mode_t0,new_mode,t_react_s,t_brake_s,d_max_m,t_stop_s,d_stop_m,t_move_again_s,px4_text
+fs_cut_r1,cut,1.300,MANUAL,AUTO/LOITER,1.293,0.716,0.749,4.596,0.542,7.776,
+fs_cut_r2,cut,1.283,MANUAL,AUTO/LOITER,1.380,0.744,0.774,4.204,0.598,7.644,
+fs_cut_r3,cut,1.274,MANUAL,AUTO/LOITER,1.331,0.715,0.725,4.895,0.551,7.695,
+fs_stopcmd_r1,stopcmd,1.269,MANUAL,AUTO/LOITER,1.378,0.682,0.736,4.401,0.567,7.462,
+fs_stopcmd_r2,stopcmd,1.310,MANUAL,AUTO/LOITER,1.374,0.678,0.690,5.679,0.509,7.878,
+fs_stopcmd_r3,stopcmd,1.291,MANUAL,AUTO/LOITER,1.378,0.643,0.690,4.642,0.509,7.682,

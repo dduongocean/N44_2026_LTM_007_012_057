@@ -23,8 +23,8 @@ NET-03/T2     | Hoàng, Dương   | Chạy loạt thí nghiệm + baseline, ki�
 NET-03/T3     | Phương         | analysis/plot_results.py: biểu đồ + bảng tổng hợp       | data/summary.csv       | DONE       |
 NET-03/T4     | Dương          | pcap + ảnh Wireshark (cờ Retry), config.txt             | NET-01/T2              | DONE       |
 NET-03/T5     | Phương         | Kiểm thử chấp nhận NET-03                               | NET-03/T2, T3          | DONE       |
-NET-04/T1     | Hoàng, Dương   | Thí nghiệm failsafe khi mất tín hiệu (loss 100%)        | NET-01/T3              | TODO       |
-NET-04/T2     | Hoàng, Phương  | Biên bản kiểm thử chấp nhận NET-04                      | NET-04/T1              | TODO       |
+NET-04/T1     | Hoàng, Dương   | Script + chạy failsafe: cut / stopcmd × 3 lần          | NET-01/T3              | DONE       |
+NET-04/T2     | Phương         | Biên bản kiểm thử chấp nhận NET-04                      | NET-04/T1              | DONE       |
 S02/REPORT-1  | Hoàng          | Mục 1 – Đóng góp thành viên                             | cuối sprint            | TODO       |
 S02/REPORT-2  | Hoàng          | Mục 2 – Tính cấp thiết và ý nghĩa                        | –                      | TODO       |
 S02/REPORT-3  | Dương          | Mục 3 – Kiến trúc và thiết kế                            | NET-01/T5              | TODO       |

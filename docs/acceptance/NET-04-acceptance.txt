@@ -1,0 +1,38 @@
+BIÊN BẢN KIỂM THỬ CHẤP NHẬN USER STORY NET-04
+==============================================
+Tên Story      : NET-04 – Đánh giá phản ứng của xe khi mất liên lạc giữa lúc chạy
+Ngày kiểm      : 2026-11-17
+Người kiểm     : Đinh Trần Thảo Phương
+Mã commit kiểm : 59845b7 + thay đổi NET-04 chưa commit (tools/run_failsafe*.sh/py, tools/failsafe_logger.py,
+                 analysis/failsafe_analysis.py) – commit ngay sau biên bản này
+Trạng thái     : [x] ĐẠT TẤT CẢ TIÊU CHÍ (AC1 – AC4)
+
+Điều kiện: ns-3 10 m (kênh fading như NET-03), PX4 SITL gz_r1_rover trong ns-rover, ga MANUAL_CONTROL z=750
+(v0 ≈ 1.3 m/s), lái 4 s trước t0, quan sát 15 s sau t0.
+
+[x] AC1 – Kịch bản lặp lại được
+    Kết quả: tools/run_failsafe.sh chạy 2 kịch bản × 3 lần (fs_cut_r1..r3, fs_stopcmd_r1..r3); mỗi lần có
+             data/failsafe/<nhãn>_pose.csv (ghi trong ns-rover qua 127.0.0.1:14550, không qua ns-3) và _events.csv;
+             kịch bản cut có thêm _netem.csv (t0 = lúc đặt netem loss 100% trên veth-gcs và veth-rover; restore = t0 + 15 s).
+    Đánh giá: [x] Đạt
+
+[x] AC2 – Đo được
+    Kết quả: data/failsafe_summary.csv đủ 6 dòng; mỗi dòng có v0, t_react (đổi chế độ), t_brake, d_max, t_stop, d_stop,
+             t_move_again. Độ lệch chuẩn 3 lần nhỏ (t_brake ± 0.02 s, d_max ± 0.02–0.03 m).
+             Ghi chú: t_react lấy từ HEARTBEAT 1 Hz nên là cận trên; d_max (quãng xa nhất) là chỉ số an toàn chính vì sau
+             khi phanh xe lùi lại ~0.2 m làm d_stop nhỏ hơn.
+    Đánh giá: [x] Đạt
+
+[x] AC3 – Biểu đồ vận tốc quanh t0
+    Kết quả: analysis/failsafe_speed.png – 2 khung (cut, stopcmd), 3 đường mỗi khung, vạch t0 và vạch nối lại mạng.
+    Đánh giá: [x] Đạt
+
+[x] AC4 – Giải thích theo tham số failsafe
+    Kết quả: NET-04.txt mục 6: phanh ~0.7 s ≈ COM_RC_LOSS_T 0.5 s; Hold 5 s (COM_FAIL_ACT_T); rồi Return (NAV_RCL_ACT = 2)
+             tới ~2 m/s và tự khóa khi về tới nơi; cut ≈ stopcmd (PX4 coi cả hai là mất MANUAL_CONTROL; NAV_DLL_ACT = 0).
+    Đánh giá: [x] Đạt
+
+KẾT LUẬN
+--------
+NET-04 ĐẠT AC1–AC4. Chuyển NET-04: DANG_LAM -> XONG.
+Ngoài phạm vi (ghi vào hướng phát triển): kịch bản (b) lái xe ở khoảng cách chập chờn (70–80 m theo NET-03).

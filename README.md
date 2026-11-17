@@ -166,6 +166,16 @@ Lưu ý:
   ```
 Số liệu chi tiết từng giây lưu tại `data/raw/<label>.csv`, dòng tổng kết được ghi nối tiếp vào `data/summary.csv`.
 
+### Thực nghiệm mất liên lạc giữa lúc chạy (NET-04)
+Cần: netns + PX4 trong ns-rover đang chạy (mục "Lái xe qua ns-3"), ns-3 CHƯA chạy. Khoảng 2.5 phút.
+```bash
+sudo NS3_BIN=$NS3 tools/run_failsafe.sh            # 2 kịch bản (cut, stopcmd) × 3 lần, ns-3 10 m
+```
+- `cut`: xe chạy tiến 4 s, rồi netem loss 100% trên `veth-gcs` và `veth-rover` (t0) trong 15 s, rồi nối lại.
+- `stopcmd`: mạng tốt, script lái ngừng gửi `MANUAL_CONTROL` tại t0 (để so sánh).
+- Vị trí xe đọc qua instance localhost trong ns-rover (`tools/failsafe_logger.py`, 127.0.0.1:14550), không qua ns-3.
+- Kết quả: `data/failsafe/`, `data/failsafe_summary.csv`, `analysis/failsafe_speed.png` (tự chạy `analysis/failsafe_analysis.py`).
+
 ### Chạy loạt thí nghiệm khoảng cách (NET-03)
 Kênh ns-3 có fading Nakagami (m = 1.5) và ReferenceLoss 40.046 dB (xem `docs/experiments/config.txt`). Build lại `rover-wifi` nếu bản build cũ hơn thay đổi này.
 ```bash
