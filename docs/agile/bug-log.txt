@@ -12,7 +12,7 @@ BUG-01| 2026-11-17 | NET-01/T2 (phát hiện ở T3) | Lệnh: sudo .../ns3-dev-
       |      |            | Sửa: setup-netns.sh cố định MAC veth-gcs 02:00:00:00:00:01, veth-rover 02:00:00:00:00:02 và tắt
       |      |            | IPv6 trên bridge/tap/veth-*-br; rover-wifi.cc gán sẵn đúng MAC đó cho WifiMac và
       |      |            | FrameExchangeManager (SetWifiAddress). Đã dựng lại lỗi bằng chương trình ns-3 nhỏ không cần tap:
-      |      |            | chưa sửa -> cùng assert; đã sửa -> 6/6 gói tới. | DA_SUA (kiểm lại 2026-11-17: ping 0% loss, drive_check tien tiến +0.54 m) | (điền sau khi commit)
+      |      |            | chưa sửa -> cùng assert; đã sửa -> 6/6 gói tới. | DA_SUA (kiểm lại 2026-11-17: ping 0% loss, drive_check tien tiến +0.54 m) | 997df68
 BUG-02| 2026-11-18 | NET-02/T2 (phát hiện ở NET-03/T2) | Lệnh: tools/run_sweep.sh (8 mức × 3 lần × 60 s, kênh fading).
       |      |            | Thấy: 10–60 m luôn mất 318–320 gói / 60 s (1.33–1.35%), không đổi theo khoảng cách; loạt cũ không
       |      |            | fading cũng ~1.3%. Mong đợi: ~0% khi tín hiệu mạnh.
@@ -23,7 +23,7 @@ BUG-02| 2026-11-18 | NET-02/T2 (phát hiện ở NET-03/T2) | Lệnh: tools/run_
       |      |            | Sửa: rover/drivers/mavlink.py thêm packet_source () đọc lại sysid, compid, seq từ header của
       |      |            | message lạ; test_18 trong tests/test_mavlink.py (viết trước, thất bại 0 != 1, sau sửa đạt).
       |      |            | Kiểm lại trên cùng pcap: mất 358 (1.35%) -> 3 (0.01%). Ảnh hưởng: mọi số liệu đo trước khi sửa
-      |      |            | có mất gói cao hơn thật ~1.3 điểm %. | DA_SUA (kiểm 2026-11-17: baseline localhost 0.00%, 10–60 m 0.00–0.01%) | (điền sau khi commit)
+      |      |            | có mất gói cao hơn thật ~1.3 điểm %. | DA_SUA (kiểm 2026-11-17: baseline localhost 0.00%, 10–60 m 0.00–0.01%) | 63eb751
 BUG-03| 2026-11-17 | NET-02/T4 (phát hiện ở NET-02 lần kiểm 2, AC4) | Lệnh: chạy lại tools/run_experiment.py với cùng --label (ví dụ acc_ref) sau một lần chạy hỏng.
       |      |            | Thấy: data/raw/<label>.csv của lần trước bị ghi đè lặng lẽ (mở file bằng "w"); summary vẫn nối thêm dòng
       |      |            | nên summary có dòng mà không còn file raw tương ứng. Mong đợi (NET-02 AC4): chạy lại không ghi đè file cũ.
@@ -31,7 +31,7 @@ BUG-03| 2026-11-17 | NET-02/T4 (phát hiện ở NET-02 lần kiểm 2, AC4) | L
       |      |            | Sửa: run_experiment.py dừng với mã 2 và báo lỗi nếu file raw cùng nhãn đã có, kiểm trước khi mở socket;
       |      |            | run_failsafe.sh kiểm mọi file của các nhãn sắp chạy trước khi bắt đầu. Test: tests/test_run_experiment.py
       |      |            | (viết trước, thất bại vì file bị ghi đè; sau sửa đạt; 58/58 test đạt). Hệ quả: chạy lại run_sweep.sh /
-      |      |            | run_failsafe.sh vào thư mục đã có số liệu sẽ dừng ngay – chuyển số liệu cũ sang data/old/<tên>/ trước. | DA_SUA | (điền sau khi commit)
+      |      |            | run_failsafe.sh vào thư mục đã có số liệu sẽ dừng ngay – chuyển số liệu cũ sang data/old/<tên>/ trước. | DA_SUA | 2503396
 
 Trạng thái: MO (mở) | DANG_SUA | DA_SUA
 

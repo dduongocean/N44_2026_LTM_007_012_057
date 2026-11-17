@@ -4,7 +4,7 @@ Tên Story      : NET-02 – Công cụ đo mất gói, RTT, jitter của đư�
 Lần kiểm       : 2 (thay cho lần kiểm 1 ngày 2026-11-16 – lý do ở mục 4)
 Ngày kiểm      : 2026-11-17
 Người kiểm     : Trương Nhật Hoàng (không làm phần nào của NET-02)
-Mã commit kiểm : a9589f4 (đã gồm sửa BUG-02) + sửa BUG-03 và tools/run_net02_acceptance.sh (commit: điền sau)
+Mã commit kiểm : a9589f4 (đã gồm sửa BUG-02) + sửa BUG-03 (2503396); số liệu và script tools/run_net02_acceptance.sh ở 30b328e
 Trạng thái     : [x] ĐẠT AC1 – AC4 (AC4 đạt sau khi sửa BUG-03 phát hiện trong lần kiểm này)
 
 1. PHẦN CHUẨN BỊ MÔI TRƯỜNG
