@@ -1,0 +1,7 @@
+label,distance,duration,rx,lost,loss_rate,rtt_mean_ms,rtt_p95_ms,rtt_jitter_ms,hb_jitter_ms,probes_lost,lost_events
+acc_ref,5.0,60.0,0,0,1.0000,,,,,0,0
+acc_loss10,5.0,9.6,0,0,1.0000,,,,,0,0
+acc_delay50,5.0,1.1,0,0,1.0000,,,,,0,0
+acc_ref,5.0,60.0,23857,0,0.0000,10.95,10.63,4.76,4.20,0,0
+acc_loss10,5.0,60.0,21622,2344,0.0978,10.44,10.59,0.91,418.02,26,0
+acc_delay50,5.0,60.0,23664,76,0.0032,60.50,62.63,4.83,3.87,0,0
