@@ -99,6 +99,10 @@ def main () -> None:
         os .makedirs (summary_dir, exist_ok = True)
 
     raw_csv_path = os .path .join (args .out_dir, f"{args .label}.csv")
+    # BUG-03: không ghi đè số liệu của lần chạy trước có cùng nhãn (NET-02 AC4). Kiểm trước khi mở socket.
+    if os .path .exists (raw_csv_path):
+        print (f"LỖI: đã có {raw_csv_path}. Đổi --label hoặc tự chuyển file cũ đi chỗ khác rồi chạy lại.", file = sys .stderr)
+        sys .exit (2)
     command_str = " " .join (sys .argv)
     start_wall_time = datetime .datetime .now () .strftime ("%Y-%m-%d %H:%M:%S")
 

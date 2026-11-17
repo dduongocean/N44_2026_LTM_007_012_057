@@ -24,8 +24,17 @@ BUG-02| 2026-11-18 | NET-02/T2 (phát hiện ở NET-03/T2) | Lệnh: tools/run_
       |      |            | message lạ; test_18 trong tests/test_mavlink.py (viết trước, thất bại 0 != 1, sau sửa đạt).
       |      |            | Kiểm lại trên cùng pcap: mất 358 (1.35%) -> 3 (0.01%). Ảnh hưởng: mọi số liệu đo trước khi sửa
       |      |            | có mất gói cao hơn thật ~1.3 điểm %. | DA_SUA (kiểm 2026-11-17: baseline localhost 0.00%, 10–60 m 0.00–0.01%) | (điền sau khi commit)
+BUG-03| 2026-11-17 | NET-02/T4 (phát hiện ở NET-02 lần kiểm 2, AC4) | Lệnh: chạy lại tools/run_experiment.py với cùng --label (ví dụ acc_ref) sau một lần chạy hỏng.
+      |      |            | Thấy: data/raw/<label>.csv của lần trước bị ghi đè lặng lẽ (mở file bằng "w"); summary vẫn nối thêm dòng
+      |      |            | nên summary có dòng mà không còn file raw tương ứng. Mong đợi (NET-02 AC4): chạy lại không ghi đè file cũ.
+      |      |            | Script NET-04 (failsafe_logger.py, run_failsafe_experiment.py, run_failsafe.sh) cũng ghi đè cùng kiểu.
+      |      |            | Sửa: run_experiment.py dừng với mã 2 và báo lỗi nếu file raw cùng nhãn đã có, kiểm trước khi mở socket;
+      |      |            | run_failsafe.sh kiểm mọi file của các nhãn sắp chạy trước khi bắt đầu. Test: tests/test_run_experiment.py
+      |      |            | (viết trước, thất bại vì file bị ghi đè; sau sửa đạt; 58/58 test đạt). Hệ quả: chạy lại run_sweep.sh /
+      |      |            | run_failsafe.sh vào thư mục đã có số liệu sẽ dừng ngay – chuyển số liệu cũ sang data/old/<tên>/ trước. | DA_SUA | (điền sau khi commit)
 
 Trạng thái: MO (mở) | DANG_SUA | DA_SUA
 
 Hạn chế đã biết của code hiện có (chưa phải lỗi cần sửa trong sprint, ghi để không quên):
+- SeqTracker coi gói đến sai thứ tự như một lần đứt quãng: mỗi lần seq lùi làm khoảng hở trước và sau nó bị cộng vào số mất dù không mất gói nào. Thấy ở NET-02 lần kiểm 2, netem delay 50 ms: 21 lần seq lùi (xác nhận trên pcap tap-gcs) -> 76 bản tin "mất" (0.32%) dù chỉ đặt trễ; loạt chính thức (tools/run_net02_acceptance.sh): 12 / 19 / 27 resync -> 35 / 54 / 76 bản tin "mất". Ở loạt NET-03 (không netem) chỉ có 2 lần resync trong 27 lần đo (d040_r1 và d060_r1, mỗi lần 1; hai lần này đếm 2 và 6 bản tin mất) nên không ảnh hưởng kết luận. Hướng sửa: đếm theo cửa sổ seq đã thấy (như đếm mất gói của RTP) thay vì chỉ so với gói liền trước.
 - ArmControl dùng một biến _last_arm_request để gắn ACK với lệnh; khi nhiều lệnh mở / khóa chưa được xác nhận (mất gói), thông báo có thể gắn nhầm. Không ảnh hưởng số đo vì RTT của NET-02 đo bằng TIMESYNC, không dựa vào ArmControl.

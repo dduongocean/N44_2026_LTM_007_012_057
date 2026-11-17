@@ -63,6 +63,17 @@ cleanup() {
     LOG_PID=""; NS3_PID=""
 }
 trap cleanup EXIT INT TERM
+# BUG-03: các script con mở file bằng "w" / ">" nên sẽ ghi đè số liệu cũ cùng nhãn. Kiểm hết trước khi chạy lần nào.
+for scen in $SCENARIOS; do
+    for r in $(seq 1 "$RUNS"); do
+        for f in "$OUT_DIR/fs_${scen}_r${r}"{_pose.csv,_events.csv,_netem.csv,.ns3.log}; do
+            if [[ -e "$f" ]]; then
+                echo "LỖI: đã có $f. Chuyển số liệu cũ trong $OUT_DIR đi chỗ khác (ví dụ data/old/<tên>/) rồi chạy lại." >&2
+                exit 2
+            fi
+        done
+    done
+done
 pkill -9 -f "^${NS3_BIN}( |$)" 2>/dev/null || true
 netem_off
 
