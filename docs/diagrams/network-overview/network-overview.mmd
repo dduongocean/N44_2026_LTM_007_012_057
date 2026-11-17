@@ -8,7 +8,7 @@ flowchart TD
     subgraph NS_GCS ["Network Namespace: ns-gcs (Trạm mặt đất)"]
         direction TB
         APP_GCS["Chương trình đo (run_experiment.py)<br/>hoặc Lái thử (drive_check.py)<br/>IP: 10.0.0.1 | Port: 14540 (UDP)"]
-        VETH_GCS["Cổng mạng veth-gcs<br/>IP: 10.0.0.1/24 | MAC: tự sinh"]
+        VETH_GCS["Cổng mạng veth-gcs<br/>IP: 10.0.0.1/24 | MAC: 02:00:00:00:00:01 (cố định)"]
         APP_GCS <-->|"Socket UDP / Linux IP Stack"| VETH_GCS
     end
 
@@ -27,7 +27,7 @@ flowchart TD
             direction LR
             GHOST0["Ghost Node 0 (GCS)<br/>WifiNetDevice (802.11g)<br/>Tọa độ: (0.0, 0.0, 0.0)"]
             
-            WIFI_CH["Kênh truyền vô tuyến ns-3 (YansWifiChannel)<br/>-----------------------------------------<br/>• Chuẩn: 802.11g Ad-hoc (AdhocWifiMac)<br/>• Tốc độ: ErpOfdmRate6Mbps<br/>• Suy hao: LogDistance (Exponent = 3.0)<br/>• Trễ truyền sóng: ConstantSpeed<br/>• Khoảng cách: d = 0 đến 200+ mét<br/>• Cơ chế gửi lại: Tầng MAC (Retry Limit)"]
+            WIFI_CH["Kênh truyền vô tuyến ns-3 (YansWifiChannel)<br/>-----------------------------------------<br/>• Chuẩn: 802.11g Ad-hoc (AdhocWifiMac)<br/>• Tốc độ: ErpOfdmRate6Mbps<br/>• Suy hao: LogDistance (n = 3.0, L0 = 40.046 dB)<br/>• Fading: Nakagami (m = 1.5)<br/>• Ngưỡng thu: -82 dBm<br/>• Trễ truyền sóng: ConstantSpeed<br/>• Khoảng cách đo: d = 10 đến 100 m<br/>• Gửi lại MAC: tối đa 7 lần; hàng đợi 500 gói, MaxDelay 500 ms"]
             
             GHOST1["Ghost Node 1 (Rover)<br/>WifiNetDevice (802.11g)<br/>Tọa độ: (distance, 0.0, 0.0)"]
 
@@ -49,8 +49,10 @@ flowchart TD
 
     subgraph NS_ROVER ["Network Namespace: ns-rover (Xe Rover PX4)"]
         direction TB
-        VETH_ROVER["Cổng mạng veth-rover<br/>IP: 10.0.0.2/24 | MAC: tự sinh"]
-        PX4_APP["PX4 SITL + Gazebo Garden (gz_r1_rover)<br/>IP: 10.0.0.2<br/>• Port 14540 (UDP Onboard - MAVLink tới GCS)<br/>• Port 14550 (UDP - Đọc trạng thái nội bộ xe)"]
+        VETH_ROVER["Cổng mạng veth-rover<br/>IP: 10.0.0.2/24 | MAC: 02:00:00:00:00:02 (cố định)"]
+        PX4_APP["PX4 SITL + Gazebo gz-sim 8 (gz_r1_rover)<br/>IP: 10.0.0.2<br/>• UDP 14581 -> 10.0.0.1:14540 (Onboard, qua ns-3)<br/>• UDP 18570 -> 127.0.0.1:14550 (nội bộ ns-rover, không qua ns-3)"]
+        LOGGER["failsafe_logger.py (NET-04)<br/>nghe 127.0.0.1:14550, ghi vị trí xe"]
+        PX4_APP -->|"lo của ns-rover"| LOGGER
         VETH_ROVER <-->|"Socket UDP / Linux IP Stack"| PX4_APP
     end
 
@@ -67,4 +69,4 @@ flowchart TD
     class NS_GCS,NS_ROVER nsStyle;
     class HOST,GCS_NET,ROVER_NET hostStyle;
     class NS3_SIM ns3Style;
-    class APP_GCS,PX4_APP appStyle;
+    class APP_GCS,PX4_APP,LOGGER appStyle;

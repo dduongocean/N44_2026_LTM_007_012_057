@@ -32,7 +32,8 @@ tap-gcs        | Host OS         | không có IP (tap L2)    | Cổng TAP ảo n
 tap-rover      | Host OS         | không có IP (tap L2)    | Cổng TAP ảo nối br-rover vào Ghost Node 1 của ns-3
 Ghost Node 0   | Trong ns-3      | (0.0, 0.0, 0.0)         | Node đại diện phía trạm trong mô phỏng không gian vô tuyến
 Ghost Node 1   | Trong ns-3      | (d, 0.0, 0.0)           | Node đại diện phía xe trong mô phỏng không gian vô tuyến (cách d mét)
-YansWifiChannel| Trong ns-3      | Kênh Wi-Fi 802.11g      | Kênh vô tuyến mô phỏng suy hao Log-distance, trễ và mất gói
+YansWifiChannel| Trong ns-3      | Kênh Wi-Fi 802.11g      | Kênh vô tuyến: suy hao Log-distance + fading Nakagami (m = 1.5), trễ lan truyền
+failsafe_logger| ns-rover        | nghe 127.0.0.1:14550    | Đọc vị trí xe qua instance MAVLink #0 của PX4, không qua ns-3 (NET-04)
 
 
 3. NGUYÊN LÝ HOẠT ĐỘNG CỦA TAPBRIDGE CHẾ ĐỘ UseLocal
@@ -42,14 +43,17 @@ YansWifiChannel| Trong ns-3      | Kênh Wi-Fi 802.11g      | Kênh vô tuyến 
   + Thiết bị mạng Wi-Fi mô phỏng của ns-3 (WifiNetDevice) do bản chất vô tuyến không hỗ trợ chế độ promiscuous (bắt mọi khung MAC bất kỳ).
   + Chế độ "UseLocal" cho phép nối một Linux Bridge vào ns-3 với điều kiện trên Linux Bridge đó chỉ có DUY NHẤT một thiết bị khác đang hoạt động (chính là đầu veth của netns tương ứng).
   + Khi đó, TapBridge sẽ trích xuất khung Ethernet từ tap device, gán địa chỉ MAC phù hợp và đưa vào hàng đợi truyền phát của card Wi-Fi ảo mà không cần promiscuous mode.
+- Hệ quả của việc "mượn MAC": mỗi bridge chỉ được có một thiết bị tự phát gói. Vì vậy setup-netns.sh tắt IPv6 trên bridge, tap và veth-*-br (nếu không chúng tự gửi Router/Neighbor Solicitation và TapBridge có thể học nhầm MAC).
+- MAC cố định (BUG-01): veth-gcs = 02:00:00:00:00:01, veth-rover = 02:00:00:00:00:02 (setup-netns.sh), và rover-wifi.cc gán sẵn đúng hai MAC này cho WifiMac và FrameExchangeManager. Nếu để TapBridge tự đổi MAC khi có khung đầu tiên, WifiNetDevice::SetAddress chỉ đổi WifiMac nên ns-3 dừng với lỗi assert linkId.has_value().
+- ARP tĩnh: setup-netns.sh gán sẵn MAC của bên kia trong bảng ARP của mỗi netns, vì khung broadcast 802.11 (ARP) không có ACK, không được gửi lại nên dễ mất ở xa.
 - Cấu hình bridge-nf: Để tránh trường hợp tường lửa iptables của host (nhất là khi máy cài Docker) lọc hoặc chặn các gói tin đi qua Linux Bridge, cần tắt bridge-nf bằng cách ghi 0 vào /proc/sys/net/bridge/bridge-nf-call-iptables.
 
 
 4. CHI TIẾT ĐƯỜNG ĐI CỦA CÁC LUỒNG GÓI TIN HAI CHIỀU
 ----------------------------------------------------
 
-4.1. Luồng 1: Gói tin HEARTBEAT / Telemetry từ Xe gửi về Trạm (10.0.0.2 -> 10.0.0.1:14540)
-  1. PX4 SITL trong ns-rover sinh gói tin MAVLink HEARTBEAT định kỳ (1 Hz hoặc 10 Hz) gửi tới socket UDP 10.0.0.1:14540.
+4.1. Luồng 1: Gói tin HEARTBEAT / Telemetry từ Xe gửi về Trạm (10.0.0.2:14581 -> 10.0.0.1:14540)
+  1. PX4 SITL trong ns-rover (instance MAVLink Onboard thêm bởi run-px4.sh, socket UDP cổng 14581) gửi HEARTBEAT 1 Hz cùng các message telemetry khác (tổng ~350–415 message/s) tới 10.0.0.1:14540.
   2. Kernel trong ns-rover đóng gói: Payload MAVLink -> UDP Header -> IP Header (Src: 10.0.0.2, Dst: 10.0.0.1) -> Ethernet Frame (Dst MAC: ARP của 10.0.0.1).
   3. Khung Ethernet đi ra cổng veth-rover, xuất hiện tại đầu đối diện veth-rover-br trong namespace chính.
   4. Linux Bridge br-rover nhận khung tại veth-rover-br và chuyển tiếp (forward L2) sang cổng tap-rover.
@@ -59,16 +63,18 @@ YansWifiChannel| Trong ns-3      | Kênh Wi-Fi 802.11g      | Kênh vô tuyến 
   8. Sóng vô tuyến truyền qua YansWifiChannel:
      - Tính toán suy hao công suất thu theo khoảng cách d bằng mô hình LogDistancePropagationLossModel:
          PL(d) = PL_0 + 10 * n * log10(d / d_0)
-     - Tính SNR tại đầu thu Ghost Node 0. Nếu SNR thấp (khoảng cách lớn), xác suất lỗi bit tăng dẫn đến hỏng khung.
-     - Tầng MAC thực hiện cơ chế gửi lại (ARQ - Retry Limit tối đa 7 lần). Nếu hết số lần thử lại mà vẫn không nhận được ACK vô tuyến, gói tin bị hủy (Packet Loss).
+       với PL_0 = 40.046 dB (d_0 = 1 m, 2.412 GHz), n = 3.0; công suất thu trung bình P_rx = 16 dBm - PL(d).
+     - Fading Nakagami (m = 1.5): mỗi khung nhân thêm một hệ số công suất ngẫu nhiên (phân phối Gamma, trung bình 1), nên công suất thu dao động từng khung quanh P_rx.
+     - Khung có công suất thu dưới -82 dBm bị bỏ ngay ở bước phát hiện preamble; trên ngưỡng thì xác suất lỗi tính theo SNR. Không có fading, mọi khung cùng khoảng cách có cùng công suất nên liên lạc đứt gọn tại một khoảng cách (calibration.txt mục 6).
+     - Tầng MAC thực hiện cơ chế gửi lại (ARQ, tối đa 7 lần thử, cờ Retry trong header 802.11). Nếu hết số lần thử mà vẫn không nhận được ACK, gói bị hủy. Mỗi lần gửi lại tốn thời gian kênh nên ở xa hàng đợi MAC đầy dần: gói chờ quá 500 ms (MaxDelay) cũng bị hủy.
   9. Nếu truyền thành công, tầng PHY và MAC của Ghost Node 0 giải mã khung vô tuyến thành khung Ethernet chuẩn.
   10. TapBridge phía trạm ghi khung Ethernet này ra thiết bị tap-gcs.
   11. Linux Bridge br-gcs nhận khung từ tap-gcs và forward sang cổng veth-gcs-br.
   12. Khung xuất hiện ở đầu veth-gcs bên trong namespace ns-gcs.
   13. Kernel của ns-gcs bóc tách Ethernet -> IP -> UDP và đẩy dữ liệu MAVLink HEARTBEAT vào socket của chương trình đo (run_experiment.py) hoặc công cụ lái thử (drive_check.py).
 
-4.2. Luồng 2: Lệnh điều khiển (ARM, SETPOINT_POSITION / VELOCITY) từ Trạm sang Xe (10.0.0.1 -> 10.0.0.2:14540)
-  1. drive_check.py hoặc run_experiment.py phát lệnh mở khóa (ARM) hoặc lệnh vận tốc điều khiển xe tiến/lùi.
+4.2. Luồng 2: Lệnh điều khiển (COMMAND_LONG đổi chế độ / mở khóa, MANUAL_CONTROL) từ Trạm sang Xe (10.0.0.1:14540 -> 10.0.0.2:14581)
+  1. Trạm không cần biết trước địa chỉ xe: socket nghe udpin:0.0.0.0:14540 học IP và cổng nguồn (10.0.0.2:14581) từ gói đầu tiên của xe rồi gửi ngược về đó. drive_check.py / run_failsafe_experiment.py gửi COMMAND_LONG 176 (đổi sang MANUAL), 400 (mở / khóa), rồi MANUAL_CONTROL đều đặn để lái (z > 500 tiến, z < 500 lùi). run_experiment.py không lái xe, chỉ gửi TIMESYNC (luồng 3).
   2. Gói tin đi theo thứ tự:
      ns-gcs (veth-gcs)
        ──▶ veth-gcs-br (Host)
@@ -81,14 +87,14 @@ YansWifiChannel| Trong ns-3      | Kênh Wi-Fi 802.11g      | Kênh vô tuyến 
        ──▶ br-rover
        ──▶ veth-rover-br
        ──▶ veth-rover (ns-rover)
-       ──▶ PX4 SITL (nhận lệnh, chuyển chế độ OFFBOARD, điều khiển động cơ xe trong Gazebo).
+       ──▶ PX4 SITL (nhận lệnh ở chế độ MANUAL, điều khiển động cơ xe trong Gazebo).
 
-4.3. Luồng 3: Gói tin đồng bộ thời gian TIMESYNC tính trễ RTT
-  1. Chương trình đo tại trạm gửi message MAVLink TIMESYNC (tc1 = thời gian trạm phát đi, ts1 = 0).
+4.3. Luồng 3: Gói tin TIMESYNC đo trễ khứ hồi RTT
+  1. Chương trình đo tại trạm gửi TIMESYNC 5 lần/giây với tc1 = 0, ts1 = thời điểm gửi (ns, đồng hồ của trạm).
   2. Gói tin truyền qua chuỗi mạng mô phỏng ns-3 tới PX4.
-  3. PX4 điền ts1 = thời gian của xe và gửi ngược lại về trạm.
-  4. Trạm nhận lại gói tại thời điểm now.
-  5. Độ trễ khứ hồi tính bằng: RTT = now - tc1. Nếu trên đường Wi-Fi có nhiều lần gửi lại MAC (hoặc nghẽn hàng đợi), RTT sẽ tăng cao và dao động (sinh jitter).
+  3. PX4 trả lại TIMESYNC với tc1 = thời gian của xe (khác 0), ts1 giữ nguyên.
+  4. Trạm nhận lại gói tại thời điểm now; chỉ gói có tc1 != 0 được coi là phản hồi (PX4 cũng tự gửi TIMESYNC yêu cầu với tc1 = 0, trạm bỏ qua).
+  5. RTT = now - ts1. Cả hai mốc đều theo đồng hồ của trạm nên không cần đồng bộ giờ hai bên. Không có phản hồi sau 2 s thì lần đo coi là mất. Khi Wi-Fi phải gửi lại nhiều lần hoặc hàng đợi MAC đầy, RTT tăng và dao động (jitter).
 
 
 5. SO SÁNH CẤU HÌNH QUA NS-3 VÀ CẤU HÌNH LOOPBACK (BASELINE)
@@ -96,7 +102,9 @@ YansWifiChannel| Trong ns-3      | Kênh Wi-Fi 802.11g      | Kênh vô tuyến 
 Đặc điểm               | Cấu hình Baseline (Loopback)          | Cấu hình qua ns-3 (Đề tài)
 -----------------------+---------------------------------------+---------------------------------------------------------
 Đường truyền           | Giao diện lo (127.0.0.1)              | Wi-Fi 802.11g qua 2 netns + TapBridge
-Tỷ lệ mất gói          | Luôn bằng 0%                          | Thay đổi từ 0% đến 100% phụ thuộc khoảng cách d
-Độ trễ RTT             | Cực nhỏ (&lt; 0.1 ms), không dao động  | Từ vài ms đến hàng chục/trăm ms do suy hao và MAC retry
+Tỷ lệ mất gói          | 0.00% (đo: baseline_r1..r3)           | 0% tới 60 m; 7.6% ở 70 m; 63–90% ở 80–100 m (NET-03)
+Độ trễ RTT             | 10.3 ms, jitter 0.12 ms (phần nền     | 10.5 ms ở 10–50 m; ~445 ms ở 70 m; ~500 ms (trần MaxDelay)
+                       | ~10 ms do chu kỳ vòng lặp của chương  | ở 80–100 m, do gửi lại MAC và hàng đợi đầy
+                       | trình đo, không do mạng)              |
 Phản ứng của xe Rover  | Xe phản hồi tức thì, không bị đứt kết nối | Xuất hiện hiện tượng giật cục, trễ lệnh hoặc kích hoạt Failsafe
 Ý nghĩa nghiên cứu     | Dùng làm mốc đối chứng chuẩn          | Phản ánh sát thực tế môi trường truyền sóng không dây
