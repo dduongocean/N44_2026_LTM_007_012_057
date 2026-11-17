@@ -90,11 +90,11 @@ failsafe_logger| ns-rover        | nghe 127.0.0.1:14550    | Đọc vị trí xe
        ──▶ PX4 SITL (nhận lệnh ở chế độ MANUAL, điều khiển động cơ xe trong Gazebo).
 
 4.3. Luồng 3: Gói tin TIMESYNC đo trễ khứ hồi RTT
-  1. Chương trình đo tại trạm gửi TIMESYNC 5 lần/giây với tc1 = 0, ts1 = thời điểm gửi (ns, đồng hồ của trạm).
+  1. Chương trình đo tại trạm gửi TIMESYNC 5 lần/giây với tc1 = 0 và ts1 = mã probe (số thứ tự 1, 2, 3, ...); đồng thời ghi lại thời điểm gửi của mã đó theo đồng hồ của trạm (RttTracker).
   2. Gói tin truyền qua chuỗi mạng mô phỏng ns-3 tới PX4.
   3. PX4 trả lại TIMESYNC với tc1 = thời gian của xe (khác 0), ts1 giữ nguyên.
   4. Trạm nhận lại gói tại thời điểm now; chỉ gói có tc1 != 0 được coi là phản hồi (PX4 cũng tự gửi TIMESYNC yêu cầu với tc1 = 0, trạm bỏ qua).
-  5. RTT = now - ts1. Cả hai mốc đều theo đồng hồ của trạm nên không cần đồng bộ giờ hai bên. Không có phản hồi sau 2 s thì lần đo coi là mất. Khi Wi-Fi phải gửi lại nhiều lần hoặc hàng đợi MAC đầy, RTT tăng và dao động (jitter).
+  5. Đọc ts1 của phản hồi để biết đó là probe nào; RTT = now - thời điểm gửi đã ghi của probe đó. Cả hai mốc đều theo đồng hồ của trạm nên không cần đồng bộ giờ hai bên. Không có phản hồi sau 2 s thì lần đo coi là mất. Khi Wi-Fi phải gửi lại nhiều lần hoặc hàng đợi MAC đầy, RTT tăng và dao động (jitter).
 
 
 5. SO SÁNH CẤU HÌNH QUA NS-3 VÀ CẤU HÌNH LOOPBACK (BASELINE)

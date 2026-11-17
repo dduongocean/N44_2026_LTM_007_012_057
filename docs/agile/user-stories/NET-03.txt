@@ -42,3 +42,14 @@ T4  pcap + ảnh Wireshark (AC4); ghi docs/experiments/config.txt (AC5)
 
 T5  Kiểm thử chấp nhận NET-03
     Trạng thái: DONE (2026-11-17) – docs/acceptance/NET-03-acceptance.txt, AC1–AC5 Đạt
+
+4. QUY ƯỚC "ĐƯỜNG ĐIỀU KHIỂN TIN CẬY" (CHỐT 2026-11-17 – nhóm xác nhận, ghi ở Sprint Review sprint-02.txt)
+---------------------------------------------------------------------------------------------
+Lý do: story kết luận "từ khoảng cách nào việc điều khiển không còn tin cậy" nhưng chưa định nghĩa "tin cậy" (phát hiện khi rà soát mục 2 báo cáo). Dùng cho mục tiêu M3 và mục 6, 7 của báo cáo.
+Xếp loại một khoảng cách theo cả 3 lần đo ở mức đó:
+  - TIN CẬY      : không lần nào mất kết nối (lost_events = 0), mọi lần có mất gói < 1% và RTT p95 < 100 ms.
+  - SUY GIẢM     : không lần nào mất kết nối, nhưng có lần vượt ngưỡng mất gói hoặc ngưỡng RTT.
+  - KHÔNG TIN CẬY: có ít nhất một lần mất kết nối (quá 3 s không có HEARTBEAT).
+Áp vào data/summary.csv: 10–60 m TIN CẬY; 70 m SUY GIẢM (mất 7.2–8.3%, RTT p95 ~502 ms); 80–100 m KHÔNG TIN CẬY (15 / 20 / 11 lần mất kết nối trong 3 lần đo).
+Độ nhạy: ngưỡng 1% và 100 ms là quy ước của nhóm. Lần xấu nhất ở 60 m: mất 0.02%, RTT p95 20.9 ms; lần tốt nhất ở 70 m: mất 7.20%, RTT p95 501 ms. Vì vậy mọi ngưỡng mất gói trong khoảng (0.02%, 7.2%] và mọi ngưỡng RTT p95 trong khoảng (21 ms, 501 ms] đều cho cùng ranh giới 60 / 70 m; ranh giới 70 / 80 m do mất kết nối quyết định, không phụ thuộc ngưỡng.
+Giới hạn: mất gói đo chiều xe -> trạm; NET-03 không gửi lệnh lái nên không đo trực tiếp mất lệnh chiều trạm -> xe (TIMESYNC khứ hồi – probes_lost – là chỉ số duy nhất phủ chiều này).

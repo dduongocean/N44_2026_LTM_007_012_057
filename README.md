@@ -14,7 +14,7 @@ Giảng viên hướng dẫn: (điền)
 
 ## Đầu vào – đầu ra của thí nghiệm
 - **Biến thay đổi:** khoảng cách giữa node mặt đất và node trên xe trong ns-3.
-- **Giữ cố định:** chuẩn 802.11g, tốc độ truyền, mô hình suy hao log-distance (exponent 3.0), công suất phát, xe `gz_r1_rover`, kịch bản lệnh, thời gian mỗi lần chạy.
+- **Giữ cố định:** chuẩn 802.11g, tốc độ truyền, mô hình kênh log-distance (exponent 3.0, L0 40.046 dB) + fading Nakagami m = 1.5, công suất phát, xe `gz_r1_rover`, kịch bản lệnh, thời gian mỗi lần chạy.
 - **Số đo:**
   - Tầng mạng: tỷ lệ mất gói MAVLink (đếm từ trường `seq`), độ trễ khứ hồi (RTT), jitter.
   - Tầng điều khiển: số lần mất kết nối (quá 3 s không có HEARTBEAT).
@@ -78,7 +78,7 @@ Agile (Scrum kết hợp thực hành XP):
 - Chi tiết: `docs/agile/definition-of-done.txt`, `docs/agile/product-backlog.txt`, `docs/agile/sprints/`.
 
 ## Trạng thái hiện tại
-Sprint 01 – NET-01 (MAVLink qua ns-3) và NET-02 (công cụ đo).
+Sprint 02 – cả 4 story NET-01…NET-04 đã XONG (biên bản trong `docs/acceptance/`); đang viết báo cáo (`docs/report/noi-dung/`).
 
 ## Cách chạy
 Cài môi trường và chạy test:

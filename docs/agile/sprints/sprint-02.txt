@@ -70,6 +70,7 @@ DAILY SCRUM
 
 SPRINT REVIEW
 -------------
+- 2026-11-17 – Chốt quy ước "đường điều khiển tin cậy" cho NET-03 / mục tiêu M3 (NET-03.txt mục 4), nhóm xác nhận: tin cậy = không lần nào mất kết nối, mất gói < 1%, RTT p95 < 100 ms (xét cả 3 lần đo). Kết quả: tin cậy tới 60 m, suy giảm ở 70 m, không tin cậy từ 80 m. Kết luận không đổi với mọi ngưỡng mất gói trong (0.02%, 7.2%] và RTT p95 trong (21, 501] ms.
 
 SPRINT RETROSPECTIVE
 --------------------

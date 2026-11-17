@@ -1,0 +1,68 @@
+NGUYÊN LIỆU MỤC 5 (VÀ MỤC 6) – MÃ GIẢ CÁC GIẢI THUẬT ĐO
+=====================================================
+(Nguyên liệu để dàn trang vào mục 5. Viết theo code thật: rover/core/linkstats.py, rover/core/vehicle.py, tools/run_experiment.py. Báo cáo không đưa code, nên trình bày bằng mã giả dưới đây và lưu đồ docs/diagrams/measure-loop/.)
+
+
+A. ĐẾM MẤT GÓI THEO SỐ THỨ TỰ (SeqTracker)
+------------------------------------------
+Ý tưởng: mỗi nguồn MAVLink (system_id, component_id) tăng trường seq 1 byte thêm 1 sau mỗi bản tin, quay vòng 255 -> 0. Bên nhận thấy seq "nhảy cóc" thì suy ra số bản tin đã mất ở giữa.
+
+  Dữ liệu: received <- 0; lost <- 0; resyncs <- 0; last_seq <- bảng rỗng (khóa: nguồn, giá trị: seq gần nhất)
+
+  THỦ TỤC on_packet(system_id, component_id, seq):
+      received <- received + 1
+      nguồn <- (system_id, component_id)
+      NẾU nguồn chưa có trong last_seq THÌ
+          last_seq[nguồn] <- seq ; KẾT THÚC          // gói đầu tiên của nguồn: chưa có gì để so
+      gap <- (seq - last_seq[nguồn] - 1) mod 256     // số bản tin bị thiếu giữa hai gói liên tiếp
+      NẾU gap = 0 THÌ                                 // liên tục, không mất
+          (không làm gì)
+      NGƯỢC LẠI NẾU gap < 128 THÌ                     // khoảng trống hợp lệ
+          lost <- lost + gap
+      NGƯỢC LẠI                                       // gap >= 128: không phân biệt được "mất rất nhiều" với "trùng / đến muộn"
+          resyncs <- resyncs + 1                      // quy ước: đứt quãng, không cộng vào lost
+      last_seq[nguồn] <- seq
+
+  HÀM loss_rate():  NẾU received + lost = 0 THÌ TRẢ VỀ 0  NGƯỢC LẠI TRẢ VỀ lost / (received + lost)
+
+Ví dụ: nhận seq 254, 255, 0, 1 -> gap luôn 0, không mất. Nhận 5 rồi 8 -> gap = 2 (mất 6, 7). Nhận 254 rồi 1 -> gap = (1 - 254 - 1) mod 256 = 2 (mất 255, 0).
+Giả thiết và hệ quả: đứt liền từ 128 bản tin trở lên (≈ 0,3 s ở ~400 bản tin/s) không được đếm đúng: 128–255 bản tin bị tính là một lần resync; từ 256 trở lên thì seq đã quay vòng nên chỉ đếm được phần dư theo mod 256. Ở 90–100 m điều này làm tỷ lệ mất đếm theo seq thấp hơn ước lượng theo số bản tin nhận được 2–3 điểm % (calibration.txt mục 6); thời gian đứt quãng được LinkMonitor phản ánh qua số lần mất kết nối.
+
+
+B. ĐO ĐỘ TRỄ KHỨ HỒI BẰNG TIMESYNC (RttTracker)
+-----------------------------------------------
+Ý tưởng: trạm gửi một bản tin TIMESYNC có đánh số; PX4 trả lại nguyên số đó. Trạm tự ghi thời điểm gửi, nên RTT chỉ dùng đồng hồ của trạm – không cần đồng bộ giờ hai máy.
+
+  Dữ liệu: pending <- bảng rỗng (mã probe -> thời điểm gửi); sent, replied, lost <- 0; samples <- danh sách rỗng; timeout <- 2 s
+
+  THỦ TỤC gửi_probe(now):                       // gọi 5 lần/giây khi đã thấy xe
+      id <- số thứ tự tiếp theo
+      gửi TIMESYNC(tc1 = 0, ts1 = id)
+      pending[id] <- now ; sent <- sent + 1
+
+  THỦ TỤC on_reply(ts1, now):                   // chỉ với TIMESYNC có tc1 ≠ 0 (phản hồi của xe)
+      NẾU ts1 không có trong pending THÌ BỎ QUA  // mã lạ hoặc đã hết hạn
+      rtt <- now - pending[ts1] ; xóa pending[ts1]
+      thêm rtt vào samples ; replied <- replied + 1
+
+  THỦ TỤC expire(now):                          // gọi mỗi vòng lặp
+      VỚI MỖI id trong pending mà now - pending[id] > timeout:
+          xóa pending[id] ; lost <- lost + 1
+
+  Chỉ số: RTT trung bình = trung bình(samples); RTT p95 = phân vị 95 của samples; jitter RTT = độ lệch chuẩn của samples.
+
+
+C. PHÁT HIỆN MẤT KẾT NỐI (LinkMonitor) VÀ JITTER HEARTBEAT (IntervalStats)
+-------------------------------------------------------------------------
+  on_heartbeat(now): last_hb <- now
+  state(now): NẾU chưa có HEARTBEAT THÌ WAITING; NẾU now - last_hb > 3 s THÌ LOST; NGƯỢC LẠI CONNECTED
+  Mỗi vòng lặp: NẾU trạng thái trước ≠ LOST VÀ trạng thái hiện tại = LOST THÌ lost_events <- lost_events + 1
+  Jitter HEARTBEAT = độ lệch chuẩn của khoảng thời gian giữa hai HEARTBEAT liên tiếp (PX4 gửi 1 Hz, lý tưởng 1,0 s).
+
+
+D. ĐỘ PHỨC TẠP (dùng cho mục 6)
+------------------------------
+  - SeqTracker.on_packet: O(1) thời gian mỗi bản tin (một lần tra bảng băm, vài phép tính); bộ nhớ O(S) với S là số nguồn MAVLink (thực tế vài nguồn), không phụ thuộc số bản tin. Với ~400 bản tin/s, chi phí đếm không đáng kể so với chu kỳ 10 ms.
+  - RttTracker: on_probe_sent, on_reply O(1); expire O(P) với P là số probe đang chờ, P ≤ tần số probe × timeout = 5 × 2 = 10. Bộ nhớ samples O(N), N = số phản hồi trong phiên (≤ 300 cho 60 s).
+  - Tính p95 mỗi giây: sắp xếp samples, O(N log N) với N ≤ 300 – không đáng kể. (Nếu đo dài nhiều giờ có thể thay bằng cửa sổ trượt hoặc ước lượng phân vị trực tuyến – ghi vào hướng phát triển.)
+  - LinkMonitor: O(1) thời gian và bộ nhớ. IntervalStats: ghi sự kiện O(1), nhưng giữ danh sách mọi khoảng (bộ nhớ O(H), H = số HEARTBEAT, 60 trong 60 s) và tính độ lệch chuẩn O(H) mỗi lần ghi dòng CSV – không đáng kể.

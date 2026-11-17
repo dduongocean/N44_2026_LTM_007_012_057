@@ -1,0 +1,40 @@
+%% Lưu đồ vòng lặp chương trình đo tools/run_experiment.py (NET-02/T4)
+%% Phục vụ: Mục 5 báo cáo – Triển khai hệ thống, giải thuật. Chú thích: measure-loop.txt
+
+flowchart TD
+    START(["Bắt đầu: đọc tham số --duration, --label, --probe-hz, ..."])
+    INIT["Mở socket MAVLink udpin:0.0.0.0:14540<br/>Tạo LinkMonitor, SeqTracker, RttTracker, IntervalStats<br/>Ghi phần đầu file data/raw/&lt;label&gt;.csv"]
+    LOOP{"Đã hết thời gian đo<br/>hoặc nhấn Ctrl+C?"}
+    POLL["(1) poll(): đọc mọi bản tin đang chờ trên socket"]
+    EV{"Loại sự kiện?"}
+    HB["HEARTBEAT:<br/>LinkMonitor ghi thời điểm<br/>IntervalStats ghi khoảng cách 2 nhịp"]
+    PS["Bản tin bất kỳ của xe:<br/>SeqTracker.on_packet(nguồn, seq)"]
+    TS["TIMESYNC phản hồi (tc1 ≠ 0):<br/>RttTracker.on_reply(mã probe = ts1, now)"]
+    STATE{"(2) Trạng thái chuyển<br/>sang LOST? (quá 3 s<br/>không có HEARTBEAT)"}
+    CNT["lost_events += 1"]
+    PROBE{"(3) Đến lúc gửi probe?<br/>(mỗi 1/probe_hz giây)"}
+    SEND["Gửi TIMESYNC tc1 = 0, ts1 = mã probe<br/>RttTracker ghi thời điểm gửi"]
+    EXP["(4) RttTracker.expire(now):<br/>probe chờ quá 2 s tính là mất"]
+    SEC{"(5) Tròn thêm 1 giây?"}
+    ROW["Tính RTT tb, p95, jitter; ghi 1 dòng CSV"]
+    SLEEP["Ngủ 10 ms"]
+    FIN["Tính chỉ số tổng kết<br/>Ghi 1 dòng vào summary.csv (nối thêm, không ghi đè)"]
+    STOP(["Kết thúc"])
+
+    START --> INIT --> LOOP
+    LOOP -- "Chưa" --> POLL --> EV
+    EV --> HB
+    EV --> PS
+    EV --> TS
+    HB --> STATE
+    PS --> STATE
+    TS --> STATE
+    STATE -- "Có" --> CNT --> PROBE
+    STATE -- "Không" --> PROBE
+    PROBE -- "Có, đã thấy xe" --> SEND --> EXP
+    PROBE -- "Không" --> EXP
+    EXP --> SEC
+    SEC -- "Có" --> ROW --> SLEEP
+    SEC -- "Không" --> SLEEP
+    SLEEP --> LOOP
+    LOOP -- "Rồi" --> FIN --> STOP

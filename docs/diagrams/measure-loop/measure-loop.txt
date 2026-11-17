@@ -1,0 +1,22 @@
+CHÚ THÍCH LƯU ĐỒ CHƯƠNG TRÌNH ĐO (measure-loop)
+Tập tin: measure-loop.mmd (nguồn Mermaid), measure-loop.svg (ảnh xuất – xuất từ .mmd)
+Mô tả  : vòng lặp chính của tools/run_experiment.py (NET-02/T4). Phục vụ mục 5 báo cáo.
+=================================================================================
+
+1. KÝ HIỆU
+----------
+- Hình bo tròn: bắt đầu / kết thúc. Hình chữ nhật: xử lý. Hình thoi: rẽ nhánh.
+- (1)…(5): năm bước của một vòng lặp, đúng thứ tự trong code.
+
+2. LUỒNG
+--------
+- Chương trình chạy trong netns ns-gcs, nghe UDP 0.0.0.0:14540; địa chỉ của xe (10.0.0.2:14581) được học từ gói đầu tiên.
+- Mỗi vòng lặp (chu kỳ 10 ms): (1) đọc mọi bản tin đang chờ và chuyển cho bộ xử lý tương ứng; (2) kiểm tra trạng thái liên kết, mỗi lần chuyển từ trạng thái khác sang LOST thì đếm một lần mất kết nối; (3) đến hạn thì gửi một probe TIMESYNC (5 lần/giây); (4) hủy các probe chờ quá 2 s và tính là mất; (5) mỗi giây ghi một dòng chi tiết vào data/raw/<label>.csv.
+- Kết thúc (hết --duration hoặc Ctrl+C): tính chỉ số tổng kết trên toàn bộ phiên, nối thêm một dòng vào file summary.
+- Chỉ bản tin có system_id của xe (học từ HEARTBEAT) mới được đếm vào SeqTracker.
+- Các lớp LinkMonitor, SeqTracker, RttTracker, IntervalStats nằm ở tầng 2 (rover/core/), không đọc đồng hồ: thời điểm now được truyền vào qua tham số, nhờ vậy test tự động được (tests/test_linkstats.py, tests/test_vehicle.py).
+
+3. GIỚI HẠN CẦN GHI TRONG BÁO CÁO
+---------------------------------
+- Độ phân giải thời gian của RTT bị giới hạn bởi chu kỳ 10 ms của vòng lặp; đây là lý do RTT baseline khoảng 10,3 ms dù không qua mạng.
+- Mất gói đếm theo seq là chiều xe -> trạm; probe TIMESYNC đi cả hai chiều.

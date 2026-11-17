@@ -1,0 +1,99 @@
+MỤC 2. TÍNH CẤP THIẾT VÀ Ý NGHĨA CỦA ĐỀ TÀI
+==========================================
+(Bản nháp nội dung – sửa 2026-11-17 theo rà soát độc lập. Tiêu chí: 10 điểm. Dự kiến 3–5 trang khi dàn trang.)
+(Ghi chú cho nhóm, xóa khi dàn trang: [CẦN NGUỒN] = chỗ nên thêm trích dẫn tài liệu; [HÌNH] = chỗ đặt hình; phần "GHI CHÚ CHO NHÓM" cuối file không đưa vào báo cáo.)
+
+
+2.1. Bối cảnh: xe tự hành mặt đất được điều khiển qua mạng không dây
+--------------------------------------------------------------------
+Xe tự hành mặt đất (rover) là loại robot di chuyển trên mặt đất, có bộ điều khiển tự động (autopilot) tự giữ hướng, tự giữ tốc độ và có thể tự chạy theo lộ trình. Rover được dùng trong nhiều việc mà con người không muốn hoặc không nên làm trực tiếp: tuần tra khuôn viên, vận chuyển trong kho bãi, khảo sát địa hình, nông nghiệp, kiểm tra hiện trường nguy hiểm. [CẦN NGUỒN]
+
+Dù "tự hành", rover vẫn cần một đường liên lạc với trạm mặt đất (ground control station – GCS):
+  - chiều trạm -> xe: lệnh điều khiển (mở khóa động cơ – "arm" – để xe được phép chạy, đổi chế độ, lệnh lái, nhiệm vụ);
+  - chiều xe -> trạm: trạng thái (vị trí, vận tốc, pin, cảnh báo) để người vận hành giám sát.
+Các nền tảng autopilot mã nguồn mở phổ biến như PX4 dùng giao thức MAVLink cho đường liên lạc này – MAVLink là giao thức gồm các bản tin nhỏ (vài chục byte), thường gửi qua UDP, mỗi bản tin mang một loại thông tin như "tôi còn hoạt động" hay "ga 75%". [CẦN NGUỒN: tài liệu PX4, MAVLink] Với rover hoạt động trong phạm vi vài chục đến vài trăm mét, Wi-Fi là lựa chọn rất thường gặp vì thiết bị rẻ, có sẵn trên máy tính nhúng và điện thoại, băng thông đủ lớn và không cần hạ tầng nhà mạng. [CẦN NGUỒN]
+
+2.2. Vấn đề: chất lượng Wi-Fi thay đổi và ảnh hưởng trực tiếp tới việc điều khiển
+---------------------------------------------------------------------------------
+Khác với dây cáp, đường Wi-Fi không có chất lượng cố định. Khi xe chạy xa trạm, tín hiệu yếu đi (suy hao theo khoảng cách); khi sóng phản xạ qua mặt đất, tường, cây cối, tín hiệu dao động liên tục (fading); khi có thiết bị khác cùng kênh, tín hiệu bị nhiễu. Tầng MAC của Wi-Fi (tầng điều khiển truy cập kênh, nơi đóng dữ liệu thành "khung" – đơn vị dữ liệu của Wi-Fi – và gửi đi) cố gắng che giấu các lỗi này bằng cách gửi lại khung bị hỏng [CẦN NGUỒN: chuẩn IEEE 802.11], nhưng cái giá phải trả là:
+  - Mất gói: khi gửi lại nhiều lần vẫn hỏng, gói bị bỏ hẳn.
+  - Độ trễ tăng: mỗi lần gửi lại tốn thêm thời gian; khi gói đến nhanh hơn tốc độ gửi được, hàng đợi đầy dần và gói phải chờ lâu trước khi được phát.
+  - Jitter (độ biến động trễ): gói lúc đến nhanh, lúc đến chậm.
+  - Mất kết nối: trong một khoảng thời gian không có gói nào tới (trong đề tài: quá 3 giây không nhận được bản tin HEARTBEAT của xe).
+
+Với một ứng dụng điều khiển, mỗi hiện tượng trên có hậu quả cụ thể:
+  - Lệnh lái đến trễ: người vận hành nhìn trạng thái cũ, ra lệnh muộn; xe phản ứng chậm so với ý muốn.
+  - Lệnh lái bị mất: xe tiếp tục làm theo lệnh cũ cho tới khi nhận ra đã mất tín hiệu.
+  - Mất kết nối: autopilot phải tự quyết định (dừng, giữ vị trí, tự quay về...) – gọi là cơ chế failsafe. Hành vi này phụ thuộc cấu hình, và người vận hành thường không biết chính xác xe sẽ làm gì, sau bao lâu. [CẦN NGUỒN: tài liệu failsafe của PX4]
+
+Từ đó nảy sinh hai câu hỏi thực tế mà người triển khai rover qua Wi-Fi cần trả lời:
+  (1) Xe được phép chạy cách trạm xa bao nhiêu thì đường điều khiển vẫn còn tin cậy? Chất lượng đường truyền xấu đi theo khoảng cách như thế nào – dần dần hay đột ngột?
+  (2) Khi mất lệnh điều khiển giữa lúc xe đang chạy, xe phản ứng ra sao: sau bao lâu xe phanh, xe đi thêm bao xa, rồi làm gì?
+
+2.3. Vì sao không thử trực tiếp ngoài thực địa
+---------------------------------------------
+Cách trực tiếp nhất là mang xe thật và bộ phát Wi-Fi ra bãi rộng, cho xe chạy xa dần và đo. Cách này gặp nhiều khó khăn:
+  - Chi phí và an toàn: cần xe thật, pin, bãi thử; khi cố tình làm mất liên lạc, xe có thể lao vào người hoặc vật.
+  - Khó lặp lại: thời tiết, người qua lại, các mạng Wi-Fi xung quanh thay đổi theo từng lần thử; hai lần đo ở cùng khoảng cách có thể cho kết quả khác nhau mà không biết vì sao.
+  - Khó tách biến: ngoài trời, khoảng cách, vật cản và nhiễu thay đổi cùng lúc, nên khó kết luận kết quả do yếu tố nào gây ra.
+  - Khó đo chính xác: muốn biết từng gói mất ở đâu, trễ bao nhiêu, cần thiết bị bắt gói và đồng bộ đồng hồ giữa xe và trạm.
+
+Mô phỏng khắc phục được các điểm trên: chạy lại bao nhiêu lần cũng được, chỉ thay đổi đúng một yếu tố và giữ cố định mọi yếu tố khác, đo được từng gói tin, và làm mất liên lạc mà không có rủi ro.
+
+2.4. Vì sao kết hợp PX4 SITL, Gazebo và ns-3
+-------------------------------------------
+Mô phỏng chỉ có giá trị nếu đủ giống thật ở những điểm quan trọng. Đề tài kết hợp ba thành phần, mỗi thành phần đảm nhận một phần "thật":
+  - PX4 SITL (Software In The Loop): chạy chính phần mềm autopilot PX4 của xe ngay trên máy tính. Nhờ vậy, cách xe xử lý lệnh, xử lý gói MAVLink và phản ứng failsafe là hành vi thật của PX4, không phải một mô hình đơn giản hóa. [CẦN NGUỒN: tài liệu PX4 SITL]
+  - Gazebo: mô phỏng vật lý của xe (bánh xe, quán tính, ma sát) và cung cấp cảm biến giả lập cho PX4. Nhờ vậy, khi mất lệnh điều khiển, có thể đo được xe thật sự đi thêm bao xa trước khi dừng.
+  - ns-3: bộ mô phỏng mạng mã nguồn mở dùng phổ biến trong nghiên cứu [CẦN NGUỒN], mô hình hóa đường Wi-Fi chuẩn 802.11g giữa trạm và xe: suy hao theo khoảng cách, fading, cơ chế gửi lại và hàng đợi ở tầng MAC.
+
+Điểm then chốt là TapBridge của ns-3: nó cho phép gói tin MAVLink thật do PX4 và chương trình trạm mặt đất tạo ra đi xuyên qua mô hình Wi-Fi của ns-3, thay vì đi tắt qua localhost (địa chỉ 127.0.0.1 – gói không rời khỏi máy tính). Kết quả là mọi gói MAVLink giữa trạm và xe đều đi qua mô hình Wi-Fi, và phần chênh lệch của các chỉ số so với trường hợp không qua ns-3 (baseline) là do đường Wi-Fi mô phỏng gây ra. [HÌNH: sơ đồ tổng thể – mục 3]
+
+So với cách đơn giản hơn là dùng công cụ netem của Linux để đặt sẵn một tỷ lệ mất gói hay một độ trễ cố định, ns-3 mô hình hóa cả nguyên nhân (tín hiệu yếu dần theo khoảng cách, fading) lẫn cơ chế tầng MAC (gửi lại, hàng đợi), nên tái hiện được những hiện tượng không đặt trước được – ví dụ ở 70 m, độ trễ khứ hồi đã tăng lên khoảng 445 ms trong khi tỷ lệ mất gói mới 7,6% (mục 6).
+
+2.5. Mục tiêu của đề tài
+-----------------------
+M1. Hệ thống mô phỏng không có đường tắt. Xây dựng hệ thống trong đó mọi gói MAVLink hai chiều giữa trạm mặt đất và PX4 (xe trong Gazebo) đi qua đường Wi-Fi 802.11g mô phỏng bằng ns-3.
+  Tiêu chí: (i) khi chưa chạy ns-3, trạm và xe không liên lạc được với nhau (mất 100% gói); (ii) ns-3 đặt hai node cách nhau 5 m thì liên lạc gần như không mất gói, cách 1000 m thì mất gần hết, dừng ns-3 thì liên lạc dừng ngay; (iii) lái được xe trong Gazebo qua ns-3; (iv) bắt gói trên giao diện mạng ảo phía trạm thấy gói MAVLink đi cả hai chiều.
+
+M2. Công cụ đo được kiểm chứng. Xây dựng chương trình đo không giao diện, ghi ra file CSV: tỷ lệ mất gói chiều xe -> trạm (đếm theo số thứ tự seq của MAVLink), độ trễ khứ hồi (RTT) và tỷ lệ mất gói đo khứ hồi bằng bản tin TIMESYNC (đi cả hai chiều), jitter, số lần mất kết nối.
+  Tiêu chí: khi đường truyền tốt, công cụ đo được 0% mất gói; khi dùng netem làm mất 10% gói chiều xe -> trạm thì đo được 8–12%; khi netem thêm trễ 50 ms thì RTT đo được tăng 40–60 ms; chạy lại cùng lệnh tạo file mới, không ghi đè dữ liệu cũ.
+
+M3. Ngưỡng khoảng cách điều khiển tin cậy. Đo các chỉ số của M2 ở 8 khoảng cách từ 10 đến 100 m (mỗi mức 3 lần × 60 giây, trạm và xe đứng yên trong mỗi lần đo), so với baseline không qua ns-3, và xác định khoảng cách lớn nhất mà đường điều khiển còn tin cậy. Đường điều khiển ở một khoảng cách được xếp loại:
+  - tin cậy: trong cả 3 lần đo không có lần mất kết nối nào, tỷ lệ mất gói < 1% và RTT p95 (95% số lần đo có RTT nhỏ hơn giá trị này) < 100 ms;
+  - suy giảm: không mất kết nối nhưng vượt ngưỡng mất gói hoặc ngưỡng RTT;
+  - không tin cậy: có ít nhất một lần mất kết nối.
+  (Ngưỡng 1% và 100 ms là quy ước của nhóm; mục 6 cho thấy kết luận không đổi trong một dải ngưỡng rộng.)
+
+M4. Phản ứng của xe khi mất lệnh điều khiển. Khi xe đang chạy ổn định (khoảng 1,3 m/s), làm mất lệnh điều khiển theo hai cách: cắt hẳn đường truyền, và – để đối chứng – giữ mạng tốt nhưng trạm ngừng gửi lệnh lái. Đo thời gian tới khi xe phanh, quãng đường xa nhất xe đi thêm, chuỗi chế độ mà PX4 chuyển qua, và việc người vận hành có lấy lại được xe khi mạng phục hồi hay không; giải thích kết quả bằng các tham số failsafe của PX4.
+  Tiêu chí: mỗi cách làm mất lệnh lặp 3 lần, đo đủ các chỉ số trên, kết quả giữa các lần ổn định; diễn biến đo được khớp (hoặc giải thích được nếu không khớp) với cấu hình failsafe của PX4.
+
+2.6. Ý nghĩa
+-----------
+Ý nghĩa thực tiễn:
+  - Cung cấp con số cụ thể về giới hạn vận hành của rover qua Wi-Fi trong một cấu hình xác định, với trạm và xe đứng yên ở mỗi khoảng cách: khoảng cách mà độ trễ và mất gói bắt đầu tăng, khoảng cách bắt đầu mất kết nối – làm cơ sở để đặt phạm vi hoạt động an toàn.
+  - Cho thấy cụ thể xe PX4 làm gì khi mất lệnh điều khiển với cấu hình mặc định, từ đó người vận hành biết cần chỉnh các tham số failsafe nào trước khi triển khai thật.
+Ý nghĩa kỹ thuật – phương pháp:
+  - Một môi trường thử nghiệm lặp lại được, chi phí thấp, an toàn: thay đổi tham số kênh Wi-Fi (khoảng cách, công suất phát, hệ số suy hao, bật/tắt fading) bằng tham số dòng lệnh; chạy lại toàn bộ loạt thí nghiệm bằng các script có sẵn.
+  - Có thể mở rộng: cho node Wi-Fi trên xe di chuyển theo vị trí xe trong Gazebo, thêm nhiều trạm, thử các cấu hình khác mà không cần phần cứng.
+Ý nghĩa với môn Lập trình mạng:
+  - Đề tài vận dụng trực tiếp các nội dung của môn: lập trình socket UDP, phân tích giao thức ở mức gói tin (cấu trúc gói MAVLink, số thứ tự, gói đo thời gian), mạng ảo trong Linux (network namespace, veth, bridge, tap), phân tích gói bằng Wireshark, và đo đạc – đánh giá hiệu năng mạng (mất gói, RTT, jitter).
+
+2.7. Phạm vi
+-----------
+Để kết quả rõ ràng và lặp lại được, đề tài giới hạn:
+  - Một trạm mặt đất và một xe, trên một kênh Wi-Fi 802.11g, tốc độ cố định 6 Mbit/s.
+  - Trong khảo sát theo khoảng cách, biến thay đổi duy nhất là khoảng cách giữa hai điểm phát Wi-Fi (node) trong ns-3; hai node đứng yên trong mỗi lần đo, không bám theo vị trí xe trong Gazebo. Thí nghiệm mất lệnh điều khiển giữ khoảng cách 10 m (tín hiệu tốt) và chỉ thay đổi cách làm mất lệnh.
+  - Kênh Wi-Fi dùng mô hình suy hao log-distance kết hợp fading Nakagami; không mô phỏng vật cản cụ thể hay nhiễu từ thiết bị khác. Mục 4 và 6 trình bày thêm kết quả với kênh không fading để thấy ảnh hưởng của giả thiết này.
+  - Mất lệnh điều khiển được tạo theo hai cách có kiểm soát: cắt hẳn đường truyền (làm mất 100% gói ở cả hai phía), và để đối chứng, giữ mạng tốt nhưng trạm ngừng gửi lệnh lái.
+Các giới hạn này và hướng mở rộng được thảo luận ở mục 7.
+
+
+GHI CHÚ CHO NHÓM (không đưa vào báo cáo)
+---------------------------------------
+Bằng chứng cho từng mục tiêu:
+  - M1: docs/acceptance/NET-01-acceptance.txt (AC4 bổ sung 2026-11-17: pcap hai chiều + pcap dừng/chạy lại ns-3 trong docs/evidence/). Ảnh Wireshark cần chụp lại để thấy cả hai chiều.
+  - M2: NET-02-acceptance.txt lần kiểm 2 (2026-11-17, sau BUG-02, 3 trường hợp × 3 lần × 60 s): loss 10% -> đo 9,76 ± 0,10%; delay 50 ms -> RTT +49,46 ± 0,45 ms; baseline 0,00%. Phát hiện và sửa BUG-03 (ghi đè file raw).
+  - M3: analysis/summary_table.txt, analysis/*.png. Áp tiêu chí: <= 60 m tin cậy; 70 m suy giảm (RTT tb ~445 ms); >= 80 m không tin cậy. Định nghĩa "tin cậy" đã CHỐT (NET-03.txt mục 4, sprint-02.txt Sprint Review, 2026-11-17). Hình bổ sung cho mục 6: analysis/throughput_vs_distance.png, analysis/fading_vs_nofading_loss.png (analysis/plot_report_extras.py).
+  - M4: data/failsafe_summary.csv, analysis/failsafe_speed.png, NET-04.txt mục 6, docs/acceptance/NET-04-acceptance.txt.
+Nguồn rà soát: phiên rà soát độc lập 2026-11-17 (phát hiện #1–#20).

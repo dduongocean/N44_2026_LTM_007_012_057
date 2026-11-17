@@ -166,3 +166,6 @@ Kết quả câu hỏi TIMESYNC (T2):
   - Đã thêm PacketSeen và TimesyncReply vào VehicleEvent trong rover/core/model.py.
   - Đã thêm send_timesync(ts1_ns) vào interface VehicleLink (rover/hal.py) và MavlinkVehicleLink (rover/drivers/mavlink.py).
   - 5 unit tests mới trong tests/test_mavlink.py (test 16 đến 20) kiểm thử giả lập UDP đều passed 100%.
+
+Ghi chú khi viết báo cáo (2026-11-17, Hoàng):
+  - Cài đặt thật khác mục "Kiến thức" của T2 ở một điểm: run_experiment.py đặt ts1 = MÃ PROBE (số thứ tự 1, 2, 3, ...), không phải thời điểm gửi; thời điểm gửi được RttTracker lưu tại trạm theo mã đó, RTT = thời điểm nhận - thời điểm gửi đã lưu. Kết quả tương đương (cùng một đồng hồ của trạm), nhưng mục 4 và 5 của báo cáo phải mô tả theo cách này.
