@@ -26,7 +26,7 @@ A. ĐẾM MẤT GÓI THEO SỐ THỨ TỰ (SeqTracker)
   HÀM loss_rate():  NẾU received + lost = 0 THÌ TRẢ VỀ 0  NGƯỢC LẠI TRẢ VỀ lost / (received + lost)
 
 Ví dụ: nhận seq 254, 255, 0, 1 -> gap luôn 0, không mất. Nhận 5 rồi 8 -> gap = 2 (mất 6, 7). Nhận 254 rồi 1 -> gap = (1 - 254 - 1) mod 256 = 2 (mất 255, 0).
-Giả thiết và hệ quả: đứt liền từ 128 bản tin trở lên (≈ 0,3 s ở ~400 bản tin/s) không được đếm đúng: 128–255 bản tin bị tính là một lần resync; từ 256 trở lên thì seq đã quay vòng nên chỉ đếm được phần dư theo mod 256. Ở 90–100 m điều này làm tỷ lệ mất đếm theo seq thấp hơn ước lượng theo số bản tin nhận được 2–3 điểm % (calibration.txt mục 6); thời gian đứt quãng được LinkMonitor phản ánh qua số lần mất kết nối.
+Giả thiết và hệ quả: đứt liền từ 128 bản tin trở lên (≈ 0,3 s ở ~400 bản tin/s) không được đếm đúng: 128–255 bản tin bị tính là một lần resync; từ 256 trở lên thì seq đã quay vòng nên chỉ đếm được phần dư theo mod 256. Trong loạt đo NET-03 điều này không xảy ra: 0 lần resync ở 70–100 m, và L khớp ước lượng theo số bản tin nhận được (tính trên cùng khoảng đếm) trong 0,44 điểm % (sửa 2026-11-18; bản cũ gán sai chênh lệch 2–3 điểm cho giới hạn này, thực ra do seq chỉ đếm từ HEARTBEAT đầu tiên; xem 06-phan-tich-hieu-nang.txt mục 6.5).
 
 
 B. ĐO ĐỘ TRỄ KHỨ HỒI BẰNG TIMESYNC (RttTracker)

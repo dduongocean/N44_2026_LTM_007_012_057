@@ -1,0 +1,85 @@
+MỤC 7. KẾT LUẬN VÀ HƯỚNG PHÁT TRIỂN
+==================================
+(Bản nháp nội dung, 2026-11-18. Tiêu chí: 5 điểm. Dự kiến 2–3 trang khi dàn trang.)
+(Ghi chú cho nhóm, xóa khi dàn trang: [BẢNG] là bảng cần dàn lại; phần "GHI CHÚ CHO NHÓM" cuối file không đưa vào báo cáo. Mọi con số giống mục 5 và mục 6.)
+
+Mục này trả lời ba câu hỏi: đề tài đã đạt các mục tiêu đặt ra ở mục 2 tới mức nào (7.1, 7.2); kết quả nào đáng chú ý nhất và có ý nghĩa gì cho việc dùng rover qua Wi-Fi (7.3); và kết quả còn giới hạn ở đâu, nên làm gì tiếp (7.4).
+
+
+7.1. Mức độ đạt các mục tiêu
+--------------------------
+Ý chính: cả bốn mục tiêu M1 đến M4 đều đạt; riêng ý "người vận hành có lấy lại được xe khi mạng phục hồi hay không" của M4 mới được kiểm một phần.
+
+[BẢNG 7.1] Kết quả theo từng mục tiêu (mục 2.5)
+  Mục tiêu                                   | Kết quả chính                                                                                   | Đạt   | Ở
+  M1. Hệ thống không có đường tắt            | chưa chạy ns-3 thì mất 100% gói; ns-3 ở 5 m thì thông, ở 1000 m thì mất hết, dừng ns-3 thì dừng ngay (15,05 s không có gói trên tap-gcs); lái được xe qua ns-3 (xe tiến 0,54 m); gói MAVLink đi cả hai chiều trên tap-gcs | có | 5.5.1
+  M2. Công cụ đo được kiểm chứng             | baseline 0,00% mất gói; đặt netem mất 10% đo được 9,76 ± 0,10%; đặt netem trễ 50 ms đo được RTT tăng 49,46 ± 0,45 ms; chạy lại không ghi đè dữ liệu cũ | có | 5.5.2
+  M3. Ngưỡng khoảng cách điều khiển tin cậy  | 10–60 m tin cậy; 70 m suy giảm (RTT trung bình 444,87 ms, mất 7,57%); 80–100 m không tin cậy (mất 63–90%, 12–43 s không có kết nối trong 59 s); kết luận không đổi khi thay ngưỡng trong khoảng rộng | có | 6.2–6.7
+  M4. Phản ứng của xe khi mất lệnh điều khiển | xe giảm tốc sau 0,60–0,68 s, đi thêm 0,71–0,75 m; đứng yên đúng 5,0 s; tự chạy về điểm xuất phát với vận tốc tới khoảng 2 m/s rồi tự khóa; cắt mạng và ngừng gửi lệnh cho cùng diễn biến; giải thích được bằng tham số failsafe của PX4 | có (ý lấy lại xe: một phần) | 6.8
+Ngoài bốn mục tiêu, mô hình ở mục 4 đưa ra bảy dự đoán và cả bảy đều khớp với số đo (bảng 6.8). Còn một hiện tượng chưa giải thích được: ở 70 m tỷ lệ probe mất (4,4%) thấp hơn tỷ lệ mất gói (7,6%).
+
+
+7.2. Trả lời hai câu hỏi của đề tài
+--------------------------------
+Ý chính: trong cấu hình đã khảo sát, đường điều khiển tin cậy tới khoảng 60 m; mất lệnh điều khiển thì xe đi thêm khoảng 0,75 m, đứng yên 5 s rồi tự chạy về.
+
+Câu hỏi 1. Xe được chạy cách trạm xa bao nhiêu thì đường điều khiển còn tin cậy, và chất lượng xấu đi dần dần hay đột ngột?
+  - Với Wi-Fi 802.11g, 6 Mbit/s, công suất phát 16 dBm, kênh log-distance n = 3 có fading Nakagami m = 1,5, trạm và xe đứng yên: đường điều khiển tin cậy tới 60 m trong các mức đã đo; ranh giới thật nằm trong khoảng 60–70 m.
+  - Chất lượng xấu đi dần trong khoảng 60–100 m: độ trễ tăng trước (70 m), mất gói tăng sau (70–100 m), mất kết nối xuất hiện muộn nhất (từ 80 m). Nếu kênh không có fading, chất lượng giữ nguyên rồi đứt đột ngột tại 85,47 m, đúng như công thức của mục 4.
+
+Câu hỏi 2. Khi mất lệnh điều khiển giữa lúc xe đang chạy, xe phản ứng ra sao?
+  - Xe (cấu hình PX4 mặc định, đang chạy khoảng 1,3 m/s) tiếp tục chạy theo lệnh cuối khoảng 0,6 s, đi thêm khoảng 0,7–0,75 m rồi phanh; đứng yên 5 s; sau đó tự chạy về điểm xuất phát với vận tốc tới khoảng 2 m/s và tự khóa khi tới nơi.
+  - PX4 phản ứng giống hệt nhau khi mất mạng và khi trạm chỉ ngừng gửi lệnh, vì với PX4 cả hai đều là mất bản tin lệnh lái.
+  - Trong suốt lúc xe tự chạy về, trạm không liên lạc được và không can thiệp được; trong các lần đã đo, khi mạng có lại thì xe đã hoặc vừa tự khóa, muốn lái tiếp phải arm lại.
+
+
+7.3. Những phát hiện chính và ý nghĩa
+----------------------------------
+Ý chính: kết quả quan trọng nhất không phải một con số khoảng cách, mà là cơ chế: khi tín hiệu yếu, độ trễ xấu đi trước mất gói, và nguyên nhân là hàng đợi ở node phát quá tải chứ không phải kênh hết băng thông.
+
+  1. Trễ xấu đi trước mất gói. Ở 70 m, đường truyền vẫn báo "đang kết nối" và chỉ mất 7,6% bản tin, nhưng độ trễ khứ hồi đã khoảng 445 ms. Người vận hành nhìn thấy trạng thái cũ mà không có cảnh báo nào. Vì vậy, chỉ theo dõi mất gói hoặc HEARTBEAT là chưa đủ để biết đường điều khiển còn dùng được hay không.
+  2. Nguyên nhân là hàng đợi ở node xe. Mỗi lần phát hỏng, node phải chờ ACK và chờ ngẫu nhiên trước lần phát sau; với khoảng 400 bản tin mỗi giây từ PX4, node xe không phục vụ kịp. Ở 80 m, khoảng 56% bản tin bị bỏ trong hàng đợi trước khi được phát lần nào, trong khi kênh vô tuyến chỉ bận khoảng 8% thời gian và chỉ 1,4% khung phát hỏng đủ 7 lần.
+  3. Fading quyết định hình dạng vùng chuyển tiếp. Cùng suy hao, không fading thì đứt gọn tại 85,47 m; có fading thì xấu đi từ khoảng 70 m nhưng ở 90–100 m vẫn nhận được một phần bản tin. Kết luận định lượng vì vậy phụ thuộc giả thiết về fading.
+  4. Phản ứng failsafe dự đoán được từ tham số. Mọi mốc thời gian đo được khớp với COM_RC_LOSS_T, COM_FAIL_ACT_T, NAV_RCL_ACT và RO_SPEED_LIM của PX4.
+
+Ý nghĩa thực tiễn (trong phạm vi cấu hình đã khảo sát):
+  - Phạm vi hoạt động: với cấu hình này, nên giữ xe trong khoảng 60 m quanh trạm nếu cần điều khiển trực tiếp.
+  - Giám sát: trạm nên theo dõi độ trễ (ví dụ bằng TIMESYNC như đề tài), không chỉ theo dõi mất gói hay HEARTBEAT, để phát hiện sớm vùng "còn kết nối nhưng trễ".
+  - Failsafe: với cấu hình mặc định, xe tự chạy về nhanh hơn lúc người lái và không chờ trạm; người triển khai cần chọn lại hành động failsafe và vận tốc tối đa cho phù hợp môi trường.
+  - Môi trường thử nghiệm: hệ thống của đề tài cho phép lặp lại các phép đo này với cấu hình khác chỉ bằng tham số dòng lệnh và script có sẵn.
+
+
+7.4. Hạn chế và hướng phát triển
+-----------------------------
+Ý chính: mỗi hạn chế dưới đây gắn với một hướng phát triển cụ thể.
+
+[BẢNG 7.2] Hạn chế và hướng phát triển
+  Hạn chế                                                                 | Hướng phát triển
+  Trạm và xe đứng yên trong mỗi lần đo; chưa đo khi xe di chuyển và khoảng cách thay đổi liên tục | cập nhật vị trí node Wi-Fi trong ns-3 theo vị trí xe trong Gazebo trong lúc chạy, để đo khi xe di chuyển ra xa và lại gần
+  Mô hình kênh đơn giản: log-distance cộng fading Nakagami m = 1,5 độc lập giữa các khung; không có vật cản, không có nhiễu từ thiết bị khác | thử các giá trị m khác, fading có tương quan theo thời gian, mô hình có vật cản; so sánh với số đo thực địa để chọn tham số
+  Một trạm, một xe, một kênh, tốc độ cố định 6 Mbit/s                     | thêm nhiều trạm hoặc nhiều xe dùng chung kênh; bật thuật toán chọn tốc độ tự động; thử chuẩn Wi-Fi mới hơn
+  PX4 gửi khoảng 400 bản tin mỗi giây, và chính tải này làm hàng đợi quá tải khi tín hiệu yếu | giảm tốc độ gửi telemetry của kênh MAVLink tới trạm và đo xem vùng tin cậy có mở rộng không (giả thuyết rút ra từ mục 6.4, chưa kiểm)
+  Bằng chứng trực tiếp về hàng đợi (bản bắt gói) chỉ có ở 80 m; hiện tượng probe mất thấp hơn mất gói ở 70 m chưa giải thích | bắt gói ở 70 m và các khoảng cách khác; ghi trạng thái hàng đợi của ns-3 theo thời gian
+  RTT có độ phân giải khoảng 10 ms; mất gói theo seq chỉ đo chiều xe về trạm; chưa đo trễ riêng từng chiều | đọc socket theo sự kiện thay cho chu kỳ 10 ms; vì mọi netns dùng chung một đồng hồ, có thể đo trễ một chiều bằng cách ghi thời điểm gửi ở ns-rover và thời điểm nhận ở ns-gcs
+  Thí nghiệm mất lệnh điều khiển chỉ ở 10 m, chỉ cắt hẳn đường truyền; chưa thử nối lại mạng khi xe còn đứng yên hoặc đang tự chạy về | nối lại mạng ở các thời điểm khác nhau; lái xe trong vùng chập chờn 70–80 m; thử các cấu hình failsafe khác (giữ xe đứng yên thay vì tự chạy về, thời gian chờ khác)
+  Vị trí và vận tốc xe là giá trị ước lượng của PX4, không phải giá trị thật trong Gazebo | đọc vị trí thật của xe trực tiếp từ Gazebo để đo quãng đường chính xác hơn
+  Toàn bộ là mô phỏng, chưa đối chiếu với xe thật                        | đo trên xe thật trong cùng các kịch bản để kiểm mức độ giống thật của mô hình
+
+
+7.5. Lời kết
+----------
+Đề tài đã xây dựng được một hệ thống mô phỏng trong đó gói tin MAVLink thật giữa trạm mặt đất và autopilot PX4 đi qua một đường Wi-Fi mô phỏng bằng ns-3, cùng một công cụ đo đã được kiểm chứng. Trên hệ thống đó, nhóm xác định được khoảng cách điều khiển tin cậy trong một cấu hình cụ thể, giải thích được vì sao độ trễ xấu đi trước mất gói, và đo được phản ứng failsafe của xe khi mất lệnh. Môi trường này có thể dùng tiếp để khảo sát các cấu hình và kịch bản phức tạp hơn mà không cần phần cứng.
+
+
+GHI CHÚ CHO NHÓM (không đưa vào báo cáo)
+---------------------------------------
+Nguồn của mọi con số (giống mục 5, 6; tra trong analysis/report_tables.txt khi có):
+  - M1: bảng 5.8 (docs/acceptance/NET-01-acceptance.txt).
+  - M2: bảng 5.9 (docs/acceptance/NET-02-acceptance.txt lần 2, data/net02_acceptance_summary.csv; baseline data/summary.csv).
+  - M3: bảng 6.2, 6.5 (70 m: RTT 444,87 ms, L 7,57%; 80–100 m: L 63,21 / 81,78 / 90,12%, T_mất 12,3 / 32,7 / 43,3 s), 6.4 (85,47 m), 6.7 (khoảng ngưỡng).
+  - M4: bảng 6.6 (giảm tốc 0,60–0,68 s; d_max 0,71–0,75 m; 5,0 s; Return 1,87–2,15 m/s; tự khóa 12,38 / 15,29–15,37 s).
+  - Phát hiện 2: mục 6.4 (pcap 80 m: 174,7 khung/s, 2,55 lần phát, 1,4% đủ 7 lần, kênh bận khoảng 8%; "56% bị bỏ" = 1 − 174,7 / 396,8).
+  - Probe mất 4,4% so với L 7,6% ở 70 m: mục 6.4.
+Cần nhóm xem:
+  - Khuyến nghị "giữ xe trong khoảng 60 m" và "giảm tốc độ telemetry" chỉ đúng trong cấu hình đã khảo sát; hướng giảm telemetry là giả thuyết chưa thử, đã ghi rõ. Nhóm xem có muốn giữ trong báo cáo không.
+  - Nếu chạy thêm thí nghiệm nối lại mạng khi xe còn đứng yên (sudo NS3_BIN=$NS3 tools/run_failsafe.sh --scenarios cut --observe-time 3), cập nhật dòng M4 ở bảng 7.1, câu trả lời Câu hỏi 2 và dòng tương ứng ở bảng 7.2.

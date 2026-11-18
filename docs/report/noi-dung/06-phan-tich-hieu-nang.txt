@@ -33,7 +33,7 @@ Mục này làm hai việc. Thứ nhất, trả lời hai câu hỏi đặt ra �
 Các chỉ số đã định nghĩa ở 4.4: L (4.13), R (4.14), L_R (4.15), RTT trung bình (4.17), RTT p95 (4.18), J_RTT (4.19), J_HB (4.20), E (4.22), T_mất (4.23), tỷ lệ probe mất (4.24). Thí nghiệm B chỉ đo 1 lần mỗi mức vì khi không có fading, kênh trong ns-3 là tất định: cùng khoảng cách thì mọi khung có cùng công suất thu.
 
 Độ tin cậy của số đo dựa trên ba điểm:
-  - Công cụ đo đúng: mục 5 đã kiểm chứng bằng lỗi biết trước. Đặt netem mất 10% gói thì đo được 9,76 ± 0,10%; đặt netem trễ 50 ms thì RTT đo được tăng 49,46 ± 0,45 ms; baseline đo được 0,00% mất gói.
+  - Công cụ đo đúng: mục 5.5.2 đã kiểm chứng bằng lỗi biết trước (bảng 5.9). Đặt netem mất 10% gói thì đo được 9,76 ± 0,10%; đặt netem trễ 50 ms thì RTT đo được tăng 49,46 ± 0,45 ms; baseline đo được 0,00% mất gói.
   - Kết quả lặp lại được: ở mọi khoảng cách, độ lệch chuẩn giữa 3 lần đo của L không quá 0,6 điểm phần trăm, của RTT trung bình không quá 4,1 ms (bảng 6.2).
   - Hai cách đếm mất gói độc lập cho cùng kết quả: L (đếm theo seq) và L_R (đếm theo số bản tin nhận được) lệch nhau không quá 0,44 điểm phần trăm ở mọi lần đo 70–100 m (6.5).
 
@@ -89,7 +89,7 @@ Mô hình giải thích: theo bảng 4.3 và 4.4, ở 10–50 m xác suất mộ
 
 Giải thích theo mô hình hàng đợi (4.11): nếu chỉ tính khung bị bỏ vì phát hỏng cả 7 lần thì ở 70 m chỉ mất 0,066%. Số đo lớn hơn rất nhiều, và RTT trung bình lại gần trần 500 ms. Lời giải thích phù hợp là: ở 70 m mỗi khung cần trung bình khoảng 1,5–2,3 lần phát (bảng 4.4, tùy có tính mất ACK hay không), và mỗi lần phát hỏng kéo theo thời gian chờ ACK và thời gian chờ ngẫu nhiên tăng dần, trong khi PX4 vẫn gửi khoảng 397 bản tin mỗi giây. Node xe không phục vụ kịp (ρ ≥ 1), hàng đợi ở node xe đầy dần, khung phải chờ gần 500 ms; khung nào chờ quá 500 ms thì bị bỏ. Như vậy phần lớn mất gói là do quá hạn chờ trong hàng đợi, không phải do phát hỏng.
 
-Bằng chứng trực tiếp từ bản bắt gói: ns-3 ghi lại mọi khung node xe phát ở 80 m (docs/evidence/net-03-wifi-80m.pcap, 57,4 s). Đếm các khung khác nhau (theo số thứ tự khung 802.11) và số lần phát của mỗi khung:
+Bằng chứng trực tiếp từ bản bắt gói: ns-3 ghi lại mọi khung node xe phát ở 80 m (docs/evidence/net-03-wifi-80m.pcap, 57,4 s). Đếm các khung khác nhau (theo số thứ tự khung 802.11) và số lần phát của mỗi khung (cách đếm ở mục 5.6):
   - Node xe chỉ phát 174,7 khung khác nhau mỗi giây, trong khi PX4 đưa xuống khoảng 397 bản tin mỗi giây: khoảng 56% bản tin bị bỏ trong hàng đợi trước khi được phát lần nào.
   - Mỗi khung được phát trung bình 2,55 lần, nằm giữa hai giá trị mô hình ở 80 m (2,05 khi chỉ tính mất khung, 3,62 khi tính cả mất ACK; bảng 4.4).
   - Chỉ 1,4% khung được phát đủ 7 lần, cùng bậc với P_mac ở 80 m (0,99%).
@@ -114,7 +114,7 @@ Mức độ: ở 80, 90 và 100 m, mất gói theo seq lần lượt là 63,2%, 
 
 RTT chạm trần (DĐ4): RTT trung bình chỉ tăng từ 503 lên 513 ms dù khoảng cách tăng từ 80 lên 100 m. Ở vùng này hầu hết khung được phát đều đã chờ gần 500 ms, nên RTT không còn phản ánh mức độ xấu của kênh. Cũng vì mọi RTT đều gần 500 ms, jitter RTT giảm từ 55,9 ms (70 m) xuống 7–11 ms. Vì vậy ở vùng này cần dùng mất gói, thông lượng và T_mất để so sánh, không dùng RTT.
 
-Cách đếm theo seq vẫn chính xác (DĐ5): ở cả 12 lần đo từ 70 đến 100 m, số lần resync bằng 0, tức không có chuỗi mất liền từ 128 bản tin trở lên; điều này khớp giả thiết các bản tin mất độc lập với nhau. L và L_R (tính trên cùng khoảng đếm) lệch nhau không quá 0,44 điểm phần trăm. Hai cách đếm độc lập cho cùng kết quả, nên giới hạn 8 bit của seq không ảnh hưởng tới số đo trong loạt này. Lưu ý về khoảng đếm: ở lần đo thứ nhất tại 90 m và 100 m, trạm phải chờ 16 s và 40 s mới nhận được HEARTBEAT đầu tiên, nên L của hai lần này chỉ phản ánh phần còn lại của lần đo.
+Cách đếm theo seq vẫn chính xác (DĐ5): ở cả 12 lần đo từ 70 đến 100 m, số lần resync bằng 0, tức không có chuỗi mất liền từ 128 bản tin trở lên; điều này khớp giả thiết các bản tin mất độc lập với nhau. L và L_R (tính trên cùng khoảng đếm) lệch nhau không quá 0,44 điểm phần trăm. Hai cách đếm độc lập cho cùng kết quả, nên giới hạn 8 bit của seq không ảnh hưởng tới số đo trong loạt này. Lưu ý về khoảng đếm (chương trình chỉ đếm seq sau HEARTBEAT đầu tiên, mục 5.3): ở lần đo thứ nhất tại 90 m và 100 m, trạm phải chờ 16 s và 40 s mới nhận được HEARTBEAT đầu tiên, nên L của hai lần này chỉ phản ánh phần còn lại của lần đo.
 
 E không tăng theo khoảng cách, nhưng T_mất thì tăng (DĐ6): số lần mất kết nối trong 3 lần đo là 15 (80 m), 20 (90 m) và 11 (100 m), giảm ở 100 m. Nhưng thời gian không có kết nối tăng đều: 12,3 s, 32,7 s và 43,3 s trên 59 s đo. Hai lý do:
   - Ở 100 m, kết nối mất lâu và ít khi hồi lại, nên nhiều lần mất ngắn gộp thành ít lần mất dài; E đếm số lần, không đếm thời gian.
@@ -195,7 +195,7 @@ Trả lời Câu hỏi 1: trong cấu hình đã khảo sát (802.11g, 6 Mbit/s,
 Đối chiếu với mô hình (DĐ7):
   - Thời điểm phát hiện: mô hình dự đoán t0 + T_RC + ε với T_RC = COM_RC_LOSS_T = 0,5 s (4.27). Xe bắt đầu giảm tốc ở 0,60–0,68 s, tức ε khoảng 0,1–0,2 s.
   - Thời gian đứng yên: hai mốc AUTO/LOITER và AUTO/RTL đều đọc từ HEARTBEAT (1 lần mỗi giây), nên từng mốc trễ hơn thực tế tới 1 s; nhưng hiệu của chúng không bị ảnh hưởng và bằng đúng 5,0 s ở cả 6 lần, khớp T_F = COM_FAIL_ACT_T = 5 s (4.28).
-  - Hai cách làm mất lệnh: mọi mốc của hai cách gần như trùng nhau, khớp dự đoán rằng PX4 không phân biệt mất mạng với ngừng gửi lệnh. Kịch bản cắt đường truyền có các mốc giảm tốc muộn hơn khoảng 0,05 s. Có hai lời giải thích có thể, nhóm chưa tách được: (a) vài lệnh lái đã nằm trên đường truyền trước lúc cắt vẫn tới được xe; (b) hai kịch bản ghi t0 khác nhau: cắt đường truyền ghi t0 sau khi đã đặt xong netem ở cả hai phía, còn ngừng gửi lệnh ghi t0 ngay sau vòng gửi lệnh cuối cùng (lệnh cuối được gửi trước t0 tối đa khoảng 50 ms).
+  - Hai cách làm mất lệnh: mọi mốc của hai cách gần như trùng nhau, khớp dự đoán rằng PX4 không phân biệt mất mạng với ngừng gửi lệnh. Kịch bản cắt đường truyền có các mốc giảm tốc muộn hơn khoảng 0,05 s. Có hai lời giải thích có thể, nhóm chưa tách được: (a) vài lệnh lái đã nằm trên đường truyền trước lúc cắt vẫn tới được xe; (b) hai kịch bản ghi t0 khác nhau (mục 5.6): cắt đường truyền ghi t0 sau khi đã đặt xong netem ở cả hai phía, còn ngừng gửi lệnh ghi t0 ngay sau vòng gửi lệnh cuối cùng (lệnh cuối được gửi trước t0 tối đa khoảng 50 ms).
   - Quãng đường đi thêm (4.29): v0 không xác định chính xác vì xe còn đang tăng tốc tới t0 và hai cách lấy vận tốc cho kết quả khác nhau (1,29 m/s theo PX4 báo, 1,11–1,12 m/s theo độ dời vị trí trong 1 s). Với khoảng 0,6 s trước khi giảm tốc, phần đường này nằm trong khoảng 0,67–0,77 m; quãng phanh ở giới hạn RO_DECEL_LIM khoảng 0,08 m. Số đo d_max = 0,71–0,75 m cùng bậc độ lớn với dự đoán; mô hình chỉ dùng để kiểm độ lớn, không dùng để dự đoán chính xác tới vài centimet.
 
 Sau khi phanh, xe còn lùi lại chậm khoảng 0,2 m; vì vậy khoảng cách từ vị trí t0 tới chỗ xe đứng yên (khoảng 0,55 m) nhỏ hơn d_max. Về an toàn, d_max là chỉ số đúng, vì đó là điểm xa nhất xe đã tới.
@@ -209,7 +209,7 @@ Trả lời Câu hỏi 2: khi mất lệnh điều khiển lúc đang chạy kho
 -----------------------------------
 Ý chính: mọi thao tác xử lý một bản tin đều có chi phí hằng số, nên chương trình đo theo kịp khoảng 400 bản tin mỗi giây với chu kỳ 10 ms.
 
-[BẢNG 6.7] Độ phức tạp (mã giả ở mục 5)
+[BẢNG 6.7] Độ phức tạp (mã giả ở mục 5.3)
   Thành phần                       | Thời gian                                                   | Bộ nhớ
   SeqTracker (đếm mất gói)         | O(1) mỗi bản tin (tra bảng băm theo nguồn, vài phép tính)   | O(S), S là số nguồn MAVLink (thực tế vài nguồn)
   RttTracker (đo RTT)              | gửi và nhận probe O(1); hủy probe quá hạn O(P), P ≤ 5 × 2 = 10 probe đang chờ | O(N) mẫu RTT, N ≤ 300 trong 60 s
