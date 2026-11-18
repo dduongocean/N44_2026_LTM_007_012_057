@@ -10,7 +10,7 @@ Xây dựng hệ thống mô phỏng xe tự hành Rover dùng PX4 SITL kết h�
 - Trương Nhật Hoàng
 - Đinh Trần Thảo Phương
 
-Giảng viên hướng dẫn: (điền)
+Giảng viên hướng dẫn: TS. Nguyễn Văn Hiếu
 
 ## Đầu vào – đầu ra của thí nghiệm
 - **Biến thay đổi:** khoảng cách giữa node mặt đất và node trên xe trong ns-3.
