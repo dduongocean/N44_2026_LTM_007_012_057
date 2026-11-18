@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="605" height="83.0" viewBox="0 0 605 83.0">
+<rect x="0" y="0" width="605" height="83.0" fill="#ffffff"/>
+<g font-family="Arial, Helvetica, sans-serif">
+<rect x="0.0" y="0.0" width="163.0" height="81.0" rx="4.0" fill="#ffffff" stroke="#333333" stroke-width="1.2"/>
+<text x="15.2" y="20.8" font-size="13" font-weight="bold" fill="#1a1a1a">VÙNG TRẠM (ns-gcs)</text>
+<text x="35.1" y="37.1" font-size="13" fill="#1a1a1a">chương trình đo</text>
+<text x="33.2" y="53.3" font-size="13" fill="#1a1a1a">hoặc script lái xe</text>
+<text x="37.5" y="69.6" font-size="13" fill="#1a1a1a">địa chỉ 10.0.0.1</text>
+<rect x="221.0" y="0.0" width="163.0" height="81.0" rx="4.0" fill="#e3eef9" stroke="#2b6cb0" stroke-width="1.2"/>
+<text x="264.9" y="20.8" font-size="13" font-weight="bold" fill="#1a1a1a">VÙNG GIỮA</text>
+<text x="243.8" y="37.1" font-size="13" font-weight="bold" fill="#1a1a1a">(namespace chính)</text>
+<text x="244.5" y="53.3" font-size="13" fill="#1a1a1a">ns-3: hai node Wi-Fi</text>
+<text x="254.6" y="69.6" font-size="13" fill="#1a1a1a">cách nhau d mét</text>
+<rect x="442.0" y="0.0" width="163.0" height="81.0" rx="4.0" fill="#ffffff" stroke="#333333" stroke-width="1.2"/>
+<text x="462.1" y="20.8" font-size="13" font-weight="bold" fill="#1a1a1a">VÙNG XE (ns-rover)</text>
+<text x="465.6" y="37.1" font-size="13" fill="#1a1a1a">PX4 SITL + Gazebo</text>
+<text x="476.0" y="53.3" font-size="13" fill="#1a1a1a">(xe gz_r1_rover)</text>
+<text x="479.6" y="69.6" font-size="13" fill="#1a1a1a">địa chỉ 10.0.0.2</text>
+<polyline points="165.0,40.5 219.0,40.5" fill="none" stroke="#333333" stroke-width="2.2" stroke-linejoin="round"/>
+<polygon points="219.0,40.5 210.0,45.0 210.0,36.0" fill="#333333"/>
+<polygon points="165.0,40.5 174.0,36.0 174.0,45.0" fill="#333333"/>
+<polyline points="386.0,40.5 440.0,40.5" fill="none" stroke="#333333" stroke-width="2.2" stroke-linejoin="round"/>
+<polygon points="440.0,40.5 431.0,45.0 431.0,36.0" fill="#333333"/>
+<polygon points="386.0,40.5 395.0,36.0 395.0,45.0" fill="#333333"/>
+</g></svg>

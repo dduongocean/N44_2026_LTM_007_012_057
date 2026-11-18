@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="605" height="127.0" viewBox="0 0 605 127.0">
+<rect x="0" y="0" width="605" height="127.0" fill="#ffffff"/>
+<g font-family="Arial, Helvetica, sans-serif">
+<rect x="0.0" y="0.0" width="196.0" height="125.0" rx="4.0" fill="#ffffff" stroke="#333333" stroke-width="1.2"/>
+<text x="28.0" y="59.1" font-size="13" font-weight="bold" fill="#1a1a1a">TRẠM MẶT ĐẤT (GCS)</text>
+<text x="23.8" y="75.3" font-size="13" fill="#1a1a1a">người vận hành, máy tính</text>
+<rect x="409.0" y="0.0" width="196.0" height="125.0" rx="4.0" fill="#ffffff" stroke="#333333" stroke-width="1.2"/>
+<text x="431.0" y="50.9" font-size="13" font-weight="bold" fill="#1a1a1a">XE (rover, autopilot PX4)</text>
+<text x="419.9" y="67.2" font-size="13" fill="#1a1a1a">nhận lệnh, điều khiển động cơ</text>
+<text x="446.4" y="83.4" font-size="13" fill="#1a1a1a">gửi trạng thái liên tục</text>
+<text x="231.9" y="26.8" font-size="13" fill="#1a1a1a">lệnh: arm, đổi chế độ, lái</text>
+<polyline points="196.0,34.2 409.0,34.2" fill="none" stroke="#333333" stroke-width="1.3" stroke-linejoin="round"/>
+<polygon points="409.0,34.2 400.0,38.8 400.0,29.8" fill="#333333"/>
+<text x="238.4" y="59.1" font-size="13" fill="#1a1a1a">trạng thái: vị trí, tốc độ</text>
+<polyline points="409.0,66.5 196.0,66.5" fill="none" stroke="#333333" stroke-width="1.3" stroke-linejoin="round"/>
+<polygon points="196.0,66.5 205.0,62.0 205.0,71.0" fill="#333333"/>
+<text x="251.3" y="91.3" font-size="13" fill="#4d4d4d">(bản tin MAVLink,</text>
+<text x="252.8" y="107.6" font-size="13" fill="#4d4d4d">truyền qua Wi-Fi)</text>
+</g></svg>

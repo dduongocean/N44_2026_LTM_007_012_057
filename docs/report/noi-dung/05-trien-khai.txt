@@ -6,23 +6,21 @@ MỤC 5. TRIỂN KHAI HỆ THỐNG VÀ GIẢI THUẬT
 BỐ CỤC MỤC 5
   5.1. Công nghệ và phiên bản
   5.2. Các bước dựng hệ thống
-  5.3. Hiện thực chương trình đo: từ công thức mục 4 tới mã
+  5.3. Hiện thực chương trình đo: từ công thức chương 4 tới mã
   5.4. Kiểm thử tự động
   5.5. Kiểm chứng hệ thống và công cụ đo
   5.6. Tự động hóa ba thí nghiệm và xử lý số liệu
   5.7. Khó khăn và cách giải quyết
-  Tóm tắt mục 5
+  Tóm tắt chương 5
 
-Mục này nối mục 4 với mục 6. Mục 4 đưa ra công thức và dự đoán; mục 6 dùng số đo để kiểm các dự đoán đó. Muốn số đo của mục 6 đáng tin, cần trả lời bốn câu hỏi, và mục này trả lời lần lượt: hệ thống được dựng bằng gì và theo những bước nào (5.1, 5.2); các công thức của mục 4 được hiện thực ra sao (5.3); làm sao biết hệ thống và chương trình đo hoạt động đúng (5.4, 5.5); và các thí nghiệm được chạy, xử lý số liệu thế nào (5.6). Cuối mục là những khó khăn gặp phải và cách giải quyết (5.7).
+Chương này là cầu nối giữa chương 4 và chương 6: chương 4 đưa ra công thức và dự đoán, chương 6 dùng số đo để kiểm chứng các dự đoán đó. Để số đo ở chương 6 đáng tin cậy, chương này trình bày công nghệ và các bước dựng hệ thống (5.1, 5.2), cách hiện thực các công thức của chương 4 (5.3), các phép kiểm thử và kiểm chứng hệ thống cùng chương trình đo (5.4, 5.5), quy trình tự động hóa thí nghiệm và xử lý số liệu (5.6), cuối cùng là các khó khăn gặp phải và cách giải quyết (5.7).
 
 
 5.1. Công nghệ và phiên bản
 -------------------------
-Ý chính: toàn bộ hệ thống chạy trên một máy Ubuntu 24.04; các phần mềm chính được ghi rõ phiên bản để người khác dựng lại được đúng cấu hình.
-
-Bảng 5.1 trình bày công nghệ sử dụng.
+Toàn bộ hệ thống chạy trên một máy Ubuntu 24.04; các phần mềm chính được ghi rõ phiên bản để có thể dựng lại đúng cấu hình. Bảng 5.1 trình bày công nghệ sử dụng.
 [BẢNG 5.1] Công nghệ sử dụng
-  Thành phần             | Phiên bản                                  | Dùng để
+  Thành phần             | Phiên bản                                  | Mục đích sử dụng
   Hệ điều hành           | Ubuntu 24.04.5 LTS (kernel 7.0)            | chạy toàn bộ hệ thống, cung cấp netns, veth, bridge, tap, tc netem
   PX4 Autopilot (SITL)   | v1.18.0-beta1-1267-gcd2b157682             | autopilot của xe, mẫu xe gz_r1_rover (airframe 4009)
   Gazebo                 | Harmonic, gz-sim 8.15.0                    | mô phỏng vật lý của xe
@@ -39,11 +37,9 @@ Một thành viên dùng ns-3.49 (bản phát hành); chương trình ns-3 của
 
 5.2. Các bước dựng hệ thống
 -------------------------
-Ý chính: hệ thống được dựng theo sáu bước, mỗi bước có một script và một cách kiểm tra. Lệnh cụ thể của từng bước có trong README của repo.
-
-Bảng 5.2 trình bày sáu bước dựng hệ thống.
+Hệ thống được dựng theo sáu bước, mỗi bước có một script và một cách kiểm tra; lệnh cụ thể của từng bước có trong README của repo. Bảng 5.2 trình bày sáu bước dựng hệ thống.
 [BẢNG 5.2] Sáu bước dựng hệ thống
-  Bước | Làm gì                                           | Script / công cụ                         | Kiểm tra bước này thành công
+  Bước | Nội dung                                         | Script / công cụ                         | Tiêu chí kiểm tra
   1    | Build PX4 SITL, build chương trình ns-3 rover-wifi, tạo môi trường Python | make px4_sitl; ./ns3 build; venv | file chạy PX4 và rover-wifi tồn tại; 58 test tự động đạt
   2    | Dựng mạng ảo: 2 netns, 2 cặp veth, 2 bridge, 2 tap | network/setup-netns.sh                   | ping giữa hai netns mất 100% khi chưa chạy ns-3
   3    | Chạy PX4 và Gazebo trong ns-rover, mở thêm kênh MAVLink tới trạm | network/run-px4.sh             | PX4 báo đã mở kênh 14581 -> 10.0.0.1:14540
@@ -53,15 +49,15 @@ Bảng 5.2 trình bày sáu bước dựng hệ thống.
 
 Chi tiết các bước quan trọng:
 
-Bước 2: dựng mạng ảo. Script tạo đúng sơ đồ ở mục 3 (hình 3.2) và thực hiện thêm bốn việc mà TapBridge chế độ UseLocal đòi hỏi (mục 3.6): gán MAC cố định cho hai veth (02:00:00:00:00:01 cho trạm, 02:00:00:00:00:02 cho xe); tắt IPv6 trên bridge, tap và đầu ngoài của veth; ghi sẵn bảng ARP trong hai netns; tắt bridge-nf. Ngoài ra script bật giao diện lo trong mỗi netns. Script gỡ toàn bộ cấu hình cũ trước khi dựng, nên chạy lại nhiều lần không lỗi.
+Bước 2: dựng mạng ảo. Script tạo đúng sơ đồ ở chương 3 (hình 3.2) và thực hiện thêm bốn việc mà TapBridge chế độ UseLocal đòi hỏi (mục 3.6): gán MAC cố định cho hai veth (02:00:00:00:00:01 cho trạm, 02:00:00:00:00:02 cho xe); tắt IPv6 trên bridge, tap và đầu ngoài của veth; ghi sẵn bảng ARP trong hai netns; tắt bridge-nf. Ngoài ra script bật giao diện lo trong mỗi netns. Script gỡ toàn bộ cấu hình cũ trước khi dựng, nên chạy lại nhiều lần không lỗi.
 
-Bước 3: chạy PX4 và Gazebo trong ns-rover. Ba điểm cần xử lý:
+Bước 3: chạy PX4 và Gazebo trong ns-rover. Bước này cần xử lý ba điểm:
   - PX4 không nên chạy bằng quyền root, nên script dùng sudo để vào netns rồi chuyển lại sang người dùng thường.
   - PX4 và Gazebo tìm nhau bằng multicast (mục 3.2.2), nên script bật multicast cho giao diện lo trong ns-rover và buộc thư viện gz-transport chỉ dùng 127.0.0.1.
-  - Mặc định PX4 chỉ gửi MAVLink tới 127.0.0.1. Sau khi PX4 khởi động xong, script dùng chương trình điều khiển đi kèm PX4 để mở thêm một kênh MAVLink: cổng 14581 trong ns-rover, gửi tới 10.0.0.1:14540, chế độ onboard. Cách này không phải sửa mã nguồn PX4.
+  - Mặc định PX4 chỉ gửi MAVLink tới 127.0.0.1. Sau khi PX4 khởi động xong, script dùng chương trình điều khiển đi kèm PX4 để mở thêm một kênh MAVLink: cổng 14581 trong ns-rover, gửi tới 10.0.0.1:14540, chế độ onboard. Cách này không phải sửa mã nguồn PX4. Bảng 5.3 liệt kê các kênh MAVLink của PX4 trong ns-rover và mục đích sử dụng của từng kênh.
 
 [BẢNG 5.3] Các kênh MAVLink của PX4 trong ns-rover
-  Kênh (instance) | Cổng nguồn | Gửi tới            | Đi qua ns-3 | Dùng cho
+  Kênh (instance) | Cổng nguồn | Đích gửi           | Qua ns-3    | Mục đích sử dụng
   0 (mặc định)    | 18570      | 127.0.0.1:14550    | không       | đọc vị trí xe trong thí nghiệm mất lệnh điều khiển (mục 5.6)
   1 (mặc định)    | 14580      | 127.0.0.1:14540    | không       | baseline (khi chạy ở namespace chính, không có netns)
   thêm bởi script | 14581      | 10.0.0.1:14540     | có          | mọi phép đo qua Wi-Fi mô phỏng
@@ -74,7 +70,7 @@ Bảng 5.4 trình bày cấu hình PX4 liên quan tới kết quả.
   COM_RC_LOSS_T        | 0,5 s       | quá thời gian này không có lệnh lái thì coi là mất tín hiệu điều khiển
   COM_FAIL_ACT_T       | 5 s         | thời gian giữ xe đứng yên trước khi thực hiện hành động failsafe
   NAV_RCL_ACT          | 2 (Return)  | hành động khi mất tín hiệu điều khiển: tự chạy về điểm xuất phát
-  COM_DL_LOSS_T, NAV_DLL_ACT | 10 s, 0 | mất liên kết dữ liệu: không làm gì riêng
+  COM_DL_LOSS_T, NAV_DLL_ACT | 10 s, 0 | mất liên kết dữ liệu: không có hành động riêng
   RO_SPEED_LIM         | 2 m/s       | vận tốc tối đa của xe khi tự chạy
   RO_DECEL_LIM         | 10 m/s^2    | giới hạn gia tốc phanh
 Biến môi trường PX4_SIM_SPEED_FACTOR không được đặt; nếu đặt, PX4 SITL sẽ tự đổi COM_RC_LOSS_T thành 1 s. (theo tệp khởi động rcS của PX4 SITL)
@@ -95,13 +91,13 @@ Bảng 5.5 trình bày tham số dòng lệnh của chương trình ns-3.
 Khi khởi động, chương trình in toàn bộ tham số ra màn hình; script chạy thí nghiệm lưu phần này vào file log của từng lần đo, nên cấu hình của mỗi lần đo đều tra lại được.
 
 
-5.3. Hiện thực chương trình đo: từ công thức mục 4 tới mã
+5.3. Hiện thực chương trình đo: từ công thức chương 4 tới mã
 -----------------------------------------------------
-Ý chính: mỗi công thức ở 4.4 có một thành phần mã tương ứng; chương trình đo gọi các thành phần này trong một vòng lặp 10 ms và ghi kết quả mỗi giây. Năm chi tiết hiện thực trong phần này được mục 6 dùng khi đọc số liệu.
+Mỗi công thức ở 4.4 có một thành phần mã tương ứng; chương trình đo gọi các thành phần này trong một vòng lặp 10 ms và ghi kết quả mỗi giây. Năm chi tiết hiện thực trình bày trong phần này được sử dụng ở chương 6 khi phân tích số liệu.
 
-Bảng 5.6 trình bày công thức mục 4 và thành phần hiện thực.
-[BẢNG 5.6] Công thức mục 4 và thành phần hiện thực
-  Công thức (mục 4)                        | Thành phần                    | File
+Bảng 5.6 trình bày công thức chương 4 và thành phần hiện thực.
+[BẢNG 5.6] Công thức chương 4 và thành phần hiện thực
+  Công thức (chương 4)                        | Thành phần                    | File
   (4.12), (4.13) mất gói theo seq         | SeqTracker                    | rover/core/linkstats.py
   (4.16)–(4.18), (4.24) RTT, p95, probe mất | RttTracker, calc_percentile | rover/core/linkstats.py
   (4.19), (4.20) jitter                   | calc_stdev, IntervalStats     | rover/core/linkstats.py
@@ -154,23 +150,23 @@ Phát hiện mất kết nối, theo (4.21) và (4.22):
   state(now): NẾU chưa có HEARTBEAT THÌ WAITING; NẾU now − last_hb > 3 s THÌ LOST; NGƯỢC LẠI CONNECTED
   Mỗi vòng lặp: NẾU trạng thái trước ≠ LOST VÀ trạng thái hiện tại = LOST THÌ lost_events <- lost_events + 1
 
-Năm chi tiết hiện thực mà mục 6 dùng khi đọc số liệu:
+Năm chi tiết hiện thực được sử dụng ở chương 6 khi phân tích số liệu:
   - Chỉ đếm sau HEARTBEAT đầu tiên. Chương trình biết system_id của xe nhờ HEARTBEAT đầu tiên, và chỉ đếm seq của các bản tin có system_id đó. Bản tin đến trước HEARTBEAT đầu tiên không được đếm. Khi kênh rất xấu, HEARTBEAT đầu tiên có thể tới muộn hàng chục giây (mục 6.5).
   - Nguồn của bản tin lạ. PX4 gửi cả những bản tin không có trong bộ định nghĩa "common" của pymavlink. Chương trình đọc lại system_id, component_id và seq trực tiếp từ header của các bản tin này (5.7, BUG-02); nếu không, mỗi bản tin như vậy tạo một khoảng hở giả trong seq của xe.
   - ts1 là mã probe. Trường ts1 mang số thứ tự của probe, còn thời điểm gửi được lưu ở trạm. Nhờ vậy RTT chỉ dùng đồng hồ của trạm.
   - RTT được làm tròn theo chu kỳ đọc. Phản hồi tới sớm vẫn phải chờ tới lần đọc kế tiếp, nên RTT đo được xấp xỉ RTT thật cộng thời gian chờ tới lần đọc kế tiếp (tối đa 10 ms).
-  - Mỗi giây một dòng, có cột trạng thái. File chi tiết của mỗi lần đo ghi mỗi giây một dòng gồm các giá trị cộng dồn và cột link_state (WAITING, CONNECTED hoặc LOST); T_mất ở mục 6 được tính từ cột này. Phần đầu file ghi lệnh đã chạy, nhãn, khoảng cách, thời lượng, thời điểm bắt đầu. Chương trình từ chối chạy nếu file cùng nhãn đã tồn tại, để không ghi đè số liệu cũ (5.7, BUG-03).
+  - Mỗi giây một dòng, có cột trạng thái. File chi tiết của mỗi lần đo ghi mỗi giây một dòng gồm các giá trị cộng dồn và cột link_state (WAITING, CONNECTED hoặc LOST); T_mất ở chương 6 được tính từ cột này. Phần đầu file ghi lệnh đã chạy, nhãn, khoảng cách, thời lượng, thời điểm bắt đầu. Chương trình từ chối chạy nếu file cùng nhãn đã tồn tại, để không ghi đè số liệu cũ (5.7, BUG-03).
 
 
 5.4. Kiểm thử tự động
 -------------------
-Ý chính: phần tính toán và phần đọc gói tin có 58 test tự động; phần lớn được viết trước khi viết mã, và mỗi lỗi trong mã Python (BUG-02, BUG-03) đều có một test tái hiện lỗi đó.
+Phần tính toán và phần đọc gói tin có 58 test tự động; phần lớn được viết trước khi viết mã, và mỗi lỗi trong mã Python (BUG-02, BUG-03) đều có một test tái hiện lỗi đó.
 
 Nhờ cách chia tầng (mục 3.7), phần tính toán ở tầng 2 không mở socket và không đọc đồng hồ, nên được kiểm thử bằng dữ liệu giả: ví dụ chuỗi seq có khoảng hở, có quay vòng qua 255, có gói đến sai thứ tự; chuỗi thời điểm HEARTBEAT có khoảng trống quá 3 giây. Phần đọc gói tin ở tầng 4 được kiểm thử bằng một chương trình giả lập PX4 gửi gói UDP thật tới chương trình đo.
 
 Bảng 5.7 liệt kê các file kiểm thử tự động.
 [BẢNG 5.7] Kiểm thử tự động
-  File test                   | Số test | Kiểm gì
+  File test                   | Số test | Nội dung kiểm thử
   tests/test_linkstats.py     | 16      | SeqTracker, RttTracker, thống kê: đếm mất gói, quay vòng seq, resync, RTT, probe quá hạn, p95, độ lệch chuẩn
   tests/test_vehicle.py       | 17      | LinkMonitor và điều khiển xe: trạng thái WAITING / CONNECTED / LOST, đúng ngưỡng 3 s vẫn CONNECTED, lệnh arm, lệnh lái
   tests/test_mavlink.py       | 21      | driver MAVLink: đọc HEARTBEAT, COMMAND_ACK, TIMESYNC qua UDP thật; gửi lệnh; bản tin ngoài bộ định nghĩa common giữ đúng nguồn và seq (test thêm khi sửa BUG-02)
@@ -181,7 +177,7 @@ Toàn bộ 58 test đạt. Với hai lỗi BUG-02 và BUG-03, test được vi�
 
 5.5. Kiểm chứng hệ thống và công cụ đo
 -----------------------------------
-Ý chính: trước khi đo, nhóm kiểm hai điều bằng các phép thử có kết quả biết trước: gói tin thật sự chỉ đi qua ns-3 (mục tiêu M1), và chương trình đo đo đúng mất gói và độ trễ (mục tiêu M2). Cả hai đều đạt; đây là cơ sở để tin số đo ở mục 6.
+Trước khi đo, nhóm kiểm chứng hai điều bằng các phép thử có kết quả biết trước: gói tin thật sự chỉ đi qua ns-3 (mục tiêu M1), và chương trình đo đo đúng mất gói và độ trễ (mục tiêu M2). Cả hai đều đạt; đây là cơ sở để tin cậy số đo ở chương 6.
 
 5.5.1. Hệ thống không có đường tắt (M1)
 Bảng 5.8 trình bày kiểm thử chấp nhận M1.
@@ -200,7 +196,7 @@ Các phép thử này không phụ thuộc mô hình kênh: chúng chỉ chứng
 
 5.5.2. Công cụ đo đo đúng (M2)
 Phương pháp: dùng netem đặt một lỗi đã biết trước lên đường truyền, rồi so số đo với lỗi đã đặt. netem được đặt trên veth-rover, tức chiều từ xe về trạm, ngay trước khi gói vào ns-3. ns-3 đặt ở 5 m (kênh tốt). Có ba trường hợp: không netem (đối chứng), netem mất 10% gói, và netem trễ 50 ms; mỗi trường hợp 3 lần × 60 s, chạy xen kẽ (đối chứng, mất gói, trễ; rồi lặp lại) bằng một script.
-Vì sao dùng netem mà không dùng mô hình lỗi có sẵn của ns-3: mô hình lỗi của ns-3 làm hỏng khung ở tầng Wi-Fi, nhưng tầng MAC sẽ phát lại khung hỏng (mục 4.3), nên 10% khung hỏng cho ra gần 0% mất gói ở tầng UDP; kết quả không biết trước được. netem làm mất gói ở tầng IP, bên ngoài ns-3, nên kết quả biết trước.
+Lý do dùng netem thay cho mô hình lỗi có sẵn của ns-3: mô hình lỗi của ns-3 làm hỏng khung ở tầng Wi-Fi, nhưng tầng MAC sẽ phát lại khung hỏng (mục 4.3), nên 10% khung hỏng cho ra gần 0% mất gói ở tầng UDP; kết quả không biết trước được. netem làm mất gói ở tầng IP, bên ngoài ns-3, nên kết quả biết trước.
 
 Bảng 5.9 trình bày kết quả kiểm chứng công cụ đo.
 [BẢNG 5.9] Kết quả kiểm chứng công cụ đo (trung bình ± độ lệch chuẩn 3 lần)
@@ -212,22 +208,22 @@ Bảng 5.9 trình bày kết quả kiểm chứng công cụ đo.
 (*) Không phải mất gói thật, xem dưới.
 Ngoài ra, chạy lại cùng lệnh không ghi đè dữ liệu cũ (sau khi sửa BUG-03).
 
-Một quan sát quan trọng: khi đặt netem trễ 50 ms, chương trình báo 0,15–0,32% "mất gói" kèm 12, 19 và 27 lần resync, trong khi hai trường hợp còn lại có 0 lần resync. Bản bắt gói trên tap-gcs ở lần chạy thử trước loạt kiểm chứng chính thức (dữ liệu lưu trữ, không dùng làm số liệu) cho thấy đúng 21 lần seq của xe bị lùi lại, khớp với 21 lần resync chương trình báo. Đây là gói đến sai thứ tự, xuất hiện khi đặt netem trễ (cơ chế cụ thể chưa kiểm), không phải gói mất; mỗi lần đảo thứ tự tạo một khoảng hở giả và bị đếm như mất (giới hạn đã nêu ở 4.4). Trong loạt đo chính của mục 6 không có netem, và chỉ có 2 lần resync trong 27 lần đo.
+Một quan sát quan trọng: khi đặt netem trễ 50 ms, chương trình báo 0,15–0,32% "mất gói" kèm 12, 19 và 27 lần resync, trong khi hai trường hợp còn lại có 0 lần resync. Bản bắt gói trên tap-gcs ở lần chạy thử trước loạt kiểm chứng chính thức (dữ liệu lưu trữ, không dùng làm số liệu) cho thấy đúng 21 lần seq của xe bị lùi lại, khớp với 21 lần resync chương trình báo. Đây là gói đến sai thứ tự, xuất hiện khi đặt netem trễ (cơ chế cụ thể chưa kiểm), không phải gói mất; mỗi lần đảo thứ tự tạo một khoảng hở giả và bị đếm như mất (giới hạn đã nêu ở 4.4). Trong loạt đo chính của chương 6 không có netem, và chỉ có 2 lần resync trong 27 lần đo.
 
 Kết luận 5.5: hệ thống không có đường tắt (M1 đạt); chương trình đo đo đúng mất gói (đặt 10%, đo 9,76%) và đúng độ trễ (đặt 50 ms, đo 49,46 ms), ổn định qua 3 lần lặp (M2 đạt).
 
 
 5.6. Tự động hóa ba thí nghiệm và xử lý số liệu
 --------------------------------------------
-Ý chính: mỗi thí nghiệm của mục 6 được chạy bằng một script, không cần thao tác tay giữa các lần đo; số liệu được xử lý bằng các script phân tích, và mọi bảng số trong báo cáo được tính lại bằng một script duy nhất.
+Mỗi thí nghiệm của chương 6 được chạy bằng một script, không cần thao tác tay giữa các lần đo; số liệu được xử lý bằng các script phân tích, và mọi bảng số trong báo cáo được tính lại bằng một script duy nhất.
 
 Bảng 5.10 liệt kê script chạy từng thí nghiệm.
 [BẢNG 5.10] Script chạy thí nghiệm
-  Thí nghiệm (mục 6)            | Script                                      | Mỗi lần đo, script làm gì
+  Thí nghiệm (chương 6)            | Script                                      | Các bước thực hiện mỗi lần đo
   A. Khảo sát theo khoảng cách  | tools/run_sweep.sh                          | chạy ns-3 với --distance = d và --RngRun = số thứ tự lần lặp, chờ 2 s, chạy chương trình đo 60 s trong ns-gcs, dừng ns-3, lưu log ns-3
   A. Baseline                   | tools/run_sweep.sh --baseline-only          | chạy chương trình đo 60 s ở namespace chính khi không có netns (PX4 chạy bình thường, nói chuyện qua localhost)
-  B. Kênh không fading          | tools/run_sweep.sh với tham số ns-3 --fading=false | như A
-  C. Mất lệnh điều khiển        | tools/run_failsafe.sh                       | xem dưới
+  B. Kênh không fading          | tools/run_sweep.sh với tham số ns-3 --fading=false | giống thí nghiệm A
+  C. Mất lệnh điều khiển        | tools/run_failsafe.sh                       | trình bày bên dưới
 Mỗi lần lặp dùng một giá trị --RngRun khác nhau, để fading ở ba lần đo cùng khoảng cách độc lập với nhau.
 
 Thí nghiệm C (mất lệnh điều khiển) phối hợp ba chương trình chạy cùng lúc:
@@ -241,11 +237,11 @@ Hai chương trình ghi thời điểm vào hai file riêng, cùng theo đồng 
 
 Bảng 5.11 liệt kê các script xử lý số liệu.
 [BẢNG 5.11] Script xử lý số liệu
-  Script                            | Đầu vào                                   | Đầu ra (dùng ở mục 6)
+  Script                            | Đầu vào                                   | Đầu ra (dùng ở chương 6)
   analysis/plot_results.py          | data/summary.csv                          | bảng tổng hợp theo khoảng cách; hình 6.1
   analysis/plot_report_extras.py    | data/summary.csv, data/nofading/          | hình 6.2 (thông lượng), hình 6.3 (so sánh fading)
   analysis/failsafe_analysis.py     | data/failsafe/                            | data/failsafe_summary.csv; hình 6.4
-  analysis/report_tables.py         | mọi file trên và pcap 80 m                | mọi bảng số của mục 4 và mục 6 (analysis/report_tables.txt)
+  analysis/report_tables.py         | mọi file trên và pcap 80 m                | mọi bảng số của chương 4 và chương 6 (analysis/report_tables.txt)
 Các chỉ số của thí nghiệm C được định nghĩa trong failsafe_analysis.py: v0 là vận tốc trung bình trong 0,5 s trước t0; "vận tốc còn một nửa" là lúc vận tốc tụt dưới 50% v0; d_max là khoảng cách lớn nhất từ vị trí tại t0 trong 5 s sau t0; "xe tự chạy lại" là lúc vận tốc vượt 0,2 m/s sau khi đã dừng.
 
 Phân tích bản bắt gói 802.11. Khi chạy ns-3 với --pcap, mỗi node ghi một file pcap chứa mọi khung nó phát và nhận, kèm cờ Retry. Để đếm số lần phát của mỗi khung (dùng ở mục 6.4), script gom các khung dữ liệu do node xe phát theo số thứ tự khung 802.11: một khung mới có số thứ tự mới, còn các lần phát lại có cùng số thứ tự và bật cờ Retry. Thời gian phát mỗi khung được ước lượng theo tốc độ 6 Mbit/s của 802.11g.
@@ -255,7 +251,7 @@ Hình 5.3 là ảnh Wireshark các khung 802.11 có cờ Retry ở 80 m.
 
 5.7. Khó khăn và cách giải quyết
 -----------------------------
-Ý chính: trong quá trình triển khai, nhóm gặp ba lỗi phần mềm (ghi trong nhật ký lỗi BUG-01 đến BUG-03) và một số vấn đề cấu hình; mỗi vấn đề được ghi nguyên nhân, cách sửa và cách kiểm chứng.
+Trong quá trình triển khai, nhóm gặp ba lỗi phần mềm (ghi trong nhật ký lỗi từ BUG-01 đến BUG-03) và một số vấn đề cấu hình; mỗi vấn đề được ghi nguyên nhân, cách sửa và cách kiểm chứng.
 
 Bảng 5.12 trình bày các lỗi phần mềm.
 [BẢNG 5.12] Các lỗi phần mềm
@@ -275,14 +271,14 @@ Bảng 5.13 trình bày các vấn đề cấu hình và thí nghiệm.
   Script chạy loạt tự dừng chính nó và không ghi được số liệu | lệnh dọn tiến trình ns-3 cũ khớp cả dòng lệnh của chính script; thư mục kết quả do quyền root tạo | chỉ dừng tiến trình có dòng lệnh bắt đầu bằng file ns-3; trao lại thư mục kết quả cho người dùng thường
 
 
-Tóm tắt mục 5
+Tóm tắt chương 5
 -------------
   - Hệ thống dựng trên Ubuntu 24.04 với PX4 v1.18, Gazebo Harmonic, ns-3.49 và Python 3.12, theo sáu bước, mỗi bước có script và cách kiểm tra.
-  - Mỗi công thức đo của mục 4 có một thành phần mã tương ứng, có mã giả và 58 test tự động. Năm chi tiết hiện thực (chỉ đếm sau HEARTBEAT đầu tiên, nguồn của bản tin lạ, ts1 là mã probe, RTT làm tròn theo chu kỳ đọc, cột trạng thái mỗi giây) được mục 6 dùng khi đọc số liệu.
+  - Mỗi công thức đo của chương 4 có một thành phần mã tương ứng, có mã giả và 58 test tự động. Năm chi tiết hiện thực (chỉ đếm sau HEARTBEAT đầu tiên, nguồn của bản tin lạ, ts1 là mã probe, RTT làm tròn theo chu kỳ đọc, cột trạng thái mỗi giây) được chương 6 dùng khi đọc số liệu.
   - Hệ thống không có đường tắt (M1), và chương trình đo đo đúng mất gói và độ trễ khi kiểm bằng lỗi biết trước (M2): đặt 10% đo 9,76%, đặt 50 ms đo 49,46 ms.
-  - Ba thí nghiệm của mục 6 được chạy hoàn toàn bằng script; mọi bảng số được tính lại bằng một script duy nhất.
+  - Ba thí nghiệm của chương 6 được chạy hoàn toàn bằng script; mọi bảng số được tính lại bằng một script duy nhất.
   - Ba lỗi phần mềm và sáu vấn đề cấu hình đã được tìm ra, sửa và kiểm chứng.
-Mục 6 tiếp theo trình bày kết quả của ba thí nghiệm.
+Chương 6 trình bày kết quả của ba thí nghiệm.
 
 
 GHI CHÚ CHO NHÓM (không đưa vào báo cáo)

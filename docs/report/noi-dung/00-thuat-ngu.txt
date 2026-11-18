@@ -50,7 +50,6 @@ probe | gói thăm dò | Một lần gửi TIMESYNC để đo RTT, có đánh s�
 promiscuous | chế độ nhận mọi khung | Chế độ giao diện mạng nhận cả những khung không gửi tới địa chỉ MAC của nó.
 PX4 | (PX4 Autopilot) | Phần mềm autopilot mã nguồn mở dùng trong đề tài.
 pymavlink | (thư viện Python) | Thư viện Python đọc và ghi bản tin MAVLink.
-QGroundControl | (phần mềm trạm mặt đất) | Phần mềm có giao diện để điều khiển và giám sát xe dùng PX4 hoặc ArduPilot.
 Rayleigh | mô hình fading Rayleigh | Trường hợp riêng của Nakagami với m = 1, ứng với tín hiệu dao động mạnh khi không có đường truyền thẳng nổi trội.
 resync | đồng bộ lại seq | Trường hợp chương trình đo gặp seq lùi lại hoặc nhảy quá xa, phải bắt đầu đếm lại từ seq mới.
 Retry (cờ) | cờ gửi lại | Bit trong header khung 802.11 cho biết khung này là bản gửi lại.

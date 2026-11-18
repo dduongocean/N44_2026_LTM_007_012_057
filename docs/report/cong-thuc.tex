@@ -1,0 +1,137 @@
+% Công thức mục 4 viết lại bằng LaTeX để build_docx.py đổi sang công thức Word (OMML).
+% Nguồn: docs/report/noi-dung/04-mo-hinh-toan.txt. Chỉ đổi cách trình bày, không đổi giá trị.
+% Định dạng (các cột cách nhau bằng TAB):
+%   <số><TAB><LaTeX>             công thức hiển thị; nhiều dòng cùng số = công thức nhiều dòng
+%   <số><TAB>@<TAB><chú giải>    phần chữ đặt ngoài công thức (chép nguyên văn từ dòng gốc; script kiểm tra)
+%   sym<TAB><ký hiệu trong bài><TAB><LaTeX>    ký hiệu nội dòng trong đoạn văn và ô bảng
+%   cell<TAB><ký hiệu><TAB><LaTeX>            ký hiệu đứng riêng trong cột "Ký hiệu" (bảng 4.1, bảng ký hiệu)
+% Dòng bắt đầu bằng % bị bỏ qua.
+
+4.1	\mathrm{PL}(d) = L_{0} + 10 \cdot n \cdot \log_{10}\left(\frac{d}{d_{0}}\right)
+4.2	L_{0} = 20 \cdot \log_{10}\left(\frac{4 \cdot \pi \cdot d_{0}}{\lambda_{s}}\right)
+4.3	\bar{P}_{\mathrm{rx}}(d) = P_{\mathrm{tx}} + G_{\mathrm{tx}} + G_{\mathrm{rx}} - \mathrm{PL}(d) = 16 - 40{,}046 - 30 \cdot \log_{10}(d) \quad [\mathrm{dBm}]
+4.4	P_{\mathrm{rx},\text{khung}} = \bar{P}_{\mathrm{rx}} \cdot X, \quad X \sim \mathrm{Gamma}\left(\text{hình dạng } m, \text{ tỷ lệ } \frac{1}{m}\right), \quad E[X] = 1
+4.5	\text{khung được phát hiện} \iff P_{\mathrm{rx},\text{khung}} \geq \theta = -82\ \mathrm{dBm}
+4.6	N = -174 + 10 \cdot \log_{10}(B) + \mathrm{NF} = -174 + 73 + 7 = -94\ \mathrm{dBm}
+4.6	@	(B = 20 MHz, hệ số nhiễu NF = 7 dB)
+4.7	d^{*} = d_{0} \cdot 10^{\frac{P_{\mathrm{tx}} + G_{\mathrm{tx}} + G_{\mathrm{rx}} - L_{0} - \theta}{10 \cdot n}}
+4.8	p(d) = P(P_{\mathrm{rx},\text{khung}} < \theta) = P(X < x(d)) = P(m, m \cdot x(d)),
+4.8	\text{với } x(d) = 10^{\frac{\theta - \bar{P}_{\mathrm{rx}}(d)}{10}}
+4.9	\text{xác suất khung bị bỏ vì hết lượt phát: } P_{\mathrm{mac}}(d) = p(d)^{K}
+4.10	\text{số lần phát trung bình của một khung:}
+4.10	E[N_{\mathrm{tx}}](d) = 1 + p + p^{2} + \dots + p^{K-1} = \frac{1 - p^{K}}{1 - p}
+4.10b	E[N_{\mathrm{tx},\text{trên}}](d) = \frac{1 - q^{K}}{1 - q}, \quad q = 1 - (1 - p)^{2}
+4.11	\rho(d) = \lambda \cdot E[S](d)
+4.12	g_{k} = (s_{k} - s_{k-1} - 1)\ \mathrm{mod}\ 256
+4.13	L = \frac{\text{số mất}}{\text{số nhận} + \text{số mất}}
+4.14	R = \frac{\text{số nhận}}{\text{thời lượng đo}}
+4.14	@	(bản tin/s; thông lượng nhận được trong cả lần đo)
+4.15	L_{R} = 1 - \frac{\text{số nhận}}{R_{\mathrm{ref}} \cdot T_{\text{đếm}}}, \quad R_{\mathrm{ref}} = R \text{ ở 10 m}
+4.15	@	(khoảng 397 bản tin/s)
+4.16	\mathrm{RTT}_{i} = t_{\text{nhận},i} - t_{\text{gửi},i}
+4.17	\text{RTT trung bình} = \frac{1}{N} \cdot \sum_{i=1}^{N} \mathrm{RTT}_{i}
+4.18	\text{RTT p95: sắp xếp các mẫu tăng dần } x_{(0)} \leq \dots \leq x_{(N-1)}; \quad \text{đặt } k = 0{,}95 \cdot (N - 1);
+4.18	\mathrm{RTT}_{p95} = x_{(\lfloor k \rfloor)} \cdot (\lceil k \rceil - k) + x_{(\lceil k \rceil)} \cdot (k - \lfloor k \rfloor)
+4.18	@	(nội suy tuyến tính)
+4.19	J_{\mathrm{RTT}} = \sqrt{\frac{\sum_{i=1}^{N} (\mathrm{RTT}_{i} - \text{RTT trung bình})^{2}}{N - 1}}
+4.20	J_{\mathrm{HB}} = \text{độ lệch chuẩn mẫu của các khoảng thời gian}
+4.20	\text{giữa hai HEARTBEAT liên tiếp nhận được}
+4.21	\text{trạng thái}(t) = \begin{cases} \text{WAITING} & \text{nếu chưa từng nhận HEARTBEAT} \\ \text{LOST} & \text{nếu } t - t_{\mathrm{HB}} > T_{\mathrm{lost}} = 3\ \mathrm{s} \\ \text{CONNECTED} & \text{trong các trường hợp còn lại} \end{cases}
+4.22	E = \text{số lần trạng thái chuyển từ khác LOST sang LOST}
+4.22	\text{trong một lần đo}
+4.23	T_{\text{mất}} = \text{số giây trong lần đo}
+4.23	\text{mà trạng thái là LOST hoặc WAITING}
+4.24	\text{tỷ lệ probe mất} = \frac{\text{số probe không có phản hồi sau } T_{\mathrm{probe}}}{\text{số probe đã gửi}}
+4.25	\begin{cases} \text{TIN CẬY} & \text{nếu với mọi } r\text{: } E_{r} = 0,\ L_{r} < 1\% \\ & \text{và } \mathrm{RTT}_{p95,r} < 100\ \mathrm{ms} \\ \text{KHÔNG TIN CẬY} & \text{nếu tồn tại } r\text{: } E_{r} \geq 1 \\ \text{SUY GIẢM} & \text{trong các trường hợp còn lại} \end{cases}
+4.26	d_{\mathrm{tc}} = \text{khoảng cách lớn nhất được xếp loại TIN CẬY}
+4.27	t_{\text{phát hiện}} \approx t_{0} + T_{\mathrm{RC}} + \varepsilon
+4.28	t_{\mathrm{Return}} \approx t_{\text{phát hiện}} + T_{F}
+4.29	\text{quãng đường xe đi thêm sau } t_{0}
+4.29	\approx v_{0} \cdot (T_{\mathrm{RC}} + \varepsilon) + \text{quãng đường phanh}
+
+% ---------------------------------------------------------------- cụm công thức trong đoạn văn
+sym	c = 3·10^8 m/s	c = 3 \cdot 10^{8}\ \mathrm{m/s}
+sym	d* = 10^((16 − 40,046 + 82) / 30) = 10^(57,954 / 30) = 85,47 m	d^{*} = 10^{(16 - 40{,}046 + 82)/30} = 10^{57{,}954/30} = 85{,}47\ \mathrm{m}
+sym	d* = 10^(51,322 / 30) = 51,37 m	d^{*} = 10^{51{,}322/30} = 51{,}37\ \mathrm{m}
+sym	q = 1 − (1 − p)^2	q = 1 - (1 - p)^{2}
+sym	v0^2 / (2 · RO_DECEL_LIM)	v_{0}^{2}/(2 \cdot \mathrm{RO\_DECEL\_LIM})
+sym	λ_s = c / f	\lambda_{s} = c/f
+sym	m/s^2	\text{m/s}^{2}
+sym	P_mac = p^7	P_{\mathrm{mac}} = p^{7}
+
+% ---------------------------------------------------------------- ký hiệu nội dòng
+sym	P̄rx(d)	\bar{P}_{\mathrm{rx}}(d)
+sym	P̄rx	\bar{P}_{\mathrm{rx}}
+sym	P_rx,khung	P_{\mathrm{rx},\text{khung}}
+sym	P_mac(d)	P_{\mathrm{mac}}(d)
+sym	P_mac	P_{\mathrm{mac}}
+sym	P_tx	P_{\mathrm{tx}}
+sym	G_tx	G_{\mathrm{tx}}
+sym	G_rx	G_{\mathrm{rx}}
+sym	PL(d)	\mathrm{PL}(d)
+sym	p(d)	p(d)
+sym	x(d)	x(d)
+sym	L0	L_{0}
+sym	d0	d_{0}
+sym	t0	t_{0}
+sym	v0	v_{0}
+sym	d*	d^{*}
+sym	d_tc	d_{\mathrm{tc}}
+sym	d_max	d_{\mathrm{max}}
+sym	D_max	D_{\mathrm{max}}
+sym	λ_s	\lambda_{s}
+sym	λ	\lambda
+sym	θ	\theta
+sym	ρ	\rho
+sym	ε	\varepsilon
+sym	E[N_tx,trên]	E[N_{\mathrm{tx},\text{trên}}]
+sym	E[N_tx]	E[N_{\mathrm{tx}}]
+sym	E[S]	E[S]
+sym	E[X]	E[X]
+sym	E_r	E_{r}
+sym	L_r	L_{r}
+sym	L_R	L_{R}
+sym	R_ref	R_{\mathrm{ref}}
+sym	RTT_p95,r	\mathrm{RTT}_{p95,r}
+sym	RTT_p95	\mathrm{RTT}_{p95}
+sym	RTT_i	\mathrm{RTT}_{i}
+sym	J_RTT	J_{\mathrm{RTT}}
+sym	J_HB	J_{\mathrm{HB}}
+sym	T_RC	T_{\mathrm{RC}}
+sym	T_F	T_{F}
+sym	T_HB	T_{\mathrm{HB}}
+sym	T_loop	T_{\mathrm{loop}}
+sym	T_lost	T_{\mathrm{lost}}
+sym	T_probe	T_{\mathrm{probe}}
+sym	T_mất	T_{\text{mất}}
+sym	T_đếm	T_{\text{đếm}}
+sym	f_probe	f_{\mathrm{probe}}
+sym	g_k	g_{k}
+sym	s_k	s_{k}
+sym	s_(k−1)	s_{k-1}
+sym	t_HB	t_{\mathrm{HB}}
+sym	t_phát_hiện	t_{\text{phát hiện}}
+sym	t_Return	t_{\mathrm{Return}}
+sym	t_gửi,i	t_{\text{gửi},i}
+sym	t_nhận,i	t_{\text{nhận},i}
+sym	p^7	p^{7}
+
+% ---------------------------------------------------------------- ô "Ký hiệu" (bảng 4.1, bảng ký hiệu)
+cell	f	f
+cell	n	n
+cell	m	m
+cell	N	N
+cell	K	K
+cell	Q	Q
+cell	d	d
+cell	c	c
+cell	X	X
+cell	q	q
+cell	λ	\lambda
+cell	B	B
+cell	NF	\mathrm{NF}
+cell	L	L
+cell	R	R
+cell	E	E
+cell	ρ	\rho
+cell	PL(d)	\mathrm{PL}(d)

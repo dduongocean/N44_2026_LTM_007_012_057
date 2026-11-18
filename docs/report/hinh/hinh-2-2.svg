@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="605" height="157.5" viewBox="0 0 605 157.5">
+<rect x="0" y="0" width="605" height="157.5" fill="#ffffff"/>
+<g font-family="Arial, Helvetica, sans-serif">
+<rect x="0.0" y="45.4" width="128.0" height="64.8" rx="4.0" fill="#ffffff" stroke="#333333" stroke-width="1.2"/>
+<text x="27.2" y="66.2" font-size="13" fill="#1a1a1a">M1: dựng hệ</text>
+<text x="26.9" y="82.4" font-size="13" fill="#1a1a1a">thống, gói tin</text>
+<text x="30.5" y="98.7" font-size="13" fill="#1a1a1a">không đi tắt</text>
+<rect x="159.0" y="45.4" width="128.0" height="64.8" rx="4.0" fill="#ffffff" stroke="#333333" stroke-width="1.2"/>
+<text x="170.1" y="74.3" font-size="13" fill="#1a1a1a">M2: có công cụ đo</text>
+<text x="180.1" y="90.6" font-size="13" fill="#1a1a1a">đã kiểm chứng</text>
+<rect x="318.0" y="0.0" width="128.0" height="64.8" rx="4.0" fill="#ffffff" stroke="#333333" stroke-width="1.2"/>
+<text x="347.8" y="28.9" font-size="13" fill="#1a1a1a">M3: đo theo</text>
+<text x="345.2" y="45.2" font-size="13" fill="#1a1a1a">khoảng cách</text>
+<rect x="318.0" y="90.8" width="128.0" height="64.8" rx="4.0" fill="#ffffff" stroke="#333333" stroke-width="1.2"/>
+<text x="333.0" y="119.7" font-size="13" fill="#1a1a1a">M4: thử mất lệnh</text>
+<text x="352.4" y="135.9" font-size="13" fill="#1a1a1a">điều khiển</text>
+<rect x="477.0" y="0.0" width="128.0" height="64.8" rx="4.0" fill="#e3eef9" stroke="#2b6cb0" stroke-width="1.2"/>
+<text x="494.9" y="28.9" font-size="13" fill="#1a1a1a">bài toán khoảng</text>
+<text x="506.8" y="45.2" font-size="13" fill="#1a1a1a">cách tin cậy</text>
+<rect x="477.0" y="90.8" width="128.0" height="64.8" rx="4.0" fill="#e3eef9" stroke="#2b6cb0" stroke-width="1.2"/>
+<text x="491.3" y="119.7" font-size="13" fill="#1a1a1a">bài toán mất lệnh</text>
+<text x="511.4" y="135.9" font-size="13" fill="#1a1a1a">điều khiển</text>
+<polyline points="128.0,77.8 159.0,77.8" fill="none" stroke="#333333" stroke-width="1.3" stroke-linejoin="round"/>
+<polygon points="159.0,77.8 150.0,82.2 150.0,73.2" fill="#333333"/>
+<polyline points="287.0,77.8 302.5,77.8 302.5,32.4 318.0,32.4" fill="none" stroke="#333333" stroke-width="1.3" stroke-linejoin="round"/>
+<polygon points="318.0,32.4 309.0,36.9 309.0,27.9" fill="#333333"/>
+<polyline points="302.5,77.8 302.5,123.1 318.0,123.1" fill="none" stroke="#333333" stroke-width="1.3" stroke-linejoin="round"/>
+<polygon points="318.0,123.1 309.0,127.6 309.0,118.6" fill="#333333"/>
+<polyline points="446.0,32.4 477.0,32.4" fill="none" stroke="#333333" stroke-width="1.3" stroke-linejoin="round"/>
+<polygon points="477.0,32.4 468.0,36.9 468.0,27.9" fill="#333333"/>
+<polyline points="446.0,123.1 477.0,123.1" fill="none" stroke="#333333" stroke-width="1.3" stroke-linejoin="round"/>
+<polygon points="477.0,123.1 468.0,127.6 468.0,118.6" fill="#333333"/>
+</g></svg>

@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="605" height="906.0" viewBox="0 0 605 906.0">
+<rect x="0" y="0" width="605" height="906.0" fill="#ffffff"/>
+<g font-family="Arial, Helvetica, sans-serif">
+<rect x="60.0" y="0.0" width="270.0" height="48.5" rx="24.2" fill="#ffffff" stroke="#333333" stroke-width="1.2"/>
+<text x="80.8" y="20.8" font-size="13" fill="#1a1a1a">Bắt đầu: đọc tham số --duration, --label,</text>
+<text x="156.2" y="37.1" font-size="13" fill="#1a1a1a">--probe-hz, ...</text>
+<rect x="60.0" y="74.5" width="270.0" height="81.0" rx="4.0" fill="#ffffff" stroke="#333333" stroke-width="1.2"/>
+<text x="78.0" y="95.3" font-size="13" fill="#1a1a1a">Mở socket MAVLink udpin:0.0.0.0:14540</text>
+<text x="75.8" y="111.6" font-size="13" fill="#1a1a1a">Tạo LinkMonitor, SeqTracker, RttTracker,</text>
+<text x="158.9" y="127.8" font-size="13" fill="#1a1a1a">IntervalStats</text>
+<text x="84.7" y="144.1" font-size="13" fill="#1a1a1a">Ghi phần đầu file data/raw/&lt;label&gt;.csv</text>
+<polygon points="78.0,181.5 312.0,181.5 330.0,205.8 312.0,230.0 78.0,230.0 60.0,205.8" fill="#e3eef9" stroke="#2b6cb0" stroke-width="1.2"/>
+<text x="139.9" y="202.3" font-size="13" fill="#1a1a1a">Đã hết thời gian đo</text>
+<text x="140.8" y="218.6" font-size="13" fill="#1a1a1a">hoặc nhấn Ctrl+C?</text>
+<rect x="60.0" y="264.0" width="270.0" height="48.5" rx="4.0" fill="#ffffff" stroke="#333333" stroke-width="1.2"/>
+<text x="81.3" y="284.8" font-size="13" fill="#1a1a1a">(1) poll(): đọc mọi bản tin đang chờ trên</text>
+<text x="176.2" y="301.1" font-size="13" fill="#1a1a1a">socket</text>
+<polygon points="78.0,338.5 312.0,338.5 330.0,354.6 312.0,370.8 78.0,370.8 60.0,354.6" fill="#e3eef9" stroke="#2b6cb0" stroke-width="1.2"/>
+<text x="156.1" y="359.3" font-size="13" fill="#1a1a1a">Loại sự kiện?</text>
+<rect x="40.0" y="404.8" width="175.0" height="81.0" rx="4.0" fill="#ffffff" stroke="#333333" stroke-width="1.2"/>
+<text x="86.7" y="425.6" font-size="13" fill="#1a1a1a">HEARTBEAT:</text>
+<text x="54.8" y="441.8" font-size="13" fill="#1a1a1a">LinkMonitor ghi thời điểm</text>
+<text x="58.0" y="458.1" font-size="13" fill="#1a1a1a">IntervalStats ghi khoảng</text>
+<text x="94.3" y="474.3" font-size="13" fill="#1a1a1a">cách 2 nhịp</text>
+<rect x="235.0" y="404.8" width="175.0" height="81.0" rx="4.0" fill="#ffffff" stroke="#333333" stroke-width="1.2"/>
+<text x="260.5" y="433.7" font-size="13" fill="#1a1a1a">Bản tin bất kỳ của xe:</text>
+<text x="255.2" y="449.9" font-size="13" fill="#1a1a1a">SeqTracker.on_packet(</text>
+<text x="288.3" y="466.2" font-size="13" fill="#1a1a1a">nguồn, seq)</text>
+<rect x="430.0" y="404.8" width="175.0" height="81.0" rx="4.0" fill="#ffffff" stroke="#333333" stroke-width="1.2"/>
+<text x="457.2" y="425.6" font-size="13" fill="#1a1a1a">TIMESYNC phản hồi</text>
+<text x="492.0" y="441.8" font-size="13" fill="#1a1a1a">(tc1 ≠ 0):</text>
+<text x="449.5" y="458.1" font-size="13" fill="#1a1a1a">RttTracker.on_reply(mã</text>
+<text x="467.2" y="474.3" font-size="13" fill="#1a1a1a">probe = ts1, now)</text>
+<polygon points="78.0,519.8 312.0,519.8 330.0,552.1 312.0,584.5 78.0,584.5 60.0,552.1" fill="#e3eef9" stroke="#2b6cb0" stroke-width="1.2"/>
+<text x="133.5" y="540.6" font-size="13" fill="#1a1a1a">(2) Trạng thái chuyển</text>
+<text x="133.4" y="556.8" font-size="13" fill="#1a1a1a">sang LOST? (quá 3 s</text>
+<text x="125.7" y="573.1" font-size="13" fill="#1a1a1a">không có HEARTBEAT)</text>
+<polygon points="78.0,628.5 312.0,628.5 330.0,652.8 312.0,677.0 78.0,677.0 60.0,652.8" fill="#e3eef9" stroke="#2b6cb0" stroke-width="1.2"/>
+<text x="130.2" y="649.3" font-size="13" fill="#1a1a1a">(3) Đến lúc gửi probe?</text>
+<text x="132.3" y="665.6" font-size="13" fill="#1a1a1a">(mỗi 1/probe_hz giây)</text>
+<rect x="60.0" y="721.0" width="270.0" height="48.5" rx="4.0" fill="#ffffff" stroke="#333333" stroke-width="1.2"/>
+<text x="117.6" y="741.8" font-size="13" fill="#1a1a1a">(4) RttTracker.expire(now):</text>
+<text x="110.5" y="758.1" font-size="13" fill="#1a1a1a">probe chờ quá 2 s tính là mất</text>
+<polygon points="78.0,795.5 312.0,795.5 330.0,811.6 312.0,827.8 78.0,827.8 60.0,811.6" fill="#e3eef9" stroke="#2b6cb0" stroke-width="1.2"/>
+<text x="133.1" y="816.3" font-size="13" fill="#1a1a1a">(5) Tròn thêm 1 giây?</text>
+<rect x="60.0" y="871.8" width="270.0" height="32.2" rx="4.0" fill="#ffffff" stroke="#333333" stroke-width="1.2"/>
+<text x="163.7" y="892.6" font-size="13" fill="#1a1a1a">Ngủ 10 ms</text>
+<rect x="400.0" y="536.0" width="205.0" height="32.2" rx="4.0" fill="#ffffff" stroke="#333333" stroke-width="1.2"/>
+<text x="454.9" y="556.8" font-size="13" fill="#1a1a1a">lost_events += 1</text>
+<rect x="400.0" y="620.4" width="205.0" height="64.8" rx="4.0" fill="#ffffff" stroke="#333333" stroke-width="1.2"/>
+<text x="417.0" y="641.2" font-size="13" fill="#1a1a1a">Gửi TIMESYNC tc1 = 0, ts1 =</text>
+<text x="475.1" y="657.4" font-size="13" fill="#1a1a1a">mã probe</text>
+<text x="421.9" y="673.7" font-size="13" fill="#1a1a1a">RttTracker ghi thời điểm gửi</text>
+<rect x="400.0" y="787.4" width="205.0" height="48.5" rx="4.0" fill="#ffffff" stroke="#333333" stroke-width="1.2"/>
+<text x="420.1" y="808.2" font-size="13" fill="#1a1a1a">Tính RTT tb, p95, jitter; ghi 1</text>
+<text x="472.9" y="824.4" font-size="13" fill="#1a1a1a">dòng CSV</text>
+<rect x="400.0" y="173.4" width="205.0" height="64.8" rx="4.0" fill="#ffffff" stroke="#333333" stroke-width="1.2"/>
+<text x="445.9" y="194.2" font-size="13" fill="#1a1a1a">Tính chỉ số tổng kết</text>
+<text x="418.6" y="210.4" font-size="13" fill="#1a1a1a">Ghi 1 dòng vào summary.csv</text>
+<text x="432.6" y="226.7" font-size="13" fill="#1a1a1a">(nối thêm, không ghi đè)</text>
+<rect x="400.0" y="264.1" width="205.0" height="32.2" rx="16.1" fill="#ffffff" stroke="#333333" stroke-width="1.2"/>
+<text x="478.7" y="284.9" font-size="13" fill="#1a1a1a">Kết thúc</text>
+<polyline points="195.0,48.5 195.0,74.5" fill="none" stroke="#333333" stroke-width="1.3" stroke-linejoin="round"/>
+<polygon points="195.0,74.5 190.5,65.5 199.5,65.5" fill="#333333"/>
+<polyline points="195.0,155.5 195.0,181.5" fill="none" stroke="#333333" stroke-width="1.3" stroke-linejoin="round"/>
+<polygon points="195.0,181.5 190.5,172.5 199.5,172.5" fill="#333333"/>
+<polyline points="195.0,230.0 195.0,264.0" fill="none" stroke="#333333" stroke-width="1.3" stroke-linejoin="round"/>
+<polygon points="195.0,264.0 190.5,255.0 199.5,255.0" fill="#333333"/>
+<text x="203.0" y="244.8" font-size="13" fill="#1a1a1a">Chưa</text>
+<polyline points="195.0,312.5 195.0,338.5" fill="none" stroke="#333333" stroke-width="1.3" stroke-linejoin="round"/>
+<polygon points="195.0,338.5 190.5,329.5 199.5,329.5" fill="#333333"/>
+<polyline points="330.0,205.8 400.0,205.8" fill="none" stroke="#333333" stroke-width="1.3" stroke-linejoin="round"/>
+<polygon points="400.0,205.8 391.0,210.2 391.0,201.2" fill="#333333"/>
+<text x="355.2" y="198.3" font-size="13" fill="#1a1a1a">Rồi</text>
+<polyline points="502.5,238.1 502.5,264.1" fill="none" stroke="#333333" stroke-width="1.3" stroke-linejoin="round"/>
+<polygon points="502.5,264.1 498.0,255.1 507.0,255.1" fill="#333333"/>
+<polyline points="195.0,370.8 195.0,387.8 127.5,387.8 127.5,404.8" fill="none" stroke="#333333" stroke-width="1.3" stroke-linejoin="round"/>
+<polygon points="127.5,404.8 123.0,395.8 132.0,395.8" fill="#333333"/>
+<polyline points="195.0,370.8 195.0,387.8 322.5,387.8 322.5,404.8" fill="none" stroke="#333333" stroke-width="1.3" stroke-linejoin="round"/>
+<polygon points="322.5,404.8 318.0,395.8 327.0,395.8" fill="#333333"/>
+<polyline points="195.0,370.8 195.0,387.8 517.5,387.8 517.5,404.8" fill="none" stroke="#333333" stroke-width="1.3" stroke-linejoin="round"/>
+<polygon points="517.5,404.8 513.0,395.8 522.0,395.8" fill="#333333"/>
+<polyline points="127.5,485.8 127.5,502.8 195.0,502.8 195.0,519.8" fill="none" stroke="#333333" stroke-width="1.3" stroke-linejoin="round"/>
+<polygon points="195.0,519.8 190.5,510.8 199.5,510.8" fill="#333333"/>
+<polyline points="322.5,485.8 322.5,502.8 195.0,502.8 195.0,519.8" fill="none" stroke="#333333" stroke-width="1.3" stroke-linejoin="round"/>
+<polygon points="195.0,519.8 190.5,510.8 199.5,510.8" fill="#333333"/>
+<polyline points="517.5,485.8 517.5,502.8 195.0,502.8 195.0,519.8" fill="none" stroke="#333333" stroke-width="1.3" stroke-linejoin="round"/>
+<polygon points="195.0,519.8 190.5,510.8 199.5,510.8" fill="#333333"/>
+<polyline points="330.0,552.1 400.0,552.1" fill="none" stroke="#333333" stroke-width="1.3" stroke-linejoin="round"/>
+<polygon points="400.0,552.1 391.0,556.6 391.0,547.6" fill="#333333"/>
+<text x="356.7" y="544.7" font-size="13" fill="#1a1a1a">Có</text>
+<polyline points="195.0,584.5 195.0,628.5" fill="none" stroke="#333333" stroke-width="1.3" stroke-linejoin="round"/>
+<polygon points="195.0,628.5 190.5,619.5 199.5,619.5" fill="#333333"/>
+<text x="203.0" y="599.3" font-size="13" fill="#1a1a1a">Không</text>
+<polyline points="502.5,568.2 502.5,616.5 195.0,616.5 195.0,628.5" fill="none" stroke="#333333" stroke-width="1.3" stroke-linejoin="round"/>
+<polygon points="195.0,628.5 190.5,619.5 199.5,619.5" fill="#333333"/>
+<polyline points="330.0,652.8 400.0,652.8" fill="none" stroke="#333333" stroke-width="1.3" stroke-linejoin="round"/>
+<polygon points="400.0,652.8 391.0,657.2 391.0,648.2" fill="#333333"/>
+<text x="345.9" y="629.1" font-size="13" fill="#1a1a1a">Có, đã</text>
+<text x="344.1" y="645.3" font-size="13" fill="#1a1a1a">thấy xe</text>
+<polyline points="195.0,677.0 195.0,721.0" fill="none" stroke="#333333" stroke-width="1.3" stroke-linejoin="round"/>
+<polygon points="195.0,721.0 190.5,712.0 199.5,712.0" fill="#333333"/>
+<text x="203.0" y="691.8" font-size="13" fill="#1a1a1a">Không</text>
+<polyline points="502.5,685.1 502.5,709.0 195.0,709.0 195.0,721.0" fill="none" stroke="#333333" stroke-width="1.3" stroke-linejoin="round"/>
+<polygon points="195.0,721.0 190.5,712.0 199.5,712.0" fill="#333333"/>
+<polyline points="195.0,769.5 195.0,795.5" fill="none" stroke="#333333" stroke-width="1.3" stroke-linejoin="round"/>
+<polygon points="195.0,795.5 190.5,786.5 199.5,786.5" fill="#333333"/>
+<polyline points="330.0,811.6 400.0,811.6" fill="none" stroke="#333333" stroke-width="1.3" stroke-linejoin="round"/>
+<polygon points="400.0,811.6 391.0,816.1 391.0,807.1" fill="#333333"/>
+<text x="356.7" y="804.2" font-size="13" fill="#1a1a1a">Có</text>
+<polyline points="195.0,827.8 195.0,871.8" fill="none" stroke="#333333" stroke-width="1.3" stroke-linejoin="round"/>
+<polygon points="195.0,871.8 190.5,862.8 199.5,862.8" fill="#333333"/>
+<text x="203.0" y="842.6" font-size="13" fill="#1a1a1a">Không</text>
+<polyline points="502.5,835.9 502.5,859.8 195.0,859.8 195.0,871.8" fill="none" stroke="#333333" stroke-width="1.3" stroke-linejoin="round"/>
+<polygon points="195.0,871.8 190.5,862.8 199.5,862.8" fill="#333333"/>
+<polyline points="60.0,887.9 20.0,887.9 20.0,205.8 60.0,205.8" fill="none" stroke="#333333" stroke-width="1.3" stroke-linejoin="round"/>
+<polygon points="60.0,205.8 51.0,210.2 51.0,201.2" fill="#333333"/>
+</g></svg>

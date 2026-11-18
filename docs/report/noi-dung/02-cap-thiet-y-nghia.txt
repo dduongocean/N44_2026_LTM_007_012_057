@@ -1,147 +1,131 @@
 MỤC 2. TÍNH CẤP THIẾT VÀ Ý NGHĨA CỦA ĐỀ TÀI
 ==========================================
-(Bản nháp nội dung, viết lại 2026-11-18 cho dễ đọc. Tiêu chí: 10 điểm. Dự kiến 4–6 trang khi dàn trang.)
+(Bản nháp nội dung, viết lại 2026-11-18 cho dễ đọc; sửa văn phong cùng ngày: trình bày liền mạch, bỏ lối hỏi đáp. Tiêu chí: 10 điểm. Dự kiến 4–6 trang khi dàn trang.)
 (Ghi chú cho nhóm, xóa khi dàn trang: [CẦN NGUỒN] là chỗ cần trích dẫn; [HÌNH] là chỗ đặt hình; [BẢNG] là bảng cần dàn lại; phần "GHI CHÚ CHO NHÓM" cuối file không đưa vào báo cáo. Thuật ngữ: 00-thuat-ngu.txt.)
 
-Mục này trả lời ba câu hỏi, theo đúng thứ tự đọc:
-  1. Vấn đề là gì? (2.1 và 2.2)
-  2. Vì sao giải quyết bằng mô phỏng, và mô phỏng bằng những công cụ nào? (2.3 và 2.4)
-  3. Đề tài đặt mục tiêu gì, làm xong thì được gì, và giới hạn ở đâu? (2.5, 2.6 và 2.7)
+Chương này trình bày bối cảnh sử dụng xe tự hành mặt đất được điều khiển qua Wi-Fi và vấn đề nảy sinh khi chất lượng đường truyền suy giảm (2.1, 2.2), lý do chọn phương pháp mô phỏng cùng tổ hợp công cụ PX4 SITL, Gazebo và ns-3 (2.3, 2.4), sau đó nêu mục tiêu, ý nghĩa và phạm vi của đề tài (2.5, 2.6, 2.7).
 
 
-2.1. Bối cảnh: xe tự hành vẫn cần liên lạc với trạm
---------------------------------------------------
-Ý chính: xe tự hành không hoạt động một mình. Nó luôn trao đổi với một trạm mặt đất, và đường trao đổi đó thường là Wi-Fi.
-
+2.1. Bối cảnh: liên lạc giữa xe tự hành và trạm mặt đất
+------------------------------------------------------
 Xe tự hành mặt đất (rover) là robot chạy trên mặt đất, có bộ điều khiển tự động (autopilot) tự giữ hướng, tự giữ tốc độ và có thể tự chạy theo lộ trình. Rover được dùng cho những việc con người không muốn hoặc không nên làm trực tiếp, như tuần tra khuôn viên, vận chuyển trong kho bãi, khảo sát địa hình, nông nghiệp, kiểm tra hiện trường nguy hiểm. [CẦN NGUỒN]
 
-Dù gọi là "tự hành", rover vẫn liên lạc liên tục với trạm mặt đất (ground control station, viết tắt GCS) theo hai chiều:
-
-Hình 2.1 minh họa hai chiều liên lạc giữa trạm và xe.
+Tuy có khả năng tự hành, rover không hoạt động độc lập mà trao đổi dữ liệu liên tục với trạm mặt đất (ground control station, viết tắt GCS) theo hai chiều. Hình 2.1 minh họa hai chiều liên lạc này.
 [HÌNH 2.1] Hai chiều liên lạc giữa trạm và xe
     TRẠM MẶT ĐẤT (GCS)                                          XE (rover, autopilot PX4)
     người vận hành, máy tính    ---- lệnh: arm, đổi chế độ, lái ---->    nhận lệnh, điều khiển động cơ
                                 <--- trạng thái: vị trí, tốc độ ----     gửi trạng thái liên tục
                                      (bản tin MAVLink, truyền qua Wi-Fi)
 
-  - Chiều trạm tới xe mang lệnh điều khiển: lệnh arm để xe được phép chạy, lệnh đổi chế độ, lệnh lái, nhiệm vụ.
-  - Chiều xe về trạm mang trạng thái: vị trí, vận tốc, pin, cảnh báo, để người vận hành theo dõi.
+  - Chiều từ trạm tới xe mang lệnh điều khiển: lệnh arm cho phép xe chạy, lệnh đổi chế độ, lệnh lái và nhiệm vụ.
+  - Chiều từ xe về trạm mang trạng thái của xe: vị trí, vận tốc, pin và cảnh báo, giúp người vận hành theo dõi xe.
 
-Các nền tảng autopilot mã nguồn mở phổ biến như PX4 dùng giao thức MAVLink cho đường liên lạc này. MAVLink gồm các bản tin nhỏ (vài chục byte), thường gửi qua UDP; mỗi bản tin mang một loại thông tin, ví dụ "tôi vẫn đang hoạt động" hay "ga 75%". [CẦN NGUỒN: tài liệu PX4, MAVLink]
+Các nền tảng autopilot mã nguồn mở phổ biến như PX4 dùng giao thức MAVLink cho đường liên lạc này. MAVLink gồm các bản tin nhỏ (vài chục byte), thường được gửi qua UDP; mỗi bản tin mang một loại thông tin, chẳng hạn bản tin báo xe vẫn đang hoạt động hay bản tin đặt mức ga 75%. [CẦN NGUỒN: tài liệu PX4, MAVLink]
 
-Với rover chạy trong phạm vi vài chục đến vài trăm mét, Wi-Fi là lựa chọn rất thường gặp: thiết bị rẻ, có sẵn trên máy tính nhúng và điện thoại, băng thông đủ lớn, không cần hạ tầng nhà mạng. [CẦN NGUỒN]
+Với rover hoạt động trong phạm vi vài chục đến vài trăm mét, Wi-Fi là lựa chọn thường gặp cho đường liên lạc này nhờ thiết bị rẻ, có sẵn trên máy tính nhúng và điện thoại, băng thông đủ lớn và không cần hạ tầng nhà mạng. [CẦN NGUỒN]
 
 
-2.2. Vấn đề: Wi-Fi không ổn định, và điều đó ảnh hưởng trực tiếp tới việc điều khiển
------------------------------------------------------------------------------------
-Ý chính: khác với dây cáp, chất lượng Wi-Fi thay đổi theo khoảng cách và môi trường. Khi tín hiệu yếu, lệnh và trạng thái đến muộn, đến thiếu hoặc không đến.
-
-Tín hiệu Wi-Fi yếu đi vì ba nguyên nhân chính:
+2.2. Vấn đề: chất lượng Wi-Fi biến động và ảnh hưởng tới việc điều khiển
+-----------------------------------------------------------------------
+Khác với cáp nối, chất lượng đường truyền Wi-Fi thay đổi theo khoảng cách và môi trường. Tín hiệu Wi-Fi suy yếu do ba nguyên nhân chính:
   - Khoảng cách: xe càng xa trạm, tín hiệu càng yếu (gọi là suy hao).
   - Phản xạ: sóng dội qua mặt đất, tường, cây cối rồi cộng hoặc triệt tiêu nhau, làm tín hiệu dao động liên tục (gọi là fading).
   - Nhiễu: thiết bị khác phát trên cùng kênh.
 
-Wi-Fi có sẵn một cơ chế tự sửa lỗi: tầng MAC (tầng đóng dữ liệu thành khung rồi gửi đi) sẽ gửi lại những khung bị hỏng. [CẦN NGUỒN: chuẩn IEEE 802.11] Cơ chế này đủ dùng khi tín hiệu còn khá; khi tín hiệu quá yếu, nó không che được lỗi nữa và sinh ra bốn hiện tượng:
+Wi-Fi có sẵn cơ chế khắc phục lỗi ở tầng MAC (tầng đóng dữ liệu thành khung rồi gửi đi): các khung bị hỏng được gửi lại. [CẦN NGUỒN: chuẩn IEEE 802.11] Cơ chế này đủ dùng khi tín hiệu còn khá. Khi tín hiệu quá yếu, việc gửi lại không còn che được lỗi và đường truyền xuất hiện bốn hiện tượng; bảng 2.1 liệt kê các hiện tượng này cùng hậu quả của chúng đối với việc điều khiển xe.
 
-Bảng 2.1 trình bày hiện tượng mạng và hậu quả cho việc điều khiển xe.
 [BẢNG 2.1] Hiện tượng mạng và hậu quả cho việc điều khiển xe
-  Hiện tượng     | Nghĩa là                                                          | Hậu quả khi điều khiển xe
-  Mất gói        | gửi lại nhiều lần vẫn hỏng, gói bị bỏ hẳn                         | lệnh lái không tới xe; trạm thiếu thông tin trạng thái
-  Độ trễ tăng    | gói phải chờ gửi lại, chờ trong hàng đợi trước khi được phát      | người vận hành nhìn trạng thái cũ; lệnh tới xe muộn
-  Jitter         | độ trễ lúc nhỏ lúc lớn                                            | xe phản ứng không đều, khó đoán trước
-  Mất kết nối    | nhiều giây liền không có gói nào (đề tài dùng ngưỡng 3 giây không nhận được bản tin HEARTBEAT của xe) | autopilot phải tự quyết định xe làm gì
+  Hiện tượng     | Mô tả                                                             | Ảnh hưởng tới việc điều khiển xe
+  Mất gói        | khung đã gửi lại nhiều lần vẫn hỏng, gói bị loại bỏ               | lệnh lái không tới xe; trạm thiếu thông tin trạng thái
+  Độ trễ tăng    | gói phải chờ gửi lại, chờ trong hàng đợi trước khi được phát      | người vận hành quan sát trạng thái đã cũ; lệnh tới xe muộn
+  Jitter         | độ trễ dao động mạnh giữa các gói                                 | xe phản ứng không đều, khó dự đoán
+  Mất kết nối    | không nhận được gói nào trong nhiều giây liên tiếp (đề tài dùng ngưỡng 3 giây không nhận được bản tin HEARTBEAT của xe) | autopilot phải tự quyết định hành động của xe
 
-Trường hợp cuối cùng nguy hiểm nhất. Khi mất tín hiệu điều khiển, autopilot tự thực hiện một hành động an toàn (dừng, giữ vị trí, tự quay về...); cơ chế này gọi là failsafe. Hành động cụ thể và thời gian chờ phụ thuộc cấu hình, nên người vận hành thường không biết chính xác xe sẽ làm gì và sau bao lâu. [CẦN NGUỒN: tài liệu failsafe của PX4]
+Trong bốn hiện tượng trên, mất kết nối là nguy hiểm nhất. Khi mất tín hiệu điều khiển, autopilot tự thực hiện một hành động an toàn như dừng, giữ vị trí hoặc tự quay về; cơ chế này gọi là failsafe. Hành động cụ thể và thời gian chờ phụ thuộc cấu hình, nên người vận hành thường không biết chính xác xe sẽ làm gì và sau bao lâu. [CẦN NGUỒN: tài liệu failsafe của PX4]
 
-Từ đó có hai câu hỏi thực tế mà đề tài trả lời:
-  Câu hỏi 1. Xe được phép chạy cách trạm xa bao nhiêu thì đường điều khiển vẫn còn tin cậy? Chất lượng đường truyền xấu đi theo khoảng cách như thế nào, dần dần hay đột ngột?
-  Câu hỏi 2. Khi mất lệnh điều khiển giữa lúc xe đang chạy, xe phản ứng ra sao: sau bao lâu xe phanh, xe đi thêm bao xa, rồi làm gì tiếp?
+Từ thực tế trên, đề tài đặt ra hai bài toán:
+  - Bài toán khoảng cách tin cậy: xác định khoảng cách lớn nhất giữa xe và trạm mà đường điều khiển còn tin cậy, đồng thời làm rõ chất lượng đường truyền xấu đi theo khoảng cách một cách dần dần hay đột ngột.
+  - Bài toán mất lệnh điều khiển: xác định phản ứng của xe khi mất lệnh điều khiển giữa lúc đang chạy, gồm thời gian tới khi xe phanh, quãng đường xe đi thêm và hành động tiếp theo của xe.
 
 
-2.3. Vì sao dùng mô phỏng thay vì thử ngoài thực địa
----------------------------------------------------
-Ý chính: thử ngoài trời tốn kém, nguy hiểm và khó lặp lại; mô phỏng khắc phục được cả ba điểm này.
+2.3. Lý do sử dụng mô phỏng thay cho thử nghiệm thực địa
+------------------------------------------------------
+Cách trực tiếp nhất để khảo sát hai bài toán trên là đưa xe thật và bộ phát Wi-Fi ra bãi rộng, cho xe chạy xa dần rồi tiến hành đo. Cách làm này tốn kém, có rủi ro về an toàn và khó lặp lại. Bảng 2.2 so sánh thử nghiệm thực địa với mô phỏng theo bốn tiêu chí.
 
-Cách trực tiếp nhất là mang xe thật và bộ phát Wi-Fi ra bãi rộng, cho xe chạy xa dần rồi đo. Bảng 2.2 so sánh cách này với mô phỏng:
-
-[BẢNG 2.2] Thử ngoài thực địa và mô phỏng
-  Tiêu chí           | Thử ngoài thực địa                                               | Mô phỏng
-  Chi phí, an toàn   | cần xe, pin, bãi thử; cố tình làm mất liên lạc thì xe có thể va vào người hoặc vật | chỉ cần một máy tính; làm mất liên lạc không gây nguy hiểm
-  Lặp lại            | thời tiết, người qua lại, các mạng Wi-Fi xung quanh thay đổi mỗi lần thử | chạy lại đúng điều kiện cũ bao nhiêu lần cũng được
-  Tách biến          | khoảng cách, vật cản và nhiễu thay đổi cùng lúc                  | chỉ đổi khoảng cách, giữ nguyên mọi thứ khác
+[BẢNG 2.2] So sánh thử nghiệm thực địa và mô phỏng
+  Tiêu chí           | Thử nghiệm thực địa                                              | Mô phỏng
+  Chi phí, an toàn   | cần xe, pin, bãi thử; chủ động cắt liên lạc có thể khiến xe va chạm với người hoặc vật | chỉ cần một máy tính; cắt liên lạc không gây nguy hiểm
+  Khả năng lặp lại   | thời tiết, người qua lại, các mạng Wi-Fi xung quanh thay đổi mỗi lần thử | lặp lại đúng điều kiện cũ với số lần tùy ý
+  Kiểm soát biến     | khoảng cách, vật cản và nhiễu thay đổi cùng lúc                  | chỉ thay đổi khoảng cách, giữ nguyên các yếu tố khác
   Đo đạc             | cần thiết bị bắt gói và đồng bộ đồng hồ giữa xe và trạm          | bắt được từng gói tin, mọi đồng hồ nằm trên một máy
 
-Mô phỏng cũng có giới hạn: kết quả chỉ đúng tới mức mô hình đúng. Vì vậy đề tài chọn các công cụ giữ lại phần "thật" nhiều nhất có thể (2.4), và nêu rõ những gì mô hình chưa có (2.7).
+Mô phỏng cũng có giới hạn: kết quả chỉ đúng tới mức mô hình đúng. Vì vậy đề tài chọn các công cụ giữ lại hành vi thật nhiều nhất có thể (2.4) và nêu rõ những yếu tố mô hình chưa bao gồm (2.7).
 
 
-2.4. Vì sao kết hợp PX4 SITL, Gazebo và ns-3
--------------------------------------------
-Ý chính: mỗi công cụ thay thế một phần của thế giới thật, còn gói tin chạy giữa chúng là gói tin thật.
+2.4. Lựa chọn công cụ: PX4 SITL, Gazebo và ns-3
+---------------------------------------------
+Hệ thống điều khiển xe qua Wi-Fi ngoài thực tế gồm ba thành phần: bộ điều khiển trên xe, chiếc xe trong môi trường vật lý, và kênh vô tuyến Wi-Fi giữa trạm và xe. Đề tài thay mỗi thành phần bằng một công cụ mô phỏng, trong khi gói tin trao đổi giữa các thành phần vẫn là gói tin thật:
+  - Bộ điều khiển trên xe được thay bằng PX4 SITL (Software In The Loop), tức chạy chính phần mềm autopilot PX4 của xe ngay trên máy tính. Nhờ vậy, cách xe xử lý lệnh, xử lý gói MAVLink và phản ứng failsafe là hành vi thật của PX4, không phải một mô hình đơn giản hóa. [CẦN NGUỒN: tài liệu PX4 SITL]
+  - Chiếc xe và môi trường vật lý được thay bằng Gazebo, phần mềm mô phỏng bánh xe, quán tính, ma sát và cung cấp cảm biến giả lập cho PX4. Nhờ vậy, khi mất lệnh điều khiển, có thể đo được quãng đường xe thực sự đi thêm trước khi dừng.
+  - Kênh Wi-Fi giữa trạm và xe được thay bằng ns-3, một phần mềm mô phỏng mạng mã nguồn mở được dùng phổ biến trong nghiên cứu [CẦN NGUỒN]. ns-3 mô hình hóa đường Wi-Fi chuẩn 802.11g gồm suy hao theo khoảng cách, fading, cơ chế gửi lại và hàng đợi ở tầng MAC. Đề tài chọn 802.11g ở tốc độ cố định 6 Mbit/s vì ba lý do. Thứ nhất, module Wi-Fi trên xe và thiết bị điều khiển phổ biến đều hỗ trợ 802.11b/g/n, nên chế độ này thiết bị nào cũng chạy được. [CẦN NGUỒN: datasheet module Wi-Fi] Thứ hai, khi tín hiệu yếu, một đường 802.11n (Wi-Fi 4) tự hạ xuống mức điều chế thấp nhất, có cùng cách điều chế và gần cùng độ nhạy thu với 802.11g ở 6 Mbit/s; do đó khảo sát 802.11g ở 6 Mbit/s cũng là khảo sát một đường 802.11n khi đã ở mép vùng phủ. [CẦN NGUỒN: chuẩn IEEE 802.11, bảng độ nhạy thu tối thiểu] Thứ ba, tốc độ 6 Mbit/s vẫn dư để chở các bản tin MAVLink. Vì Wi-Fi chỉ cho một thiết bị phát tại một thời điểm, mức tải có thể đo bằng tỷ lệ thời gian kênh bị chiếm để gửi bản tin; thời gian này gồm cả phần mở đầu của khung, khung xác nhận ACK và các khoảng chờ bắt buộc giữa hai lần phát. Ở 6 Mbit/s, khoảng 400 bản tin mỗi giây của xe chỉ chiếm kênh khoảng 15–20% thời gian, phần còn lại kênh vẫn rỗi. Với 802.11b ở 1–2 Mbit/s, cùng lượng bản tin đó đã chiếm kênh 50–75% thời gian ngay khi tín hiệu còn tốt, nên chỉ vài lần gửi lại là đủ gây quá tải; còn ở 11 Mbit/s, 802.11b đủ nhanh nhưng tầm phủ ngắn hơn. Lựa chọn này có một giới hạn: 802.11n còn có cơ chế gộp nhiều bản tin vào một lần phát, nên kết quả về hàng đợi ở chương 6 chỉ chắc chắn đúng cho 802.11g (chương 7 nêu điểm này thành hướng phát triển).
 
-Ngoài đời, việc điều khiển xe qua Wi-Fi có ba phần: bộ điều khiển trên xe, chiếc xe trong môi trường vật lý, và sóng Wi-Fi giữa trạm và xe. Đề tài thay mỗi phần bằng một công cụ:
-  - Bộ điều khiển trên xe được thay bằng PX4 SITL (Software In The Loop): chạy chính phần mềm autopilot PX4 của xe ngay trên máy tính. Nhờ vậy, cách xe xử lý lệnh, xử lý gói MAVLink và phản ứng failsafe là hành vi thật của PX4, không phải một mô hình đơn giản hóa. [CẦN NGUỒN: tài liệu PX4 SITL]
-  - Chiếc xe và môi trường vật lý được thay bằng Gazebo: mô phỏng bánh xe, quán tính, ma sát và cung cấp cảm biến giả lập cho PX4. Nhờ vậy, khi mất lệnh điều khiển, có thể đo được xe thật sự đi thêm bao xa trước khi dừng.
-  - Sóng Wi-Fi giữa trạm và xe được thay bằng ns-3, một phần mềm mô phỏng mạng mã nguồn mở dùng phổ biến trong nghiên cứu [CẦN NGUỒN]. ns-3 mô hình hóa đường Wi-Fi chuẩn 802.11g: suy hao theo khoảng cách, fading, cơ chế gửi lại và hàng đợi ở tầng MAC.
+Thành phần then chốt của hệ thống là TapBridge của ns-3. Trạm và xe được đặt trong hai vùng mạng tách biệt (network namespace), không có đường nối trực tiếp với nhau. TapBridge nối mỗi vùng với một thiết bị Wi-Fi mô phỏng trong ns-3, nên gói tin MAVLink thật do PX4 và chương trình của trạm tạo ra chỉ có thể sang vùng bên kia bằng cách đi qua kênh Wi-Fi mô phỏng, không thể đi tắt qua localhost (địa chỉ 127.0.0.1, nơi gói tin không rời khỏi máy). Do đó, khi so với trường hợp không qua ns-3 (gọi là baseline), phần chênh lệch của các số đo chính là do đường Wi-Fi mô phỏng gây ra. Cách dựng các vùng mạng và điểm nối này được trình bày ở chương 3.
 
-Mắt xích quan trọng nhất là thành phần TapBridge của ns-3. Có thể hình dung trạm và xe ở trong hai căn phòng kín, không có cửa thông nhau. TapBridge mở cho mỗi phòng một ô cửa dẫn vào ns-3, và ns-3 đóng vai khoảng không mà sóng Wi-Fi đi qua. Gói tin MAVLink thật do PX4 và chương trình của trạm tạo ra phải đi qua ns-3 mới tới được phòng bên kia, không thể đi tắt qua localhost (địa chỉ 127.0.0.1, nơi gói tin không rời khỏi máy). Vì vậy, khi so với trường hợp không qua ns-3 (gọi là baseline), phần chênh lệch của các số đo chính là do đường Wi-Fi mô phỏng gây ra. Mục 3 trình bày chi tiết cách dựng các "căn phòng" và "ô cửa" này. (hình 3.2)
-
-Có một cách đơn giản hơn là dùng công cụ netem của Linux để đặt sẵn một tỷ lệ mất gói hay một độ trễ cố định. Cách này cho ra đúng con số người dùng đặt vào, nhưng không cho thấy nguyên nhân. ns-3 thì mô hình hóa cả nguyên nhân (tín hiệu yếu dần theo khoảng cách, fading) lẫn cơ chế tầng MAC (gửi lại, hàng đợi), nên tái hiện được những hiện tượng không ai đặt trước. Ví dụ, ở 70 m độ trễ khứ hồi đã tăng lên khoảng 445 ms trong khi tỷ lệ mất gói mới 7,6% (mục 6). Đề tài vẫn dùng netem, nhưng cho việc khác: kiểm chứng công cụ đo bằng lỗi biết trước (mục 5) và cắt hẳn đường truyền trong thí nghiệm mất lệnh điều khiển.
+Một phương án đơn giản hơn là dùng công cụ netem của Linux để đặt sẵn một tỷ lệ mất gói hay một độ trễ cố định. Phương án này cho ra đúng con số được đặt vào nhưng không thể hiện nguyên nhân. ns-3 mô hình hóa cả nguyên nhân (tín hiệu yếu dần theo khoảng cách, fading) lẫn cơ chế tầng MAC (gửi lại, hàng đợi), nên tái hiện được cả những hiện tượng không được đặt trước. Ví dụ, ở 70 m độ trễ khứ hồi đã tăng lên khoảng 445 ms trong khi tỷ lệ mất gói mới 7,6% (chương 6). Đề tài vẫn dùng netem cho hai việc khác: kiểm chứng công cụ đo bằng lỗi biết trước (chương 5) và cắt hẳn đường truyền trong thí nghiệm mất lệnh điều khiển.
 
 
 2.5. Mục tiêu của đề tài
 -----------------------
-Ý chính: bốn mục tiêu nối tiếp nhau. Hai mục tiêu đầu là nền móng, hai mục tiêu sau trả lời hai câu hỏi ở 2.2.
-
-Hình 2.2 minh họa bốn mục tiêu và quan hệ giữa chúng.
+Đề tài đặt bốn mục tiêu nối tiếp nhau. Hai mục tiêu đầu (M1, M2) là nền móng; hai mục tiêu sau (M3, M4) giải quyết hai bài toán nêu ở 2.2. Hình 2.2 minh họa bốn mục tiêu và quan hệ giữa chúng.
 [HÌNH 2.2] Bốn mục tiêu và quan hệ giữa chúng
-    M1: dựng hệ thống, gói tin       M2: có công cụ đo       M3: đo theo khoảng cách   ---> trả lời Câu hỏi 1
+    M1: dựng hệ thống, gói tin       M2: có công cụ đo       M3: đo theo khoảng cách   ---> bài toán khoảng cách tin cậy
         không đi tắt             --->    đã kiểm chứng   --->
-                                                              M4: thử mất lệnh điều khiển ---> trả lời Câu hỏi 2
+                                                              M4: thử mất lệnh điều khiển ---> bài toán mất lệnh điều khiển
 
 Nếu gói tin đi tắt (M1 không đạt) hoặc công cụ đo sai (M2 không đạt) thì mọi số đo của M3 và M4 đều không đáng tin. Vì vậy M1 và M2 được kiểm chứng trước, bằng các phép thử có kết quả biết trước.
 
 M1. Hệ thống mô phỏng không có đường tắt.
-  Làm gì: dựng hệ thống trong đó mọi gói MAVLink hai chiều giữa trạm mặt đất và PX4 (xe trong Gazebo) đi qua đường Wi-Fi 802.11g mô phỏng bằng ns-3.
-  Đạt khi: (i) chưa chạy ns-3 thì trạm và xe không liên lạc được (mất 100% gói); (ii) ns-3 đặt hai node cách nhau 5 m thì liên lạc gần như không mất gói, cách 1000 m thì mất gần hết, dừng ns-3 thì liên lạc dừng ngay; (iii) lái được xe trong Gazebo qua ns-3; (iv) bắt gói trên giao diện mạng ảo phía trạm thấy gói MAVLink đi cả hai chiều.
+  Công việc: dựng hệ thống trong đó mọi gói MAVLink hai chiều giữa trạm mặt đất và PX4 (xe trong Gazebo) đi qua đường Wi-Fi 802.11g mô phỏng bằng ns-3.
+  Tiêu chí hoàn thành: (i) chưa chạy ns-3 thì trạm và xe không liên lạc được (mất 100% gói); (ii) ns-3 đặt hai node cách nhau 5 m thì liên lạc gần như không mất gói, cách 1000 m thì mất gần hết, dừng ns-3 thì liên lạc dừng ngay; (iii) lái được xe trong Gazebo qua ns-3; (iv) bắt gói tin ở interface mạng ảo của trạm để thấy gói MAVLink đi cả hai chiều.
 
 M2. Công cụ đo được kiểm chứng.
-  Làm gì: viết chương trình đo không giao diện, ghi ra file CSV các chỉ số: tỷ lệ mất gói chiều xe về trạm (đếm theo số thứ tự seq của MAVLink); độ trễ khứ hồi (RTT) và tỷ lệ mất gói khứ hồi, đo bằng bản tin TIMESYNC đi cả hai chiều; jitter; số lần mất kết nối.
-  Đạt khi: đường truyền tốt thì đo được 0% mất gói; dùng netem làm mất 10% gói chiều xe về trạm thì đo được 8–12%; dùng netem thêm trễ 50 ms thì RTT đo được tăng 40–60 ms; chạy lại cùng lệnh thì tạo file mới, không ghi đè dữ liệu cũ.
+  Công việc: viết chương trình đo không giao diện, ghi ra file CSV các chỉ số: tỷ lệ mất gói chiều xe về trạm (đếm theo số thứ tự seq của MAVLink); độ trễ khứ hồi (RTT) và tỷ lệ mất gói khứ hồi, đo bằng bản tin TIMESYNC đi cả hai chiều; jitter; số lần mất kết nối.
+  Tiêu chí hoàn thành: đường truyền tốt thì đo được 0% mất gói; dùng netem làm mất 10% gói chiều xe về trạm thì đo được 8–12%; dùng netem thêm trễ 50 ms thì RTT đo được tăng 40–60 ms; chạy lại cùng lệnh thì tạo file mới, không ghi đè dữ liệu cũ.
 
-M3. Tìm khoảng cách lớn nhất mà đường điều khiển còn tin cậy (trả lời Câu hỏi 1).
-  Làm gì: đo các chỉ số của M2 ở 8 khoảng cách từ 10 đến 100 m, mỗi mức 3 lần, mỗi lần 60 giây, trạm và xe đứng yên trong mỗi lần đo; so với baseline không qua ns-3.
-  Đạt khi: mỗi khoảng cách được xếp vào một trong ba loại sau, và tìm được ranh giới giữa các loại.
+M3. Xác định khoảng cách lớn nhất mà đường điều khiển còn tin cậy (bài toán khoảng cách tin cậy).
+  Công việc: đo các chỉ số của M2 ở 8 khoảng cách từ 10 đến 100 m, mỗi mức 3 lần, mỗi lần 60 giây, trạm và xe đứng yên trong mỗi lần đo; so với baseline không qua ns-3.
+  Tiêu chí hoàn thành: mỗi khoảng cách được xếp vào một trong ba loại sau, và tìm được ranh giới giữa các loại.
     - Tin cậy: trong cả 3 lần đo không có lần mất kết nối nào, tỷ lệ mất gói dưới 1% và RTT p95 dưới 100 ms. (RTT p95 là giá trị mà 95% số lần đo có RTT nhỏ hơn; nó cho biết độ trễ ở những lúc gần xấu nhất.)
     - Suy giảm: không mất kết nối, nhưng vượt ngưỡng mất gói hoặc ngưỡng RTT.
     - Không tin cậy: có ít nhất một lần mất kết nối.
-  Ngưỡng 1% và 100 ms là quy ước của nhóm. Mục 6 cho thấy ranh giới tìm được không đổi khi thay các ngưỡng này trong một khoảng rộng.
+  Ngưỡng 1% và 100 ms là quy ước của nhóm. Chương 6 cho thấy ranh giới tìm được không đổi khi thay các ngưỡng này trong một khoảng rộng.
 
-M4. Tìm hiểu xe phản ứng ra sao khi mất lệnh điều khiển (trả lời Câu hỏi 2).
-  Làm gì: khi xe đang chạy ổn định (khoảng 1,3 m/s), làm mất lệnh điều khiển theo hai cách. Cách thứ nhất là cắt hẳn đường truyền. Cách thứ hai dùng để đối chứng: giữ mạng tốt nhưng trạm ngừng gửi lệnh lái. Đo thời gian tới khi xe phanh, quãng đường xa nhất xe đi thêm, chuỗi chế độ mà PX4 chuyển qua, và xem người vận hành có lấy lại được xe khi mạng phục hồi hay không. Giải thích kết quả bằng các tham số failsafe của PX4.
-  Đạt khi: mỗi cách lặp 3 lần, đo đủ các chỉ số trên, kết quả giữa các lần ổn định; diễn biến đo được khớp với cấu hình failsafe của PX4, hoặc giải thích được nếu không khớp.
+M4. Xác định phản ứng của xe khi mất lệnh điều khiển (bài toán mất lệnh điều khiển).
+  Công việc: khi xe đang chạy ổn định (khoảng 1,3 m/s), làm mất lệnh điều khiển theo hai cách. Cách thứ nhất là cắt hẳn đường truyền. Cách thứ hai dùng để đối chứng: giữ mạng tốt nhưng trạm ngừng gửi lệnh lái. Đo thời gian tới khi xe phanh, quãng đường xa nhất xe đi thêm, chuỗi chế độ mà PX4 chuyển qua, và kiểm tra khả năng người vận hành lấy lại quyền điều khiển khi mạng phục hồi. Giải thích kết quả bằng các tham số failsafe của PX4.
+  Tiêu chí hoàn thành: mỗi cách lặp 3 lần, đo đủ các chỉ số trên, kết quả giữa các lần ổn định; diễn biến đo được khớp với cấu hình failsafe của PX4, hoặc giải thích được nếu không khớp.
 
-Bảng 2.3 cho biết mỗi mục tiêu được kiểm chứng và kết luận ở mục nào.
-[BẢNG 2.3] Mỗi mục tiêu được trả lời ở đâu
-  Mục tiêu | Vai trò                     | Kiểm chứng / kết quả ở | Kết luận ở
-  M1       | nền móng                    | mục 5                  | mục 7
-  M2       | nền móng                    | mục 5                  | mục 7
-  M3       | trả lời Câu hỏi 1           | mục 6                  | mục 7
-  M4       | trả lời Câu hỏi 2           | mục 6                  | mục 7
+Bảng 2.3 cho biết vai trò của từng mục tiêu và mục trình bày kết quả kiểm chứng, kết luận tương ứng.
+[BẢNG 2.3] Vai trò và nơi trình bày kết quả của từng mục tiêu
+  Mục tiêu | Vai trò                          | Kiểm chứng / kết quả ở | Kết luận ở
+  M1       | nền móng                         | chương 5                  | chương 7
+  M2       | nền móng                         | chương 5                  | chương 7
+  M3       | bài toán khoảng cách tin cậy     | chương 6                  | chương 7
+  M4       | bài toán mất lệnh điều khiển     | chương 6                  | chương 7
 
 
 2.6. Ý nghĩa của đề tài
 ---------------------
-Ý chính: đề tài cho con số cụ thể để vận hành rover an toàn hơn, cho một môi trường thử nghiệm dùng lại được, và vận dụng trực tiếp kiến thức môn Lập trình mạng.
+Đề tài có ý nghĩa trên ba phương diện: thực tiễn vận hành rover, kỹ thuật và phương pháp thử nghiệm, và việc vận dụng kiến thức môn Lập trình mạng.
 
-Ý nghĩa thực tiễn:
+Về thực tiễn:
   - Đưa ra con số cụ thể về giới hạn vận hành của rover qua Wi-Fi trong một cấu hình xác định (trạm và xe đứng yên ở mỗi khoảng cách): từ khoảng cách nào độ trễ và mất gói bắt đầu tăng, từ khoảng cách nào bắt đầu mất kết nối. Đây là cơ sở để đặt phạm vi hoạt động an toàn.
-  - Cho thấy cụ thể xe PX4 làm gì khi mất lệnh điều khiển với cấu hình mặc định. Từ đó người vận hành biết cần chỉnh những tham số failsafe nào trước khi triển khai thật.
+  - Làm rõ hành vi của xe PX4 khi mất lệnh điều khiển với cấu hình mặc định, từ đó người vận hành biết cần chỉnh những tham số failsafe nào trước khi triển khai thật.
 
-Ý nghĩa về kỹ thuật và phương pháp:
+Về kỹ thuật và phương pháp:
   - Một môi trường thử nghiệm lặp lại được, chi phí thấp, an toàn. Muốn đổi điều kiện kênh Wi-Fi (khoảng cách, công suất phát, hệ số suy hao, bật hoặc tắt fading) chỉ cần đổi tham số dòng lệnh; muốn chạy lại cả loạt thí nghiệm chỉ cần chạy lại script có sẵn.
   - Dễ mở rộng mà không cần phần cứng: cho điểm phát Wi-Fi trên xe di chuyển theo vị trí xe trong Gazebo, thêm nhiều trạm, thử cấu hình khác.
 
-Ý nghĩa với môn Lập trình mạng: đề tài vận dụng trực tiếp các nội dung của môn:
+Về môn Lập trình mạng, đề tài vận dụng trực tiếp các nội dung:
   - lập trình socket UDP;
   - phân tích giao thức ở mức gói tin (cấu trúc gói MAVLink, số thứ tự, gói đo thời gian);
   - mạng ảo trong Linux (network namespace, veth, bridge, tap);
@@ -151,11 +135,10 @@ Bảng 2.3 cho biết mỗi mục tiêu được kiểm chứng và kết luận
 
 2.7. Phạm vi của đề tài
 ---------------------
-Ý chính: để kết quả rõ ràng và lặp lại được, đề tài chỉ thay đổi một yếu tố mỗi lần và chưa mô phỏng một số tình huống thực tế. Những tình huống chưa làm được nêu lại ở mục 7 như hướng phát triển.
+Để kết quả rõ ràng và lặp lại được, đề tài chỉ thay đổi một yếu tố mỗi lần và chưa mô phỏng một số tình huống thực tế; các tình huống này được nêu lại ở chương 7 như hướng phát triển. Bảng 2.4 tóm tắt phạm vi thực hiện và các hạn chế của đề tài.
 
-Bảng 2.4 tóm tắt những gì đề tài làm và chưa làm.
-[BẢNG 2.4] Đề tài làm gì và chưa làm gì
-  Khía cạnh          | Đề tài làm                                                         | Đề tài chưa làm (mục 7)
+[BẢNG 2.4] Phạm vi thực hiện và hạn chế của đề tài
+  Khía cạnh          | Phạm vi thực hiện                                                  | Hạn chế (hướng phát triển ở chương 7)
   Số thiết bị        | một trạm và một xe trên một kênh Wi-Fi                             | nhiều trạm hoặc nhiều xe dùng chung kênh
   Chuẩn và tốc độ    | Wi-Fi 802.11g, tốc độ cố định 6 Mbit/s                             | các chuẩn Wi-Fi khác, tốc độ thay đổi theo tín hiệu
   Chuyển động        | trạm và xe đứng yên trong mỗi lần đo; chỉ đổi khoảng cách giữa hai lần đo | điểm phát Wi-Fi di chuyển theo xe trong lúc đo
@@ -163,13 +146,13 @@ Bảng 2.4 tóm tắt những gì đề tài làm và chưa làm.
   Mất lệnh điều khiển| cắt hẳn đường truyền; đối chứng bằng ngừng gửi lệnh khi mạng tốt; xe chạy ở 10 m (tín hiệu tốt) | xe chạy trong vùng tín hiệu chập chờn
 
 
-Tóm tắt mục 2
+Tóm tắt chương 2
 -------------
   - Rover điều khiển qua Wi-Fi gặp bốn vấn đề khi tín hiệu yếu: mất gói, trễ tăng, jitter và mất kết nối. Hậu quả là lệnh tới muộn, tới thiếu, hoặc xe phải tự xử lý bằng failsafe.
-  - Đề tài trả lời hai câu hỏi: xa bao nhiêu thì còn điều khiển tin cậy, và mất lệnh thì xe làm gì.
-  - Đề tài dùng mô phỏng vì an toàn, rẻ và lặp lại được. PX4 SITL, Gazebo và ns-3 thay ba phần của thế giới thật; TapBridge buộc gói tin thật đi qua Wi-Fi mô phỏng.
-  - Bốn mục tiêu: M1 và M2 làm nền móng (hệ thống đúng, công cụ đo đúng), M3 và M4 trả lời hai câu hỏi.
-Mục 3 tiếp theo trình bày hệ thống được dựng như thế nào.
+  - Đề tài giải quyết hai bài toán: khoảng cách lớn nhất mà đường điều khiển còn tin cậy, và phản ứng của xe khi mất lệnh điều khiển.
+  - Đề tài dùng mô phỏng vì an toàn, chi phí thấp và lặp lại được. PX4 SITL, Gazebo và ns-3 thay ba thành phần của hệ thống thật; TapBridge buộc gói tin thật đi qua kênh Wi-Fi mô phỏng.
+  - Bốn mục tiêu: M1 và M2 làm nền móng (hệ thống đúng, công cụ đo đúng), M3 và M4 giải quyết hai bài toán.
+Chương 3 trình bày kiến trúc và thiết kế của hệ thống.
 
 
 GHI CHÚ CHO NHÓM (không đưa vào báo cáo)
@@ -186,4 +169,7 @@ Nguồn số liệu dùng trong mục 2 (DoD A2):
   - 6 Mbit/s, 802.11g: docs/experiments/config.txt mục 1.
   - 8 mức, 3 lần × 60 s: data/summary.csv (27 dòng), config.txt mục 5.
   - 8–12% và 40–60 ms: tiêu chí AC2, AC3 trong docs/agile/user-stories/NET-02.txt.
+  - Lý do chọn 802.11g (2.4): "15–20%" và "50–75%" là ước lượng tính tay 2026-11-18 cho 397 bản tin/s, khung MAC khoảng 124 byte (MAVLink trung bình khoảng 60 byte), gồm phần đầu khung, ACK, SIFS, DIFS và thời gian chờ ngẫu nhiên tối thiểu; chưa có phát lại. 802.11g 6 Mbit/s: khoảng 0,35–0,46 ms mỗi bản tin; 802.11b 1 Mbit/s: khoảng 1,9 ms (phần đầu khung dài 192 µs); 2 Mbit/s: khoảng 1,3 ms; 11 Mbit/s: khoảng 0,9 ms. Độ nhạy tối thiểu theo chuẩn: OFDM 6 Mbit/s và HT MCS0 20 MHz là -82 dBm, DSSS 11 Mbit/s là -76 dBm (cần trích bảng trong IEEE 802.11 trước khi nộp). Theo (4.7), -76 dBm cho tầm phủ khoảng 54 m so với 85 m của -82 dBm.
+  - Cần làm: đặt bảng so sánh đầy đủ 802.11b / g / n (thời gian kênh mỗi bản tin, mức sử dụng kênh, độ nhạy, tầm phủ, khả năng mô hình hóa) ở mục 3.2.5; ghi chú rằng ns-3 mặc định áp ngưỡng -82 dBm cho cả khung 802.11b (src/wifi/model/phy-entity.cc), nên mô phỏng không thể hiện lợi thế tầm xa của 802.11b ở 1–2 Mbit/s. Thêm vào bảng 7.2 dòng "chỉ khảo sát 802.11g; 802.11n có gộp khung có thể làm hàng đợi khó quá tải hơn" nếu chưa có.
+Sửa văn phong 2026-11-18 (bản mẫu cho cả báo cáo): bỏ lối hỏi đáp ("Mục này trả lời ba câu hỏi", "Câu hỏi 1/2", "Ý chính"), bỏ các ví von (căn phòng kín, ô cửa), trình bày liền mạch. "Câu hỏi 1" đổi thành "bài toán khoảng cách tin cậy", "Câu hỏi 2" thành "bài toán mất lệnh điều khiển". Mọi số liệu giữ nguyên. Đã áp dụng cùng cách cho mục 3–7 và cập nhật quy ước trong 00-huong-dan.txt (2026-11-18); "mục N" đổi thành "chương N" theo mẫu trình bày của trường.
 Nguồn rà soát: phiên rà soát độc lập 2026-11-17 (phát hiện #1–#20); viết lại cho dễ đọc 2026-11-18.

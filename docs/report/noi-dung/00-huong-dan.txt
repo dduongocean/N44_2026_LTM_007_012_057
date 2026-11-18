@@ -10,7 +10,7 @@ HƯỚNG DẪN ĐỌC CÁC FILE NHÁP BÁO CÁO VÀ CÁC FILE DỮ LIỆU
   00-huong-dan.txt              | file này                                                     | –
   00-thuat-ngu.txt              | danh sách thuật ngữ, đặt ở đầu báo cáo                       | cập nhật khi mục mới có thuật ngữ mới
   02-cap-thiet-y-nghia.txt      | mục 2: vấn đề, vì sao mô phỏng, mục tiêu M1–M4, phạm vi       | bản nháp, còn [CẦN NGUỒN]
-  03-kien-truc-thiet-ke.txt     | mục 3: các phần mềm, kiến trúc mạng, đường đi gói tin, so sánh | bản nháp, còn [CẦN NGUỒN], bảng QGroundControl cần kiểm
+  03-kien-truc-thiet-ke.txt     | mục 3: các phần mềm, kiến trúc mạng, đường đi gói tin, so sánh | bản nháp, còn [CẦN NGUỒN]
   04-mo-hinh-toan.txt           | mục 4: công thức (4.1)–(4.29), bảy dự đoán DĐ1–DĐ7           | bản nháp, đã sửa theo rà soát độc lập 2026-11-18
   05-ma-gia-thuat-toan.txt      | nguyên liệu gốc của mục 5 (mã giả, độ phức tạp); nội dung đã đưa vào 05-trien-khai.txt và 6.9 | chỉ để tham khảo
   05-trien-khai.txt             | mục 5: công nghệ, các bước dựng, hiện thực công thức mục 4, kiểm thử, kiểm chứng M1 M2, tự động hóa thí nghiệm, khó khăn | bản nháp
@@ -19,14 +19,14 @@ HƯỚNG DẪN ĐỌC CÁC FILE NHÁP BÁO CÁO VÀ CÁC FILE DỮ LIỆU
   (chưa có)                     | mục 1 (đóng góp), tài liệu tham khảo | –
 Mỗi file nháp có phần "GHI CHÚ CHO NHÓM" ở cuối, ghi nguồn của từng con số trong mục đó.
 
-Quy ước viết: mỗi đoạn một dòng (dùng word wrap của VS Code); tiếng Việt tự nhiên, giữ nguyên thuật ngữ tiếng Anh; không dùng dấu gạch để chèn ý; mỗi mục mở đầu bằng câu hỏi mục trả lời, mỗi tiểu mục mở bằng "Ý chính", cuối mục có tóm tắt; hình và bảng đánh số theo mục (Hình 6.1, Bảng 4.3...).
+Quy ước viết: mỗi đoạn một dòng (dùng word wrap của VS Code); tiếng Việt tự nhiên, giữ nguyên thuật ngữ tiếng Anh; không dùng dấu gạch để chèn ý; văn phong báo cáo, trình bày liền mạch từ trên xuống (không dùng lối hỏi đáp, không ví von); mỗi chương mở đầu bằng một đoạn giới thiệu nội dung chương, mỗi mục mở bằng câu nêu ý chính của mục, cuối chương có tóm tắt; gọi "chương N" cho mục cấp 1 và "mục N.M" cho mục con; mỗi bảng, hình được nhắc trong đoạn ngay trước nó; hình và bảng đánh số theo chương (Hình 6.1, Bảng 4.3...). [CẦN NGUỒN] chỉ là ghi chú nội bộ, không đưa vào báo cáo (build_docx.py tự bỏ).
 
 
 2. MỤC 4, 5, 6 NỐI VỚI NHAU THẾ NÀO
 ---------------------------------
     MỤC 4: mô hình                MỤC 5: hiện thực và kiểm chứng          MỤC 6: số đo và đối chiếu
     công thức (4.1)–(4.29)  --->  chương trình đo tính đúng các công thức  --->  kết quả ba thí nghiệm
-    bảng 4.5: bảy dự đoán         (mã giả, lưu đồ); kiểm chứng bằng netem      bảng 6.8: từng dự đoán khớp hay không
+    bảng 4.6: bảy dự đoán         (mã giả, lưu đồ); kiểm chứng bằng netem      bảng 6.8: từng dự đoán khớp hay không
                                   cho thấy số đo đáng tin                       trả lời Câu hỏi 1 (6.7), Câu hỏi 2 (6.8)
 Quy tắc liên kết:
   - Mục 6 nhắc công thức theo số của mục 4, ví dụ (4.13), và nhắc dự đoán theo mã DĐ1–DĐ7.
