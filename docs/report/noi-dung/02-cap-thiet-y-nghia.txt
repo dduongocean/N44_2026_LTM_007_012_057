@@ -17,6 +17,7 @@ Xe tự hành mặt đất (rover) là robot chạy trên mặt đất, có bộ
 
 Dù gọi là "tự hành", rover vẫn liên lạc liên tục với trạm mặt đất (ground control station, viết tắt GCS) theo hai chiều:
 
+Hình 2.1 minh họa hai chiều liên lạc giữa trạm và xe.
 [HÌNH 2.1] Hai chiều liên lạc giữa trạm và xe
     TRẠM MẶT ĐẤT (GCS)                                          XE (rover, autopilot PX4)
     người vận hành, máy tính    ---- lệnh: arm, đổi chế độ, lái ---->    nhận lệnh, điều khiển động cơ
@@ -42,6 +43,7 @@ Tín hiệu Wi-Fi yếu đi vì ba nguyên nhân chính:
 
 Wi-Fi có sẵn một cơ chế tự sửa lỗi: tầng MAC (tầng đóng dữ liệu thành khung rồi gửi đi) sẽ gửi lại những khung bị hỏng. [CẦN NGUỒN: chuẩn IEEE 802.11] Cơ chế này đủ dùng khi tín hiệu còn khá; khi tín hiệu quá yếu, nó không che được lỗi nữa và sinh ra bốn hiện tượng:
 
+Bảng 2.1 trình bày hiện tượng mạng và hậu quả cho việc điều khiển xe.
 [BẢNG 2.1] Hiện tượng mạng và hậu quả cho việc điều khiển xe
   Hiện tượng     | Nghĩa là                                                          | Hậu quả khi điều khiển xe
   Mất gói        | gửi lại nhiều lần vẫn hỏng, gói bị bỏ hẳn                         | lệnh lái không tới xe; trạm thiếu thông tin trạng thái
@@ -60,7 +62,7 @@ Từ đó có hai câu hỏi thực tế mà đề tài trả lời:
 ---------------------------------------------------
 Ý chính: thử ngoài trời tốn kém, nguy hiểm và khó lặp lại; mô phỏng khắc phục được cả ba điểm này.
 
-Cách trực tiếp nhất là mang xe thật và bộ phát Wi-Fi ra bãi rộng, cho xe chạy xa dần rồi đo. Bảng dưới so sánh cách này với mô phỏng:
+Cách trực tiếp nhất là mang xe thật và bộ phát Wi-Fi ra bãi rộng, cho xe chạy xa dần rồi đo. Bảng 2.2 so sánh cách này với mô phỏng:
 
 [BẢNG 2.2] Thử ngoài thực địa và mô phỏng
   Tiêu chí           | Thử ngoài thực địa                                               | Mô phỏng
@@ -81,7 +83,7 @@ Ngoài đời, việc điều khiển xe qua Wi-Fi có ba phần: bộ điều k
   - Chiếc xe và môi trường vật lý được thay bằng Gazebo: mô phỏng bánh xe, quán tính, ma sát và cung cấp cảm biến giả lập cho PX4. Nhờ vậy, khi mất lệnh điều khiển, có thể đo được xe thật sự đi thêm bao xa trước khi dừng.
   - Sóng Wi-Fi giữa trạm và xe được thay bằng ns-3, một phần mềm mô phỏng mạng mã nguồn mở dùng phổ biến trong nghiên cứu [CẦN NGUỒN]. ns-3 mô hình hóa đường Wi-Fi chuẩn 802.11g: suy hao theo khoảng cách, fading, cơ chế gửi lại và hàng đợi ở tầng MAC.
 
-Mắt xích quan trọng nhất là thành phần TapBridge của ns-3. Có thể hình dung trạm và xe ở trong hai căn phòng kín, không có cửa thông nhau. TapBridge mở cho mỗi phòng một ô cửa dẫn vào ns-3, và ns-3 đóng vai khoảng không mà sóng Wi-Fi đi qua. Gói tin MAVLink thật do PX4 và chương trình của trạm tạo ra phải đi qua ns-3 mới tới được phòng bên kia, không thể đi tắt qua localhost (địa chỉ 127.0.0.1, nơi gói tin không rời khỏi máy). Vì vậy, khi so với trường hợp không qua ns-3 (gọi là baseline), phần chênh lệch của các số đo chính là do đường Wi-Fi mô phỏng gây ra. Mục 3 trình bày chi tiết cách dựng các "căn phòng" và "ô cửa" này. [HÌNH: sơ đồ tổng thể ở mục 3]
+Mắt xích quan trọng nhất là thành phần TapBridge của ns-3. Có thể hình dung trạm và xe ở trong hai căn phòng kín, không có cửa thông nhau. TapBridge mở cho mỗi phòng một ô cửa dẫn vào ns-3, và ns-3 đóng vai khoảng không mà sóng Wi-Fi đi qua. Gói tin MAVLink thật do PX4 và chương trình của trạm tạo ra phải đi qua ns-3 mới tới được phòng bên kia, không thể đi tắt qua localhost (địa chỉ 127.0.0.1, nơi gói tin không rời khỏi máy). Vì vậy, khi so với trường hợp không qua ns-3 (gọi là baseline), phần chênh lệch của các số đo chính là do đường Wi-Fi mô phỏng gây ra. Mục 3 trình bày chi tiết cách dựng các "căn phòng" và "ô cửa" này. (hình 3.2)
 
 Có một cách đơn giản hơn là dùng công cụ netem của Linux để đặt sẵn một tỷ lệ mất gói hay một độ trễ cố định. Cách này cho ra đúng con số người dùng đặt vào, nhưng không cho thấy nguyên nhân. ns-3 thì mô hình hóa cả nguyên nhân (tín hiệu yếu dần theo khoảng cách, fading) lẫn cơ chế tầng MAC (gửi lại, hàng đợi), nên tái hiện được những hiện tượng không ai đặt trước. Ví dụ, ở 70 m độ trễ khứ hồi đã tăng lên khoảng 445 ms trong khi tỷ lệ mất gói mới 7,6% (mục 6). Đề tài vẫn dùng netem, nhưng cho việc khác: kiểm chứng công cụ đo bằng lỗi biết trước (mục 5) và cắt hẳn đường truyền trong thí nghiệm mất lệnh điều khiển.
 
@@ -90,6 +92,7 @@ Có một cách đơn giản hơn là dùng công cụ netem của Linux để �
 -----------------------
 Ý chính: bốn mục tiêu nối tiếp nhau. Hai mục tiêu đầu là nền móng, hai mục tiêu sau trả lời hai câu hỏi ở 2.2.
 
+Hình 2.2 minh họa bốn mục tiêu và quan hệ giữa chúng.
 [HÌNH 2.2] Bốn mục tiêu và quan hệ giữa chúng
     M1: dựng hệ thống, gói tin       M2: có công cụ đo       M3: đo theo khoảng cách   ---> trả lời Câu hỏi 1
         không đi tắt             --->    đã kiểm chứng   --->
@@ -117,6 +120,7 @@ M4. Tìm hiểu xe phản ứng ra sao khi mất lệnh điều khiển (trả l
   Làm gì: khi xe đang chạy ổn định (khoảng 1,3 m/s), làm mất lệnh điều khiển theo hai cách. Cách thứ nhất là cắt hẳn đường truyền. Cách thứ hai dùng để đối chứng: giữ mạng tốt nhưng trạm ngừng gửi lệnh lái. Đo thời gian tới khi xe phanh, quãng đường xa nhất xe đi thêm, chuỗi chế độ mà PX4 chuyển qua, và xem người vận hành có lấy lại được xe khi mạng phục hồi hay không. Giải thích kết quả bằng các tham số failsafe của PX4.
   Đạt khi: mỗi cách lặp 3 lần, đo đủ các chỉ số trên, kết quả giữa các lần ổn định; diễn biến đo được khớp với cấu hình failsafe của PX4, hoặc giải thích được nếu không khớp.
 
+Bảng 2.3 cho biết mỗi mục tiêu được kiểm chứng và kết luận ở mục nào.
 [BẢNG 2.3] Mỗi mục tiêu được trả lời ở đâu
   Mục tiêu | Vai trò                     | Kiểm chứng / kết quả ở | Kết luận ở
   M1       | nền móng                    | mục 5                  | mục 7
@@ -149,6 +153,7 @@ M4. Tìm hiểu xe phản ứng ra sao khi mất lệnh điều khiển (trả l
 ---------------------
 Ý chính: để kết quả rõ ràng và lặp lại được, đề tài chỉ thay đổi một yếu tố mỗi lần và chưa mô phỏng một số tình huống thực tế. Những tình huống chưa làm được nêu lại ở mục 7 như hướng phát triển.
 
+Bảng 2.4 tóm tắt những gì đề tài làm và chưa làm.
 [BẢNG 2.4] Đề tài làm gì và chưa làm gì
   Khía cạnh          | Đề tài làm                                                         | Đề tài chưa làm (mục 7)
   Số thiết bị        | một trạm và một xe trên một kênh Wi-Fi                             | nhiều trạm hoặc nhiều xe dùng chung kênh

@@ -20,6 +20,7 @@ Mục này nối mục 4 với mục 6. Mục 4 đưa ra công thức và dự �
 -------------------------
 Ý chính: toàn bộ hệ thống chạy trên một máy Ubuntu 24.04; các phần mềm chính được ghi rõ phiên bản để người khác dựng lại được đúng cấu hình.
 
+Bảng 5.1 trình bày công nghệ sử dụng.
 [BẢNG 5.1] Công nghệ sử dụng
   Thành phần             | Phiên bản                                  | Dùng để
   Hệ điều hành           | Ubuntu 24.04.5 LTS (kernel 7.0)            | chạy toàn bộ hệ thống, cung cấp netns, veth, bridge, tap, tc netem
@@ -40,6 +41,7 @@ Một thành viên dùng ns-3.49 (bản phát hành); chương trình ns-3 của
 -------------------------
 Ý chính: hệ thống được dựng theo sáu bước, mỗi bước có một script và một cách kiểm tra. Lệnh cụ thể của từng bước có trong README của repo.
 
+Bảng 5.2 trình bày sáu bước dựng hệ thống.
 [BẢNG 5.2] Sáu bước dựng hệ thống
   Bước | Làm gì                                           | Script / công cụ                         | Kiểm tra bước này thành công
   1    | Build PX4 SITL, build chương trình ns-3 rover-wifi, tạo môi trường Python | make px4_sitl; ./ns3 build; venv | file chạy PX4 và rover-wifi tồn tại; 58 test tự động đạt
@@ -64,6 +66,7 @@ Bước 3: chạy PX4 và Gazebo trong ns-rover. Ba điểm cần xử lý:
   1 (mặc định)    | 14580      | 127.0.0.1:14540    | không       | baseline (khi chạy ở namespace chính, không có netns)
   thêm bởi script | 14581      | 10.0.0.1:14540     | có          | mọi phép đo qua Wi-Fi mô phỏng
 
+Bảng 5.4 trình bày cấu hình PX4 liên quan tới kết quả.
 [BẢNG 5.4] Cấu hình PX4 liên quan tới kết quả
   Tham số              | Giá trị     | Ý nghĩa
   SYS_AUTOSTART        | 4009        | mẫu xe gz_r1_rover (rover hai bánh vi sai)
@@ -74,10 +77,11 @@ Bước 3: chạy PX4 và Gazebo trong ns-rover. Ba điểm cần xử lý:
   COM_DL_LOSS_T, NAV_DLL_ACT | 10 s, 0 | mất liên kết dữ liệu: không làm gì riêng
   RO_SPEED_LIM         | 2 m/s       | vận tốc tối đa của xe khi tự chạy
   RO_DECEL_LIM         | 10 m/s^2    | giới hạn gia tốc phanh
-Biến môi trường PX4_SIM_SPEED_FACTOR không được đặt; nếu đặt, PX4 SITL sẽ tự đổi COM_RC_LOSS_T thành 1 s. [CẦN NGUỒN: tài liệu tham số PX4]
+Biến môi trường PX4_SIM_SPEED_FACTOR không được đặt; nếu đặt, PX4 SITL sẽ tự đổi COM_RC_LOSS_T thành 1 s. (theo tệp khởi động rcS của PX4 SITL)
 
 Bước 4: chạy ns-3. Chương trình rover-wifi.cc dựng hai node Wi-Fi ad-hoc chuẩn 802.11g, tốc độ cố định 6 Mbit/s, kênh log-distance có fading Nakagami (tham số ở bảng 4.1), chạy theo thời gian thực, và nối node 0 với tap-gcs, node 1 với tap-rover bằng TapBridge chế độ UseLocal. Hai thiết bị Wi-Fi được gán sẵn địa chỉ MAC trùng với hai veth (lý do ở 5.7, BUG-01).
 
+Bảng 5.5 trình bày tham số dòng lệnh của chương trình ns-3.
 [BẢNG 5.5] Tham số dòng lệnh của chương trình ns-3
   Tham số     | Mặc định             | Ý nghĩa
   --distance  | 5 m                  | khoảng cách giữa hai node
@@ -95,6 +99,7 @@ Khi khởi động, chương trình in toàn bộ tham số ra màn hình; scrip
 -----------------------------------------------------
 Ý chính: mỗi công thức ở 4.4 có một thành phần mã tương ứng; chương trình đo gọi các thành phần này trong một vòng lặp 10 ms và ghi kết quả mỗi giây. Năm chi tiết hiện thực trong phần này được mục 6 dùng khi đọc số liệu.
 
+Bảng 5.6 trình bày công thức mục 4 và thành phần hiện thực.
 [BẢNG 5.6] Công thức mục 4 và thành phần hiện thực
   Công thức (mục 4)                        | Thành phần                    | File
   (4.12), (4.13) mất gói theo seq         | SeqTracker                    | rover/core/linkstats.py
@@ -105,6 +110,7 @@ Khi khởi động, chương trình in toàn bộ tham số ra màn hình; scrip
   vòng lặp đo, ghi CSV                    | chương trình đo               | tools/run_experiment.py
 (Cách chia tầng của mã nguồn đã trình bày ở mục 3.7.)
 
+Hình 5.1 là lưu đồ vòng lặp chính của chương trình đo.
 [HÌNH 5.1] docs/diagrams/measure-loop/measure-loop.svg: lưu đồ vòng lặp chính của chương trình đo.
 
 Vòng lặp chính chạy mỗi 10 ms và làm năm việc theo thứ tự:
@@ -158,10 +164,11 @@ Năm chi tiết hiện thực mà mục 6 dùng khi đọc số liệu:
 
 5.4. Kiểm thử tự động
 -------------------
-Ý chính: phần tính toán và phần đọc gói tin có 58 test tự động; phần lớn được viết trước khi viết mã, và mỗi lỗi tìm thấy đều có một test tái hiện lỗi đó.
+Ý chính: phần tính toán và phần đọc gói tin có 58 test tự động; phần lớn được viết trước khi viết mã, và mỗi lỗi trong mã Python (BUG-02, BUG-03) đều có một test tái hiện lỗi đó.
 
 Nhờ cách chia tầng (mục 3.7), phần tính toán ở tầng 2 không mở socket và không đọc đồng hồ, nên được kiểm thử bằng dữ liệu giả: ví dụ chuỗi seq có khoảng hở, có quay vòng qua 255, có gói đến sai thứ tự; chuỗi thời điểm HEARTBEAT có khoảng trống quá 3 giây. Phần đọc gói tin ở tầng 4 được kiểm thử bằng một chương trình giả lập PX4 gửi gói UDP thật tới chương trình đo.
 
+Bảng 5.7 liệt kê các file kiểm thử tự động.
 [BẢNG 5.7] Kiểm thử tự động
   File test                   | Số test | Kiểm gì
   tests/test_linkstats.py     | 16      | SeqTracker, RttTracker, thống kê: đếm mất gói, quay vòng seq, resync, RTT, probe quá hạn, p95, độ lệch chuẩn
@@ -177,6 +184,7 @@ Toàn bộ 58 test đạt. Với hai lỗi BUG-02 và BUG-03, test được vi�
 Ý chính: trước khi đo, nhóm kiểm hai điều bằng các phép thử có kết quả biết trước: gói tin thật sự chỉ đi qua ns-3 (mục tiêu M1), và chương trình đo đo đúng mất gói và độ trễ (mục tiêu M2). Cả hai đều đạt; đây là cơ sở để tin số đo ở mục 6.
 
 5.5.1. Hệ thống không có đường tắt (M1)
+Bảng 5.8 trình bày kiểm thử chấp nhận M1.
 [BẢNG 5.8] Kiểm thử chấp nhận M1
   Phép thử                                   | Kết quả                                                            | Đạt
   Chưa chạy ns-3, trạm ping xe               | mất 100% gói (5/5), "Destination Host Unreachable"                 | có
@@ -186,6 +194,7 @@ Toàn bộ 58 test đạt. Với hai lỗi BUG-02 và BUG-03, test được vi�
   Lái xe qua ns-3 ở 5 m                      | thấy xe; lệnh đổi chế độ và lệnh arm được chấp nhận; xe tiến 0,54 m trong Gazebo | có
   Bắt gói trên tap-gcs khi lái xe            | 6 128 gói từ xe tới trạm (10.0.0.2:14581 -> 10.0.0.1:14540) và 73 gói từ trạm tới xe | có
   Dừng ns-3 trong lúc bắt gói, rồi chạy lại  | 15,05 s không có gói nào trên tap-gcs; chạy lại ns-3 thì gói xuất hiện lại ngay, không cần khởi động lại PX4 | có
+Hình 5.2 là ảnh Wireshark bắt gói trên tap-gcs, thấy gói MAVLink đi cả hai chiều.
 [HÌNH 5.2] docs/evidence/net-01-wireshark-tap-gcs.png: gói MAVLink hai chiều trên tap-gcs (khung 451 đi từ trạm tới xe, các khung còn lại từ xe về trạm).
 Các phép thử này không phụ thuộc mô hình kênh: chúng chỉ chứng minh rằng mọi gói giữa trạm và xe phải đi qua ns-3.
 
@@ -193,6 +202,7 @@ Các phép thử này không phụ thuộc mô hình kênh: chúng chỉ chứng
 Phương pháp: dùng netem đặt một lỗi đã biết trước lên đường truyền, rồi so số đo với lỗi đã đặt. netem được đặt trên veth-rover, tức chiều từ xe về trạm, ngay trước khi gói vào ns-3. ns-3 đặt ở 5 m (kênh tốt). Có ba trường hợp: không netem (đối chứng), netem mất 10% gói, và netem trễ 50 ms; mỗi trường hợp 3 lần × 60 s, chạy xen kẽ (đối chứng, mất gói, trễ; rồi lặp lại) bằng một script.
 Vì sao dùng netem mà không dùng mô hình lỗi có sẵn của ns-3: mô hình lỗi của ns-3 làm hỏng khung ở tầng Wi-Fi, nhưng tầng MAC sẽ phát lại khung hỏng (mục 4.3), nên 10% khung hỏng cho ra gần 0% mất gói ở tầng UDP; kết quả không biết trước được. netem làm mất gói ở tầng IP, bên ngoài ns-3, nên kết quả biết trước.
 
+Bảng 5.9 trình bày kết quả kiểm chứng công cụ đo.
 [BẢNG 5.9] Kết quả kiểm chứng công cụ đo (trung bình ± độ lệch chuẩn 3 lần)
   Trường hợp          | Mất gói đo được     | RTT trung bình  | Tiêu chí                 | Đạt
   baseline localhost  | 0,00%               | 10,32 ms        | 0% mất gói               | có
@@ -202,7 +212,7 @@ Vì sao dùng netem mà không dùng mô hình lỗi có sẵn của ns-3: mô h
 (*) Không phải mất gói thật, xem dưới.
 Ngoài ra, chạy lại cùng lệnh không ghi đè dữ liệu cũ (sau khi sửa BUG-03).
 
-Một quan sát quan trọng: khi đặt netem trễ 50 ms, chương trình báo 0,15–0,32% "mất gói" kèm 12, 19 và 27 lần resync, trong khi hai trường hợp còn lại có 0 lần resync. Bản bắt gói trên tap-gcs ở một lần chạy cùng cấu hình cho thấy đúng 21 lần seq của xe bị lùi lại, khớp với 21 lần resync chương trình báo. Đây là gói đến sai thứ tự do netem tạo ra, không phải gói mất; mỗi lần đảo thứ tự tạo một khoảng hở giả và bị đếm như mất (giới hạn đã nêu ở 4.4). Trong loạt đo chính của mục 6 không có netem, và chỉ có 2 lần resync trong 27 lần đo.
+Một quan sát quan trọng: khi đặt netem trễ 50 ms, chương trình báo 0,15–0,32% "mất gói" kèm 12, 19 và 27 lần resync, trong khi hai trường hợp còn lại có 0 lần resync. Bản bắt gói trên tap-gcs ở lần chạy thử trước loạt kiểm chứng chính thức (dữ liệu lưu trữ, không dùng làm số liệu) cho thấy đúng 21 lần seq của xe bị lùi lại, khớp với 21 lần resync chương trình báo. Đây là gói đến sai thứ tự, xuất hiện khi đặt netem trễ (cơ chế cụ thể chưa kiểm), không phải gói mất; mỗi lần đảo thứ tự tạo một khoảng hở giả và bị đếm như mất (giới hạn đã nêu ở 4.4). Trong loạt đo chính của mục 6 không có netem, và chỉ có 2 lần resync trong 27 lần đo.
 
 Kết luận 5.5: hệ thống không có đường tắt (M1 đạt); chương trình đo đo đúng mất gói (đặt 10%, đo 9,76%) và đúng độ trễ (đặt 50 ms, đo 49,46 ms), ổn định qua 3 lần lặp (M2 đạt).
 
@@ -211,6 +221,7 @@ Kết luận 5.5: hệ thống không có đường tắt (M1 đạt); chương 
 --------------------------------------------
 Ý chính: mỗi thí nghiệm của mục 6 được chạy bằng một script, không cần thao tác tay giữa các lần đo; số liệu được xử lý bằng các script phân tích, và mọi bảng số trong báo cáo được tính lại bằng một script duy nhất.
 
+Bảng 5.10 liệt kê script chạy từng thí nghiệm.
 [BẢNG 5.10] Script chạy thí nghiệm
   Thí nghiệm (mục 6)            | Script                                      | Mỗi lần đo, script làm gì
   A. Khảo sát theo khoảng cách  | tools/run_sweep.sh                          | chạy ns-3 với --distance = d và --RngRun = số thứ tự lần lặp, chờ 2 s, chạy chương trình đo 60 s trong ns-gcs, dừng ns-3, lưu log ns-3
@@ -228,6 +239,7 @@ Thí nghiệm C (mất lệnh điều khiển) phối hợp ba chương trình c
   - Kịch bản ngừng gửi lệnh: t0 do script lái ghi ngay sau vòng gửi lệnh cuối cùng; lệnh cuối được gửi trước t0 tối đa khoảng 50 ms.
 Hai chương trình ghi thời điểm vào hai file riêng, cùng theo đồng hồ của máy; lần chạy đầu tiên của thí nghiệm này bị mất t0 vì hai chương trình ghi chung một file (5.7).
 
+Bảng 5.11 liệt kê các script xử lý số liệu.
 [BẢNG 5.11] Script xử lý số liệu
   Script                            | Đầu vào                                   | Đầu ra (dùng ở mục 6)
   analysis/plot_results.py          | data/summary.csv                          | bảng tổng hợp theo khoảng cách; hình 6.1
@@ -237,6 +249,7 @@ Hai chương trình ghi thời điểm vào hai file riêng, cùng theo đồng 
 Các chỉ số của thí nghiệm C được định nghĩa trong failsafe_analysis.py: v0 là vận tốc trung bình trong 0,5 s trước t0; "vận tốc còn một nửa" là lúc vận tốc tụt dưới 50% v0; d_max là khoảng cách lớn nhất từ vị trí tại t0 trong 5 s sau t0; "xe tự chạy lại" là lúc vận tốc vượt 0,2 m/s sau khi đã dừng.
 
 Phân tích bản bắt gói 802.11. Khi chạy ns-3 với --pcap, mỗi node ghi một file pcap chứa mọi khung nó phát và nhận, kèm cờ Retry. Để đếm số lần phát của mỗi khung (dùng ở mục 6.4), script gom các khung dữ liệu do node xe phát theo số thứ tự khung 802.11: một khung mới có số thứ tự mới, còn các lần phát lại có cùng số thứ tự và bật cờ Retry. Thời gian phát mỗi khung được ước lượng theo tốc độ 6 Mbit/s của 802.11g.
+Hình 5.3 là ảnh Wireshark các khung 802.11 có cờ Retry ở 80 m.
 [HÌNH 5.3] docs/evidence/net-03-wireshark-retry-80m.png: khung 802.11 có cờ Retry ở 80 m (lọc wlan.fc.retry == 1).
 
 
@@ -244,18 +257,20 @@ Phân tích bản bắt gói 802.11. Khi chạy ns-3 với --pcap, mỗi node gh
 -----------------------------
 Ý chính: trong quá trình triển khai, nhóm gặp ba lỗi phần mềm (ghi trong nhật ký lỗi BUG-01 đến BUG-03) và một số vấn đề cấu hình; mỗi vấn đề được ghi nguyên nhân, cách sửa và cách kiểm chứng.
 
+Bảng 5.12 trình bày các lỗi phần mềm.
 [BẢNG 5.12] Các lỗi phần mềm
   Mã     | Hiện tượng                                       | Nguyên nhân                                                            | Cách giải quyết và kiểm chứng
   BUG-01 | ns-3 dừng với lỗi ngay khi có gói đầu tiên đi qua | TapBridge UseLocal đổi địa chỉ MAC của thiết bị Wi-Fi khi gặp khung đầu tiên, nhưng bản ns-3 dùng trong đề tài chỉ cập nhật một phần bên trong thiết bị, nên khung gửi đi mang địa chỉ không khớp | cố định MAC của hai veth và gán sẵn đúng MAC đó cho thiết bị Wi-Fi trong ns-3; tắt IPv6 để không thiết bị nào khác phát gói. Kiểm: dựng lại lỗi bằng một chương trình ns-3 nhỏ (chưa sửa: lỗi; đã sửa: 6/6 gói tới), sau đó ping và lái xe qua ns-3 đều thông
   BUG-02 | ở mọi khoảng cách, kể cả baseline, luôn đo được khoảng 1,3% mất gói | PX4 gửi khoảng 5 bản tin mỗi giây không có trong bộ định nghĩa "common" của pymavlink; pymavlink gán nguồn (0, 0) cho các bản tin này dù header ghi nguồn của xe, nên seq của xe bị hở một ô mỗi bản tin | đọc lại nguồn và seq trực tiếp từ header của bản tin lạ. Kiểm: test tự động viết trước; chạy lại trên một bản bắt gói thật, mất gói từ 1,35% giảm còn 0,01%; baseline sau khi sửa 0,00%
   BUG-03 | chạy lại chương trình đo cùng nhãn làm mất file số liệu của lần trước | file chi tiết được mở ở chế độ ghi đè                                   | chương trình dừng và báo lỗi nếu file cùng nhãn đã có; script thí nghiệm mất lệnh điều khiển kiểm trước mọi file sẽ ghi. Kiểm: test tự động viết trước
 
+Bảng 5.13 trình bày các vấn đề cấu hình và thí nghiệm.
 [BẢNG 5.13] Các vấn đề cấu hình và thí nghiệm
   Vấn đề                                             | Nguyên nhân                                                  | Cách giải quyết
   PX4 và Gazebo không tìm thấy nhau trong ns-rover   | gz-transport dùng multicast, mà netns mới không có đường multicast | bật multicast cho lo trong ns-rover, buộc gz-transport dùng 127.0.0.1
   Gói ARP dễ mất khi tín hiệu yếu                    | ARP là khung broadcast, không được xác nhận và phát lại trong Wi-Fi | ghi sẵn bảng ARP trong hai netns
   Kết quả loạt đo đầu tiên đứt gọn ở khoảng 51 m, không có vùng chuyển tiếp | không có fading thì công suất thu cố định theo khoảng cách (mục 4.2); thêm vào đó L0 dùng giá trị mặc định của ns-3 cho 5,15 GHz | đặt L0 đúng cho 2,4 GHz và thêm fading Nakagami; giữ kết quả không fading làm đối chứng (thí nghiệm B)
-  Gói đến sai thứ tự khi đặt netem trễ bị đếm như mất | netem đổi thứ tự gói; mỗi lần đảo tạo khoảng hở giả trong seq | nhận diện bằng số resync và bản bắt gói (5.5.2); không ảnh hưởng loạt đo chính
+  Gói đến sai thứ tự khi đặt netem trễ bị đếm như mất | gói đến sai thứ tự xuất hiện khi đặt netem trễ (cơ chế chưa kiểm); mỗi lần đảo tạo khoảng hở giả trong seq | nhận diện bằng số resync và bản bắt gói (5.5.2); không ảnh hưởng loạt đo chính
   Thí nghiệm C lần đầu mất thời điểm t0              | script điều phối và script lái ghi chung một file, dòng sau ghi đè dòng trước | mỗi chương trình ghi một file riêng; chạy lại toàn bộ
   Script chạy loạt tự dừng chính nó và không ghi được số liệu | lệnh dọn tiến trình ns-3 cũ khớp cả dòng lệnh của chính script; thư mục kết quả do quyền root tạo | chỉ dừng tiến trình có dòng lệnh bắt đầu bằng file ns-3; trao lại thư mục kết quả cho người dùng thường
 

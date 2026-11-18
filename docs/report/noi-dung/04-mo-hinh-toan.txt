@@ -16,13 +16,14 @@ BỐ CỤC MỤC 4
 
 Mục này trả lời ba câu hỏi: bài toán được phát biểu chính xác ra sao (4.1); vì sao khi xe ở xa, gói tin bị trễ và bị mất (4.2, 4.3); mỗi con số trong bảng kết quả được tính bằng công thức nào (4.4 đến 4.6); và mô hình dự đoán điều gì để mục 6 kiểm chứng (4.7). Toàn bộ chuỗi lập luận có thể tóm trong một hình:
 
+Hình 4.1 minh họa chuỗi nhân quả từ khoảng cách tới số đo.
 [HÌNH 4.1] Chuỗi nhân quả từ khoảng cách tới số đo
     khoảng cách d
       -> suy hao PL(d)                                  (4.2, công thức 4.1)
       -> công suất thu trung bình P̄rx(d)                (4.2, công thức 4.3)
       -> fading: công suất từng khung dao động quanh P̄rx (4.2, công thức 4.4)
       -> so với ngưỡng θ = -82 dBm: khung nhận được hay không   (4.2, công thức 4.5)
-      -> tầng MAC phát lại tối đa 7 lần; mỗi khung tốn nhiều thời gian phục vụ hơn (4.3)
+      -> tầng MAC phát mỗi khung tối đa 7 lần (1 lần đầu và tối đa 6 lần phát lại); mỗi khung tốn nhiều thời gian phục vụ hơn (4.3)
       -> hàng đợi: nếu kênh không phục vụ kịp thì khung chờ tới 500 ms rồi bị bỏ (4.3)
       -> các số đo: mất gói, RTT, jitter, mất kết nối, thông lượng       (4.4)
       -> xếp loại tin cậy / suy giảm / không tin cậy                     (4.5)
@@ -96,6 +97,7 @@ Thay f = 2,4 GHz, c = 3·10^8 m/s: λ_s = 0,125 m và L0 = 40,046 dB.
 Công suất thu trung bình. Công suất thu (dBm) bằng công suất phát cộng độ lợi anten trừ suy hao:
   (4.3)  P̄rx(d) = P_tx + G_tx + G_rx − PL(d) = 16 − 40,046 − 30·log10(d)   [dBm]
 
+Bảng 4.2 trình bày công suất thu trung bình ở các khoảng cách khảo sát.
 [BẢNG 4.2] Công suất thu trung bình ở các khoảng cách khảo sát
   d (m)          | 10     | 40     | 50     | 60     | 70     | 80     | 85     | 90     | 100
   P̄rx (dBm)      | -54,05 | -72,11 | -75,02 | -77,39 | -79,40 | -81,14 | -81,93 | -82,67 | -84,05
@@ -120,6 +122,7 @@ Trường hợp có fading: xác suất một lần phát bị hỏng. Có fadin
   (4.8)  p(d) = P(P_rx,khung < θ) = P(X < x(d)) = P(m, m·x(d)),   với x(d) = 10^((θ − P̄rx(d)) / 10)
 trong đó P(a, z) là hàm Gamma không đầy đủ chuẩn hóa (hàm phân phối của X). x(d) là tỷ số giữa ngưỡng và công suất trung bình: x < 1 khi trung bình còn trên ngưỡng, x > 1 khi trung bình đã dưới ngưỡng.
 
+Bảng 4.3 trình bày xác suất một lần phát bị hỏng, tính theo (4.8) với m = 1,5.
 [BẢNG 4.3] Xác suất một lần phát bị hỏng theo (4.8), m = 1,5
   d (m)       | 10    | 40    | 50    | 60    | 70    | 80    | 85    | 90    | 100
   x(d)        | 0,002 | 0,103 | 0,200 | 0,346 | 0,549 | 0,820 | 0,984 | 1,168 | 1,602
@@ -131,12 +134,13 @@ Nhận xét: không có fading thì p nhảy từ 0 lên 1 tại d* = 85,47 m; c
 ----------------------------------------
 Ý chính: tầng MAC gửi lại khung hỏng, nên một mình fading ít khi làm mất gói. Nhưng mỗi lần phát hỏng, node phát phải chờ ACK rồi chờ thêm một khoảng ngẫu nhiên trước lần phát sau; thời gian phục vụ một khung vì vậy tăng nhanh theo số lần phát. Khi node xe không còn phục vụ kịp khoảng 400 bản tin/giây PX4 đưa xuống, hàng đợi đầy lên, khung phải chờ tới 500 ms rồi bị bỏ. Đây là nguyên nhân chính làm RTT tăng vọt và làm mất gói ở khoảng cách lớn.
 
-Gửi lại. Sau mỗi lần phát, bên phát chờ khung xác nhận (ACK). Không có ACK thì phát lại, tối đa K = 7 lần cho mỗi khung. [CẦN NGUỒN: IEEE 802.11, ns-3 FrameRetryLimit] Theo giả thiết GT2 (các lần phát độc lập):
+Gửi lại. Sau mỗi lần phát, bên phát chờ khung xác nhận (ACK). Không có ACK thì phát lại; mỗi khung được phát tối đa K = 7 lần (1 lần đầu và tối đa 6 lần phát lại). [CẦN NGUỒN: IEEE 802.11, ns-3 FrameRetryLimit] Theo giả thiết GT2 (các lần phát độc lập):
   (4.9)  xác suất khung bị bỏ vì hết lượt phát:  P_mac(d) = p(d)^K
   (4.10) số lần phát trung bình của một khung:  E[N_tx](d) = 1 + p + p^2 + ... + p^(K−1) = (1 − p^K) / (1 − p)
 Ghi chú: một lần phát cũng thất bại nếu khung tới nơi nhưng ACK bị mất; khi đó bên phát vẫn phát lại, khung không mất nhưng tốn thêm thời gian. (4.9) vẫn đúng, vì khung chỉ mất khi cả K lần đều không tới nơi. Còn (4.10) chỉ tính mất khung nên là cận dưới của số lần phát. Nếu coi ACK cũng bị mất với xác suất p (kênh đối xứng), một lần phát thất bại với xác suất q = 1 − (1 − p)^2, và số lần phát trung bình có cận trên:
   (4.10b) E[N_tx,trên](d) = (1 − q^K) / (1 − q),   q = 1 − (1 − p)^2
 
+Bảng 4.4 trình bày mất gói do hết lượt phát và số lần phát trung bình, tính theo (4.9), (4.10) và (4.10b).
 [BẢNG 4.4] Mất gói do hết lượt phát và số lần phát trung bình, theo (4.9), (4.10) và (4.10b)
   d (m)         | 10    | 40    | 50    | 60     | 70     | 80     | 85     | 90     | 100
   P_mac         | 0     | ~0    | ~0    | 0,002% | 0,066% | 0,99%  | 2,8%   | 6,7%   | 23,6%
@@ -233,7 +237,7 @@ Hệ quả của mô hình: vì cả hai cách làm mất lệnh (cắt đườn
   DĐ2  | Kênh có fading: chất lượng xấu đi dần trong một vùng khoảng cách quanh d*, không đứt gọn; RTT thay đổi trước mất gói | (4.8), (4.10)
   DĐ3  | Hàng đợi quá tải xuất hiện trước khi mất do hết lượt phát đáng kể: sẽ có khoảng cách mà RTT đã gần D_max = 500 ms trong khi mất gói còn thấp; mất gói đo được lớn hơn nhiều P_mac; phần lớn khung mất bị bỏ trong hàng đợi chứ không phải sau 7 lần phát | (4.9), (4.11)
   DĐ4  | RTT không vượt xa 500 ms dù khoảng cách tăng; khi RTT đã chạm trần thì J_RTT giảm lại          | RB3, (4.19)
-  DĐ5  | Vì các bản tin mất độc lập (GT2), hiếm khi có chuỗi mất liền từ 128 bản tin trở lên: số resync gần 0 và L (theo seq) gần bằng L_R (theo số bản tin nhận được, cùng khoảng đếm) ở mọi khoảng cách | GT2, (4.12)–(4.15)
+  DĐ5  | Kiểm tra tính đúng của cách đếm: vì các bản tin mất độc lập (GT2), hiếm khi có chuỗi mất liền từ 128 bản tin trở lên: số resync gần 0 và L (theo seq) gần bằng L_R (theo số bản tin nhận được, cùng khoảng đếm) ở mọi khoảng cách | GT2, (4.12)–(4.15)
   DĐ6  | Khi kênh rất xấu, E có thể không tăng theo khoảng cách, còn T_mất thì tăng                     | (4.22), (4.23)
   DĐ7  | Khi mất lệnh điều khiển: xe phanh sau khoảng T_RC + ε; chuyển sang Return sau thêm đúng T_F = 5 s; cắt đường truyền và ngừng gửi lệnh cho cùng diễn biến | (4.27)–(4.29)
 
@@ -242,7 +246,7 @@ Tóm tắt mục 4
 -------------
   - Bài toán: thay đổi khoảng cách d, giữ cố định mọi tham số khác (bảng 4.1), đo L, RTT, jitter, E, R và tìm d_tc lớn nhất còn tin cậy.
   - Công suất thu trung bình giảm 30 dB mỗi lần khoảng cách tăng gấp 10. Không có fading, liên lạc đứt gọn tại d* = 85,47 m (L0 = 40,046 dB) hoặc 51,37 m (L0 mặc định của ns-3); số đo khớp cả hai giá trị.
-  - Có fading, xác suất một lần phát hỏng tăng dần từ khoảng 50 m. Tầng MAC phát lại tối đa 7 lần nên một mình fading ít làm mất gói, nhưng mỗi lần phát hỏng kéo theo thời gian chờ ACK và chờ ngẫu nhiên, nên node xe phục vụ chậm lại; khi đó hàng đợi đầy, RTT tăng tới gần 500 ms và khung bị bỏ vì quá hạn chờ.
+  - Có fading, xác suất một lần phát hỏng tăng dần từ khoảng 50 m. Tầng MAC phát mỗi khung tối đa 7 lần nên một mình fading ít làm mất gói, nhưng mỗi lần phát hỏng kéo theo thời gian chờ ACK và chờ ngẫu nhiên, nên node xe phục vụ chậm lại; khi đó hàng đợi đầy, RTT tăng tới gần 500 ms và khung bị bỏ vì quá hạn chờ.
   - Mỗi chỉ số có công thức và giới hạn: mất gói theo seq chỉ đếm từ HEARTBEAT đầu tiên và đếm thiếu nếu đứt liền từ 128 bản tin; RTT có độ phân giải khoảng 10 ms; E không đếm khi chưa từng nhận HEARTBEAT.
   - Phản ứng failsafe dự đoán được từ tham số PX4: phanh sau khoảng 0,5 s, giữ yên 5 s, rồi tự chạy về điểm xuất phát.
   - Mô hình đưa ra bảy dự đoán kiểm tra được (bảng 4.5).
@@ -268,9 +272,10 @@ Bảng ký hiệu
   p(d)             | xác suất một lần phát bị hỏng                                    | không đơn vị
   K                | số lần phát tối đa của một khung (7)                             | lần
   P_mac            | xác suất khung bị bỏ vì hết lượt phát                            | không đơn vị
-  E[N_tx]          | số lần phát trung bình của một khung                             | lần
+  E[N_tx]          | số lần phát trung bình của một khung, chỉ tính mất khung (4.10)  | lần
+  q, E[N_tx,trên]  | xác suất một lần phát thất bại khi tính cả mất ACK; cận trên của số lần phát (4.10b) | không đơn vị; lần
   λ                | tốc độ gửi bản tin của PX4                                       | bản tin/s
-  E[S], ρ          | thời gian phục vụ trung bình một khung; mức sử dụng kênh         | s; không đơn vị
+  E[S], ρ          | thời gian phục vụ trung bình một khung của node; mức sử dụng của node | s; không đơn vị
   D_max, Q         | thời gian chờ tối đa; sức chứa hàng đợi MAC                      | ms; khung
   s_k, g_k         | seq của bản tin thứ k; khoảng hở seq                             | không đơn vị
   L, L_R           | tỷ lệ mất gói theo seq; ước lượng theo thông lượng               | %
@@ -279,6 +284,10 @@ Bảng ký hiệu
   J_RTT, J_HB      | jitter RTT; jitter khoảng cách HEARTBEAT                         | ms
   E                | số lần mất kết nối trong một lần đo                              | lần
   T_mất            | thời gian không có kết nối trong một lần đo (4.23)              | s
+  T_đếm            | khoảng thời gian từ HEARTBEAT đầu tiên tới cuối lần đo (4.15)   | s
+  t0, ε            | thời điểm xe bắt đầu không nhận được lệnh lái; độ trễ xử lý của PX4 (4.27) | s
+  v0, d_max        | vận tốc xe ngay trước t0; quãng đường xa nhất xe đi thêm sau t0 (4.29) | m/s; m
+  RO_SPEED_LIM, RO_DECEL_LIM | vận tốc tối đa khi tự chạy; giới hạn gia tốc phanh (4.6)  | m/s; m/s^2
   T_RC, T_F        | COM_RC_LOSS_T; COM_FAIL_ACT_T                                    | s
   T_HB, T_lost, T_probe, T_loop | chu kỳ HEARTBEAT; ngưỡng mất kết nối; thời gian chờ probe; chu kỳ vòng lặp đo | s
 
@@ -295,7 +304,7 @@ Nguồn số liệu dùng trong mục 4 (DoD A2):
   - λ ≈ 397 bản tin/s: analysis/throughput_table.csv (10 m: 396,8).
   - T_probe 2 s, T_loop 10 ms: tools/run_experiment.py (RttTracker timeout_s = 2.0; time.sleep(0.01)). T_lost 3 s: rover/core/vehicle.py (LINK_TIMEOUT_S). f_probe 5: tools/run_sweep.sh (PROBE_HZ).
   - Quy ước seq (4.12): rover/core/linkstats.py, SeqTracker.on_packet (gap < 128 thì cộng; gap ≥ 128 là resync). p95 (4.18) và jitter (4.19): linkstats.py calc_percentile, calc_stdev; run_experiment.py dùng calc_stdev cho cả rtt_jitter và hb_jitter.
-  - Bảng 4.2, 4.3, 4.4: tính bằng Python 2026-11-18 từ (4.3), (4.8), (4.9), (4.10) với hàm Gamma không đầy đủ chuẩn hóa (chuỗi lũy thừa). Không có file script trong repo; nếu cần tái lập, nên thêm vào analysis/ (ví dụ analysis/model_tables.py).
+  - Bảng 4.2, 4.3, 4.4 tính từ (4.3), (4.8), (4.9), (4.10), (4.10b) bằng analysis/report_tables.py (hàm Gamma không đầy đủ chuẩn hóa tính bằng chuỗi lũy thừa).
   - d* = 85,47 m và 51,37 m: tính lại 2026-11-18. Số đo đối chiếu: data/nofading/summary.csv (85 m nhận 23 643 bản tin, mất 0; 86 m nhận 0); data/old/sweep-20s-nofading/summary.csv (50 m nhận được, 60 m mất 100%; loạt cũ, nêu rõ là loạt cũ).
   - Tham số failsafe: docs/experiments/config.txt mục 6; docs/agile/user-stories/NET-04.txt (Q2).
 Cần sửa ở tài liệu khác (phát hiện khi viết mục 4):

@@ -31,7 +31,7 @@ Quy ước viết: mỗi đoạn một dòng (dùng word wrap của VS Code); ti
 Quy tắc liên kết:
   - Mục 6 nhắc công thức theo số của mục 4, ví dụ (4.13), và nhắc dự đoán theo mã DĐ1–DĐ7.
   - Mục 5 (05-trien-khai.txt) có: cách chương trình hiện thực (4.12)–(4.24) (bảng 5.6, mã giả, năm chi tiết hiện thực), kết quả kiểm chứng netem (bảng 5.9: 9,76 ± 0,10%; +49,46 ± 0,45 ms; baseline 0,00%), định nghĩa t0 của thí nghiệm C và cách đếm số lần phát từ pcap (5.6). Mục 6 dẫn về các phần này.
-  - Một con số dùng ở nhiều mục phải giống hệt nhau. Các số dùng chung: 85,47 m; 51,37 m; 397 bản tin/s (396,8); 70 m: RTT 444,87 ms, mất 7,57%; d_tc = 60 m; 0,75 m; 5 s; 9,76%; +49,46 ms.
+  - Một con số dùng ở nhiều mục phải giống hệt nhau. Các số dùng chung: 85,47 m; 51,37 m; 397 bản tin/s (396,8); 70 m: RTT 444,87 ms, mất 7,57%; d_tc = 60 m; giảm tốc sau khoảng 0,6 s (0,60–0,68 s); d_max 0,71–0,75 m; 5 s; tối đa 7 lần phát (1 lần đầu + 6 lần phát lại); 9,76%; +49,46 ms.
 
 
 3. CÁC FILE DỮ LIỆU: CHỨA GÌ, DÙNG Ở ĐÂU
@@ -40,9 +40,9 @@ Nhãn của một lần đo: baseline_rN (đối chứng qua localhost), dXXX_rN
 
 3.1. Số liệu chính thức (chỉ dùng các file này cho báo cáo)
   File / thư mục                       | Chứa gì                                                                                  | Dùng ở
-  data/summary.csv                     | 27 dòng, mỗi lần đo của thí nghiệm A một dòng tổng kết: label, distance, duration, rx, lost, loss_rate, rtt_mean_ms, rtt_p95_ms, rtt_jitter_ms, hb_jitter_ms, probes_lost, lost_events | mục 6 (bảng 6.2, 6.5)
-  data/raw/<nhãn>.csv                  | số liệu từng giây của một lần đo. 6 dòng đầu bắt đầu bằng "#": lệnh đã chạy, thời điểm bắt đầu, nhãn, khoảng cách, thời lượng, tần số probe. Sau đó các cột t, rx, lost, loss_rate, resyncs, probes_sent, probes_lost, rtt_mean_ms, rtt_p95_ms, rtt_jitter_ms, hb_jitter_ms, link_state (WAITING / CONNECTED / LOST), lost_events; giá trị cộng dồn từ đầu lần đo | mục 6 (T_mất, probe mất, resync)
-  data/raw/<nhãn>.ns3.log              | các tham số ns-3 in ra lúc khởi động của lần đo đó (khoảng cách, công suất, L0, fading, RngRun) | kiểm cấu hình
+    data/summary.csv                     | 27 dòng, mỗi lần đo của thí nghiệm A một dòng tổng kết: label, distance, duration, rx, lost, loss_rate, rtt_mean_ms, rtt_p95_ms, rtt_jitter_ms, hb_jitter_ms, probes_lost, lost_events | mục 6 (bảng 6.2, 6.5)
+    data/raw/<nhãn>.csv                  | số liệu từng giây của một lần đo. 6 dòng đầu bắt đầu bằng "#": lệnh đã chạy, thời điểm bắt đầu, nhãn, khoảng cách, thời lượng, tần số probe. Sau đó các cột t, rx, lost, loss_rate, resyncs, probes_sent, probes_lost, rtt_mean_ms, rtt_p95_ms, rtt_jitter_ms, hb_jitter_ms, link_state (WAITING / CONNECTED / LOST), lost_events; giá trị cộng dồn từ đầu lần đo | mục 6 (T_mất, probe mất, resync)
+    data/raw/<nhãn>.ns3.log              | các tham số ns-3 in ra lúc khởi động của lần đo đó (khoảng cách, công suất, L0, fading, RngRun) | kiểm cấu hình
   data/raw/acc_*.csv                   | số liệu từng giây của NET-02 lần kiểm 2                                                   | mục 5
   data/net02_acceptance_summary.csv    | 9 dòng tổng kết NET-02 lần 2 (ref, loss10, delay50 × 3 lần), cùng cột với summary.csv     | mục 5
   data/nofading/summary.csv, raw/      | thí nghiệm B: kênh không fading, cùng L0; 70, 80, 85, 86, 90 m × 1 lần. Dòng đầu (d070_r1, 14,7 s, rx = 0) là lần thử bị dừng, không dùng; xem data/nofading/README.txt | mục 4 (đối chiếu d*), mục 6 (bảng 6.4)
@@ -60,7 +60,7 @@ Nhãn của một lần đo: baseline_rN (đối chứng qua localhost), dXXX_rN
   analysis/fading_vs_nofading_loss.png  | analysis/plot_report_extras.py  | so sánh kênh có và không fading          | Hình 6.3
   analysis/failsafe_speed.png           | analysis/failsafe_analysis.py   | vận tốc quanh t0, 2 kịch bản             | Hình 6.4
   analysis/report_tables.txt            | analysis/report_tables.py       | MỌI bảng số của mục 4 và mục 6 (mô hình, bảng 6.2–6.6, khoảng ngưỡng, thống kê pcap 80 m); không sửa tay | mục 4, mục 6
-  docs/diagrams/*/ *.mmd, *.svg, *.txt  | Mermaid (file .mmd là gốc)       | sơ đồ mạng (network-overview), lưu đồ đo (measure-loop) | mục 3, mục 5
+  docs/diagrams/*/ *.mmd, *.svg, *.txt  | Mermaid (file .mmd là gốc)       | sơ đồ mạng (network-overview), lưu đồ đo (measure-loop), trình tự đo RTT (timesync-rtt, chưa xuất .svg) | mục 3, mục 5
 
 3.3. Minh chứng và tài liệu cấu hình
   docs/evidence/net-01-tap-gcs-*.pcap, net-01-wireshark-tap-gcs.png : gói tin hai chiều trên tap-gcs (mục 5, M1); ảnh đã thấy cả hai chiều.

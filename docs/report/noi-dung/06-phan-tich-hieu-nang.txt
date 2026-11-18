@@ -24,6 +24,7 @@ Mục này làm hai việc. Thứ nhất, trả lời hai câu hỏi đặt ra �
 ------------------------------------------------
 Ý chính: có ba thí nghiệm, đều chạy bằng script và lặp lại được. Công cụ đo đã được kiểm chứng ở mục 5, và các lần đo lặp cho kết quả rất sát nhau, nên các khác biệt trong mục này là do kênh Wi-Fi chứ không do sai số đo.
 
+Bảng 6.1 trình bày ba thí nghiệm.
 [BẢNG 6.1] Ba thí nghiệm
   Thí nghiệm                     | Thay đổi gì                                    | Số lần đo                                      | Trả lời
   A. Khảo sát theo khoảng cách   | d ∈ {10, 40, 50, 60, 70, 80, 90, 100} m, kênh có fading (m = 1,5) | 8 mức × 3 lần × 60 s, cộng 3 lần baseline × 60 s | Câu hỏi 1; DĐ2 đến DĐ6
@@ -46,10 +47,10 @@ Các chỉ số đã định nghĩa ở 4.4: L (4.13), R (4.14), L_R (4.15), RTT
   d (m)    | L (%)         | L_R (%)     | R (bản tin/s) | RTT tb (ms)    | RTT p95 (ms) | J_RTT (ms) | J_HB (ms) | probe mất (%) | E (từng lần) | T_mất (s, trên 59 s) | chờ HEARTBEAT đầu (s, từng lần)
   baseline | 0,00 ± 0,00   | không tính  | 395,8 ± 1,3   | 10,32 ± 0,01   | 10,51        | 0,12       | 4,8       | 0,0           | 0/0/0        | 0                    | 0/0/0
   10       | 0,00 ± 0,00   | 0,0 ± 0,6   | 396,8 ± 2,4   | 10,46 ± 0,11   | 10,44        | 1,65       | 3,3       | 0,0           | 0/0/0        | 0                    | 0/0/0
-  40       | 0,00 ± 0,01   | 0,2 ± 0,4   | 395,8 ± 1,6   | 10,50 ± 0,04   | 10,45        | 1,76       | 3,4       | 0,0           | 0/0/0        | 0                    | 0/0/0
+  40       | 0,00 ± 0,00   | 0,2 ± 0,4   | 395,8 ± 1,6   | 10,50 ± 0,04   | 10,45        | 1,76       | 3,4       | 0,0           | 0/0/0        | 0                    | 0/0/0
   50       | 0,00 ± 0,00   | −0,1 ± 0,5  | 397,1 ± 1,9   | 10,52 ± 0,11   | 10,44        | 1,80       | 4,0       | 0,0           | 0/0/0        | 0                    | 0/0/0
   60       | 0,01 ± 0,01   | −0,3 ± 0,4  | 398,2 ± 1,8   | 11,80 ± 0,37   | 20,65        | 5,34       | 7,1       | 0,0           | 0/0/0        | 0                    | 0/0/0
-  70       | 7,57 ± 0,59   | 7,6 ± 0,3   | 364,5 ± 4,5   | 444,87 ± 4,11  | 502,29       | 55,90      | 111       | 4,4 ± 1,6     | 0/0/0        | 0,3                  | 1/0/0
+  70       | 7,57 ± 0,59   | 7,6 ± 0,3   | 364,5 ± 4,5   | 444,87 ± 4,11  | 502,29       | 55,90      | 111       | 4,4 ± 1,6     | 0/0/0        | 0,3 ± 0,6            | 1/0/0
   80       | 63,21 ± 0,21  | 63,2 ± 0,1  | 145,4 ± 1,3   | 503,21 ± 1,61  | 515,05       | 8,29       | 1 760     | 50,4 ± 3,1    | 7/5/3        | 12,3 ± 4,6           | 0/1/0
   90       | 81,78 ± 0,28  | 81,8 ± 0,4  | 63,7 ± 10,2   | 506,81 ± 1,19  | 519,98       | 7,10       | 3 884     | 73,2 ± 3,8    | 6/9/5        | 32,7 ± 6,8           | 16/2/3
   100      | 90,12 ± 0,15  | 90,2 ± 0,4  | 28,7 ± 14,3   | 512,74 ± 3,65  | 533,36       | 10,81      | 6 050     | 85,2 ± 2,2    | 2/4/5        | 43,3 ± 2,1           | 40/7/1
@@ -58,7 +59,9 @@ Ghi chú bảng:
   - R tính trên cả 60 s, kể cả thời gian chờ HEARTBEAT đầu tiên (cột cuối).
   - T_mất gồm cả thời gian chờ HEARTBEAT đầu tiên; ở 70 m, 0,3 s trung bình chính là 1 giây chờ lúc bắt đầu của lần đo thứ nhất, không phải mất kết nối.
 
+Hình 6.1 vẽ bốn chỉ số theo khoảng cách: mất gói, RTT, jitter và số lần mất kết nối.
 [HÌNH 6.1] analysis/combined_metrics.png: (a) mất gói, (b) RTT trung bình và p95, (c) jitter RTT và jitter HEARTBEAT, (d) số lần mất kết nối; đều theo khoảng cách, có đường baseline và thanh độ lệch chuẩn.
+Hình 6.2 vẽ thông lượng (số bản tin nhận được mỗi giây) theo khoảng cách.
 [HÌNH 6.2] analysis/throughput_vs_distance.png: số bản tin nhận được mỗi giây theo khoảng cách, có đường baseline.
 
 Đọc bảng 6.2 theo cột: RTT là chỉ số thay đổi sớm nhất (60 m bắt đầu tăng, 70 m tăng vọt), mất gói thay đổi muộn hơn (70 m mới đáng kể), và mất kết nối xuất hiện muộn nhất (từ 80 m). Ba phần tiếp theo giải thích từng vùng bằng mô hình của mục 4.
@@ -89,11 +92,11 @@ Mô hình giải thích: theo bảng 4.3 và 4.4, ở 10–50 m xác suất mộ
 
 Giải thích theo mô hình hàng đợi (4.11): nếu chỉ tính khung bị bỏ vì phát hỏng cả 7 lần thì ở 70 m chỉ mất 0,066%. Số đo lớn hơn rất nhiều, và RTT trung bình lại gần trần 500 ms. Lời giải thích phù hợp là: ở 70 m mỗi khung cần trung bình khoảng 1,5–2,3 lần phát (bảng 4.4, tùy có tính mất ACK hay không), và mỗi lần phát hỏng kéo theo thời gian chờ ACK và thời gian chờ ngẫu nhiên tăng dần, trong khi PX4 vẫn gửi khoảng 397 bản tin mỗi giây. Node xe không phục vụ kịp (ρ ≥ 1), hàng đợi ở node xe đầy dần, khung phải chờ gần 500 ms; khung nào chờ quá 500 ms thì bị bỏ. Như vậy phần lớn mất gói là do quá hạn chờ trong hàng đợi, không phải do phát hỏng.
 
-Bằng chứng trực tiếp từ bản bắt gói: ns-3 ghi lại mọi khung node xe phát ở 80 m (docs/evidence/net-03-wifi-80m.pcap, 57,4 s). Đếm các khung khác nhau (theo số thứ tự khung 802.11) và số lần phát của mỗi khung (cách đếm ở mục 5.6):
+Bằng chứng trực tiếp từ bản bắt gói: trong một lần chạy riêng ở 80 m có bật ghi pcap (cùng cấu hình và cùng tải như loạt chính, nhưng không thuộc 3 lần đo của bảng 6.2), ns-3 ghi lại mọi khung node xe phát (docs/evidence/net-03-wifi-80m.pcap, 57,4 s). Đếm các khung khác nhau (theo số thứ tự khung 802.11) và số lần phát của mỗi khung (cách đếm ở mục 5.6):
   - Node xe chỉ phát 174,7 khung khác nhau mỗi giây, trong khi PX4 đưa xuống khoảng 397 bản tin mỗi giây: khoảng 56% bản tin bị bỏ trong hàng đợi trước khi được phát lần nào.
   - Mỗi khung được phát trung bình 2,55 lần, nằm giữa hai giá trị mô hình ở 80 m (2,05 khi chỉ tính mất khung, 3,62 khi tính cả mất ACK; bảng 4.4).
   - Chỉ 1,4% khung được phát đủ 7 lần, cùng bậc với P_mac ở 80 m (0,99%).
-  - Tổng thời gian phát khung dữ liệu chỉ khoảng 8% thời gian: kênh vô tuyến phần lớn thời gian rảnh. Node xe chậm không phải vì thiếu băng thông mà vì phần lớn thời gian phục vụ là thời gian chờ ACK và chờ ngẫu nhiên trước mỗi lần phát lại.
+  - Thời gian phát khung dữ liệu chỉ chiếm khoảng 8% thời gian (chưa tính ACK và các khoảng chờ): kênh vô tuyến không bị khung dữ liệu chiếm kín. Node xe chậm không phải vì thiếu băng thông mà vì phần lớn thời gian phục vụ là thời gian chờ ACK và chờ ngẫu nhiên trước mỗi lần phát lại.
 Bản bắt gói chỉ có ở 80 m; ở 70 m, cơ chế được suy ra từ các số đo gián tiếp dưới đây, cùng hướng với bằng chứng ở 80 m.
 
 Các số đo ở 70 m cùng chỉ về hướng này:
@@ -138,6 +141,7 @@ Jitter HEARTBEAT tăng lên hàng giây (1,8 s ở 80 m, 6,0 s ở 100 m): khi H
   100   | -84,05               | (không đo)                        | 90,12%, 512,74 ms, 10%
 (Tỷ lệ bản tin nhận được = 100% − L_R, tính trên khoảng đếm, theo bảng 6.2.)
 
+Hình 6.3 so sánh tỷ lệ mất gói của kênh có và không có fading.
 [HÌNH 6.3] analysis/fading_vs_nofading_loss.png: tỷ lệ mất gói theo khoảng cách của hai kênh, kèm ngưỡng tính tay 85,47 m.
 
 Kiểm DĐ1: không fading, kênh nhận đủ bản tin ở 85 m (P̄rx = -81,93 dBm, trên ngưỡng -82 dBm) và không nhận được gì ở 86 m (P̄rx = -82,08 dBm, dưới ngưỡng). Ranh giới nằm giữa 85 và 86 m, khớp với d* = 85,47 m tính theo (4.7). RTT ở 70–85 m vẫn bằng như ở 10 m (khoảng 10,5 ms) vì mọi khung đều trên ngưỡng nên không có lần phát lại nào. Cả hai ý của DĐ1 đều đúng.
@@ -152,6 +156,7 @@ Trả lời ý "dần dần hay đột ngột" của Câu hỏi 1: điều này 
 ---------------------------------------
 Ý chính: theo quy ước (4.25), 10–60 m là tin cậy, 70 m là suy giảm, 80–100 m là không tin cậy. Ranh giới này không đổi khi thay ngưỡng trong một khoảng rất rộng.
 
+Bảng 6.5 trình bày kết quả xếp loại từng khoảng cách theo (4.25).
 [BẢNG 6.5] Xếp loại theo (4.25)
   d (m)  | E lớn nhất trong 3 lần | L lớn nhất (%) | RTT p95 lớn nhất (ms) | Xếp loại
   10     | 0                      | 0,000          | 10,54                 | TIN CẬY
@@ -175,13 +180,14 @@ Trả lời Câu hỏi 1: trong cấu hình đã khảo sát (802.11g, 6 Mbit/s,
 --------------------------------------------------------------
 Ý chính: cả 6 lần đo diễn ra giống nhau và đúng như mô hình (4.27)–(4.29): xe tiếp tục chạy khoảng 0,6 s, giảm tốc, đứng yên đúng 5 s, rồi tự chạy về điểm xuất phát và tự khóa. Cắt đường truyền và ngừng gửi lệnh cho cùng diễn biến (DĐ7).
 
+Bảng 6.6 trình bày kết quả thí nghiệm C.
 [BẢNG 6.6] Kết quả thí nghiệm C (trung bình ± độ lệch chuẩn của 3 lần, mốc thời gian tính từ t0)
   Chỉ số                                              | Cắt đường truyền        | Ngừng gửi lệnh (mạng tốt)
   Vận tốc trong 0,5 s trước t0, PX4 báo (m/s)         | 1,29 ± 0,01             | 1,29 ± 0,02
   Vận tốc trong 1 s trước t0, theo độ dời vị trí (m/s)| 1,11–1,12               | 1,11–1,12
   Bắt đầu giảm tốc, vận tốc dưới 95% (s)              | 0,64–0,68               | 0,60–0,62
   Vận tốc còn một nửa (s)                             | 0,73 ± 0,02             | 0,67 ± 0,02
-  Quãng đường xa nhất xe đi thêm, d_max (m)           | 0,75 ± 0,03             | 0,71 ± 0,03
+  Quãng đường xa nhất xe đi thêm, d_max (m)           | 0,75 ± 0,02             | 0,71 ± 0,03
   HEARTBEAT đầu tiên báo AUTO/LOITER (s)              | 1,29–1,38               | 1,37–1,38
   HEARTBEAT đầu tiên báo AUTO/RTL (s)                 | 6,29–6,38               | 6,37–6,38
   Khoảng cách giữa hai mốc trên (s)                   | 5,0 (cả 3 lần)          | 5,0 (cả 3 lần)
@@ -190,6 +196,7 @@ Trả lời Câu hỏi 1: trong cấu hình đã khảo sát (802.11g, 6 Mbit/s,
   HEARTBEAT báo đã tự khóa (s)                        | 15,29 / 12,38 / 15,33   | 12,38 / 15,37 / 12,38
   Nối lại mạng (s)                                    | 15,0                    | không áp dụng
 
+Hình 6.4 vẽ vận tốc của xe theo thời gian quanh t0 ở cả hai kịch bản.
 [HÌNH 6.4] analysis/failsafe_speed.png: vận tốc theo thời gian quanh t0, mỗi kịch bản 3 đường, vạch t0 và vạch nối lại mạng.
 
 Đối chiếu với mô hình (DĐ7):
@@ -202,13 +209,14 @@ Sau khi phanh, xe còn lùi lại chậm khoảng 0,2 m; vì vậy khoảng các
 
 Sau giai đoạn đứng yên, xe tự chạy về điểm xuất phát với vận tốc lớn nhất 1,87–2,15 m/s theo PX4 báo, đúng bằng giới hạn RO_SPEED_LIM = 2 m/s của mẫu xe và nhanh hơn lúc người vận hành lái (1,3 m/s). Xe tự khóa khi về tới nơi; HEARTBEAT báo đã khóa ở 12,38 s hoặc 15,29–15,37 s tính từ t0 (khác nhau do khoảng cách về điểm xuất phát ở mỗi lần khác nhau), và sau khi khóa PX4 tự trở về chế độ MANUAL. Trong kịch bản cắt đường truyền, mạng được nối lại ở 15,0 s và script vẫn tiếp tục gửi lệnh lái, nhưng không lần nào xe chạy theo lệnh: xe đã tự khóa từ trước, hoặc HEARTBEAT báo khóa khoảng 0,3 s sau khi nối mạng (thời điểm khóa thật không xác định chính xác hơn vì HEARTBEAT chỉ 1 lần mỗi giây).
 
-Trả lời Câu hỏi 2: khi mất lệnh điều khiển lúc đang chạy khoảng 1,3 m/s, xe PX4 với cấu hình mặc định tiếp tục chạy theo lệnh cuối khoảng 0,6 s, đi thêm khoảng 0,7–0,75 m rồi phanh; đứng yên 5 s; sau đó tự chạy về điểm xuất phát (nhanh tới khoảng 2 m/s) và tự khóa. Trong suốt quá trình đó, trạm mặt đất không liên lạc được và không can thiệp được. Thí nghiệm chưa thử nối lại mạng trong lúc xe còn đứng yên hoặc đang tự chạy về; trong các lần đã đo, khi mạng có lại ở 15 s thì xe đã (hoặc vừa) tự khóa sau khi về tới điểm xuất phát, và muốn lái tiếp phải gửi lệnh arm lại.
+Trả lời Câu hỏi 2: khi mất lệnh điều khiển lúc đang chạy khoảng 1,3 m/s, xe PX4 với cấu hình mặc định tiếp tục chạy theo lệnh cuối khoảng 0,6 s, giảm tốc và đi thêm 0,71–0,75 m; đứng yên 5 s; sau đó tự chạy về điểm xuất phát (nhanh tới khoảng 2 m/s) và tự khóa. Trong suốt quá trình đó, trạm mặt đất không liên lạc được và không can thiệp được. Thí nghiệm chưa thử nối lại mạng trong lúc xe còn đứng yên hoặc đang tự chạy về; trong các lần đã đo, khi mạng có lại ở 15 s thì xe đã (hoặc vừa) tự khóa sau khi về tới điểm xuất phát, và muốn lái tiếp phải gửi lệnh arm lại.
 
 
 6.9. Độ phức tạp của các thuật toán đo
 -----------------------------------
 Ý chính: mọi thao tác xử lý một bản tin đều có chi phí hằng số, nên chương trình đo theo kịp khoảng 400 bản tin mỗi giây với chu kỳ 10 ms.
 
+Bảng 6.7 tóm tắt độ phức tạp của các thành phần đo.
 [BẢNG 6.7] Độ phức tạp (mã giả ở mục 5.3)
   Thành phần                       | Thời gian                                                   | Bộ nhớ
   SeqTracker (đếm mất gói)         | O(1) mỗi bản tin (tra bảng băm theo nguồn, vài phép tính)   | O(S), S là số nguồn MAVLink (thực tế vài nguồn)
@@ -223,6 +231,7 @@ Với khoảng 400 bản tin mỗi giây, tức khoảng 4 bản tin mỗi chu k
 ----------------------------------
 Ý chính: cả bảy dự đoán đều khớp với số đo; nhờ vậy mỗi hiện tượng quan sát được đều có lời giải thích bằng công thức ở mục 4. Còn một hiện tượng chưa giải thích được (probe mất thấp hơn L ở 70 m, 6.4).
 
+Bảng 6.8 đặt từng dự đoán của bảng 4.5 cạnh kết quả đo.
 [BẢNG 6.8] Dự đoán (bảng 4.5) và kết quả
   Mã   | Dự đoán (tóm tắt)                                             | Kết quả đo                                                    | Khớp | Ở
   DĐ1  | không fading: đứt gọn tại 85,47 m; RTT không tăng trước ngưỡng | 85 m nhận đủ, 86 m không nhận được gì; RTT 10,4–10,6 ms ở 70–85 m | có | 6.6
@@ -253,10 +262,10 @@ Với khoảng 400 bản tin mỗi giây, tức khoảng 4 bản tin mỗi chu k
 Tóm tắt mục 6
 -------------
   - Chất lượng đường MAVLink chia ba vùng: 10–60 m gần như không khác baseline; 70 m trễ khoảng nửa giây dù chỉ mất 7,6% bản tin; 80–100 m mất 63–90% bản tin và mất kết nối từng lúc.
-  - Nguyên nhân chính của trễ và mất gói ở khoảng cách lớn là node xe phục vụ không kịp vì phải chờ ACK và chờ ngẫu nhiên trước mỗi lần phát lại, làm hàng đợi quá tải; không phải do khung phát hỏng cả 7 lần, cũng không phải do kênh vô tuyến hết băng thông (kênh chỉ bận khoảng 8% thời gian ở 80 m).
+  - Nguyên nhân chính của trễ và mất gói ở khoảng cách lớn là node xe phục vụ không kịp vì phải chờ ACK và chờ ngẫu nhiên trước mỗi lần phát lại, làm hàng đợi quá tải; không phải do khung phát hỏng cả 7 lần, cũng không phải do kênh vô tuyến hết băng thông (ở 80 m, thời gian phát khung dữ liệu chỉ chiếm khoảng 8%).
   - Ở 70 m, trạng thái trạm nhìn thấy có thể đã cũ khoảng nửa giây mà không có cảnh báo mất kết nối nào; đây là vùng nguy hiểm vì khó nhận ra.
   - Câu hỏi 1: đường điều khiển tin cậy tới 60 m trong các mức đã đo (ranh giới thật trong 60–70 m), và kết luận này không phụ thuộc vào việc chọn ngưỡng cụ thể. Chất lượng xấu đi dần khi có fading, đột ngột tại 85,47 m khi không có fading.
-  - Câu hỏi 2: mất lệnh điều khiển thì xe đi thêm khoảng 0,7–0,75 m trong khoảng 0,7 s rồi phanh, đứng yên 5 s, tự chạy về điểm xuất phát (tới 2 m/s) và tự khóa; mất mạng và ngừng gửi lệnh cho cùng kết quả.
+  - Câu hỏi 2: mất lệnh điều khiển thì xe tiếp tục chạy khoảng 0,6 s rồi giảm tốc, đi thêm 0,71–0,75 m, đứng yên 5 s, tự chạy về điểm xuất phát (tới 2 m/s) và tự khóa; mất mạng và ngừng gửi lệnh cho cùng kết quả.
   - Cả bảy dự đoán của mục 4 đều khớp với số đo.
 Mục 7 tổng kết mức độ đạt các mục tiêu M1 đến M4 và hướng phát triển.
 
@@ -286,5 +295,5 @@ Sửa theo rà soát độc lập 2026-11-18:
 Có thể bổ sung (chưa làm, cần sudo): loạt ngắn khoảng 5 phút `sudo NS3_BIN=$NS3 tools/run_failsafe.sh --scenarios cut --observe-time 3` (nối mạng lại khi xe còn đứng yên) để trả lời trọn ý "có lấy lại được xe không" của M4; một pcap ở 70 m để có bằng chứng trực tiếp cho 6.4 và kiểm hiện tượng probe mất thấp hơn L.
 Cần thống nhất với các mục khác:
   - Mục 5 phải trình bày kết quả kiểm chứng netem (9,76 ± 0,10%; +49,46 ± 0,45 ms), cách chương trình chỉ đếm sau HEARTBEAT đầu tiên, định nghĩa t0 của hai kịch bản thí nghiệm C, và thống kê pcap 80 m.
-  - Mục 7 dùng đúng các con số: d_tc = 60 m (ranh giới 60–70 m), 70 m RTT khoảng 445 ms và mất 7,6%, 85,47 m, d_max 0,7–0,75 m, 5 s, Return tới 2 m/s.
+  - Mục 7 dùng đúng các con số: d_tc = 60 m (ranh giới 60–70 m), 70 m RTT khoảng 445 ms và mất 7,6%, 85,47 m, d_max 0,71–0,75 m, giảm tốc sau khoảng 0,6 s, 5 s, Return tới 2 m/s.
   - NET-04.txt mục 6 ghi "~12 s tới nơi, PX4 tự khóa": chính xác hơn là HEARTBEAT báo khóa ở 12,38 s (3 lần) hoặc 15,29–15,37 s (3 lần).

@@ -1,0 +1,25 @@
+CHÚ THÍCH SƠ ĐỒ TRÌNH TỰ ĐO RTT BẰNG TIMESYNC (timesync-rtt)
+Tập tin: timesync-rtt.mmd (nguồn Mermaid), timesync-rtt.svg (ảnh xuất từ .mmd, CẦN XUẤT: máy Hoàng chưa có mmdc; có thể dán .mmd vào https://mermaid.live rồi tải SVG)
+Phục vụ: mục 3 báo cáo, hình 3.3 (mục 3.5); công thức (4.16) ở mục 4; mã giả ở mục 5.3.
+==========================================================================================
+
+1. KÝ HIỆU
+----------
+- Ba cột: Trạm (chương trình đo trong ns-gcs), ns-3 (kênh Wi-Fi mô phỏng), PX4 (xe trong ns-rover).
+- Mũi tên: bản tin MAVLink TIMESYNC; số thứ tự trên mũi tên do Mermaid đánh (autonumber).
+- Ô ghi chú: việc mỗi bên làm.
+
+2. LUỒNG
+--------
+- Trạm gửi TIMESYNC 5 lần mỗi giây với tc1 = 0 và ts1 = i (mã probe, số thứ tự 1, 2, 3...), đồng thời ghi thời điểm gửi t_gửi,i theo đồng hồ của trạm.
+- PX4 trả lời bằng TIMESYNC giữ nguyên ts1 và điền thời gian của xe vào tc1 (khác 0). Trạm chỉ coi bản tin có tc1 khác 0 là phản hồi (PX4 cũng tự gửi TIMESYNC với tc1 = 0).
+- Trạm nhận phản hồi lúc t_nhận,i, tra mã i để lấy t_gửi,i, tính RTT_i = t_nhận,i − t_gửi,i. Cả hai mốc theo đồng hồ của trạm nên không cần đồng bộ giờ với xe.
+- Phản hồi đi chiều xe về trạm nên xếp chung hàng đợi phía xe với telemetry (khoảng 400 bản tin/s); vì vậy RTT phản ánh chủ yếu độ trễ hàng đợi phía xe (mục 4.3).
+- Chương trình đọc socket mỗi 10 ms nên RTT đo được bị làm tròn lên theo chu kỳ này (mục 4.4).
+- Probe không có phản hồi sau 2 s được tính là mất (tỷ lệ probe mất, công thức 4.24).
+
+3. NGUỒN
+--------
+- tools/run_experiment.py (probe_counter truyền vào send_timesync; vòng lặp time.sleep(0.01)).
+- rover/core/linkstats.py (RttTracker: on_probe_sent, on_reply, expire với timeout_s = 2.0).
+- rover/drivers/mavlink.py (send_timesync: tc1 = 0, ts1 = mã probe; poll: chỉ TIMESYNC có tc1 ≠ 0 sinh TimesyncReply).

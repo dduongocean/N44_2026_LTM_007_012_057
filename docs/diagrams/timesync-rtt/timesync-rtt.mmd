@@ -1,0 +1,18 @@
+%% Sơ đồ trình tự đo RTT bằng TIMESYNC (tools/run_experiment.py, rover/core/linkstats.py RttTracker)
+%% Phục vụ: Mục 3 báo cáo, hình 3.3. Chú thích: timesync-rtt.txt
+
+sequenceDiagram
+    autonumber
+    participant T as Trạm (chương trình đo, ns-gcs)
+    participant N as ns-3 (kênh Wi-Fi)
+    participant X as PX4 (xe, ns-rover)
+
+    Note over T: mỗi 0,2 s (5 probe/giây)<br/>ghi: probe i gửi lúc t_gửi,i (đồng hồ trạm)
+    T->>N: TIMESYNC (tc1 = 0, ts1 = i)
+    N->>X: chuyển khung (có thể trễ hoặc mất)
+    Note over X: giữ nguyên ts1 = i<br/>điền tc1 = giờ của xe (khác 0)
+    X->>N: TIMESYNC (tc1 ≠ 0, ts1 = i)
+    Note over N: xếp sau telemetry trong hàng đợi phía xe
+    N->>T: chuyển khung (có thể trễ hoặc mất)
+    Note over T: nhận lúc t_nhận,i (đọc mỗi 10 ms)<br/>RTT_i = t_nhận,i − t_gửi,i
+    Note over T: không có phản hồi sau 2 s<br/>thì probe i tính là mất
