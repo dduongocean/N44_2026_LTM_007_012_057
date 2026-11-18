@@ -10,10 +10,11 @@ BỐ CỤC MỤC 4
   4.4. Cách tính các chỉ số đo
   4.5. Quy ước xếp loại "tin cậy"
   4.6. Mô hình phản ứng của xe khi mất lệnh điều khiển
+  4.7. Các dự đoán của mô hình (được kiểm chứng ở mục 6)
   Tóm tắt mục 4
   Bảng ký hiệu
 
-Mục này trả lời ba câu hỏi: bài toán được phát biểu chính xác ra sao (4.1); vì sao khi xe ở xa, gói tin bị trễ và bị mất (4.2, 4.3); và mỗi con số trong bảng kết quả được tính bằng công thức nào (4.4 đến 4.6). Toàn bộ chuỗi lập luận có thể tóm trong một hình:
+Mục này trả lời ba câu hỏi: bài toán được phát biểu chính xác ra sao (4.1); vì sao khi xe ở xa, gói tin bị trễ và bị mất (4.2, 4.3); mỗi con số trong bảng kết quả được tính bằng công thức nào (4.4 đến 4.6); và mô hình dự đoán điều gì để mục 6 kiểm chứng (4.7). Toàn bộ chuỗi lập luận có thể tóm trong một hình:
 
 [HÌNH 4.1] Chuỗi nhân quả từ khoảng cách tới số đo
     khoảng cách d
@@ -21,7 +22,7 @@ Mục này trả lời ba câu hỏi: bài toán được phát biểu chính x�
       -> công suất thu trung bình P̄rx(d)                (4.2, công thức 4.3)
       -> fading: công suất từng khung dao động quanh P̄rx (4.2, công thức 4.4)
       -> so với ngưỡng θ = -82 dBm: khung nhận được hay không   (4.2, công thức 4.5)
-      -> tầng MAC phát lại tối đa 7 lần; mỗi khung tốn nhiều thời gian kênh hơn (4.3)
+      -> tầng MAC phát lại tối đa 7 lần; mỗi khung tốn nhiều thời gian phục vụ hơn (4.3)
       -> hàng đợi: nếu kênh không phục vụ kịp thì khung chờ tới 500 ms rồi bị bỏ (4.3)
       -> các số đo: mất gói, RTT, jitter, mất kết nối, thông lượng       (4.4)
       -> xếp loại tin cậy / suy giảm / không tin cậy                     (4.5)
@@ -128,23 +129,25 @@ Nhận xét: không có fading thì p nhảy từ 0 lên 1 tại d* = 85,47 m; c
 
 4.3. Mô hình tầng MAC: gửi lại và hàng đợi
 ----------------------------------------
-Ý chính: tầng MAC gửi lại khung hỏng, nên một mình fading ít khi làm mất gói. Nhưng mỗi lần gửi lại tốn thêm thời gian kênh; khi kênh không còn phục vụ kịp tải khoảng 400 bản tin/giây, hàng đợi đầy lên, khung phải chờ tới 500 ms rồi bị bỏ. Đây là nguyên nhân chính làm RTT tăng vọt và làm mất gói ở khoảng cách lớn.
+Ý chính: tầng MAC gửi lại khung hỏng, nên một mình fading ít khi làm mất gói. Nhưng mỗi lần phát hỏng, node phát phải chờ ACK rồi chờ thêm một khoảng ngẫu nhiên trước lần phát sau; thời gian phục vụ một khung vì vậy tăng nhanh theo số lần phát. Khi node xe không còn phục vụ kịp khoảng 400 bản tin/giây PX4 đưa xuống, hàng đợi đầy lên, khung phải chờ tới 500 ms rồi bị bỏ. Đây là nguyên nhân chính làm RTT tăng vọt và làm mất gói ở khoảng cách lớn.
 
 Gửi lại. Sau mỗi lần phát, bên phát chờ khung xác nhận (ACK). Không có ACK thì phát lại, tối đa K = 7 lần cho mỗi khung. [CẦN NGUỒN: IEEE 802.11, ns-3 FrameRetryLimit] Theo giả thiết GT2 (các lần phát độc lập):
   (4.9)  xác suất khung bị bỏ vì hết lượt phát:  P_mac(d) = p(d)^K
   (4.10) số lần phát trung bình của một khung:  E[N_tx](d) = 1 + p + p^2 + ... + p^(K−1) = (1 − p^K) / (1 − p)
-Ghi chú: nếu khung tới nơi nhưng ACK bị mất, bên phát vẫn phát lại; khung không mất nhưng tốn thêm thời gian. Vì vậy (4.9) tính đúng xác suất mất do hết lượt phát, còn (4.10) là cận dưới của số lần phát thực tế.
+Ghi chú: một lần phát cũng thất bại nếu khung tới nơi nhưng ACK bị mất; khi đó bên phát vẫn phát lại, khung không mất nhưng tốn thêm thời gian. (4.9) vẫn đúng, vì khung chỉ mất khi cả K lần đều không tới nơi. Còn (4.10) chỉ tính mất khung nên là cận dưới của số lần phát. Nếu coi ACK cũng bị mất với xác suất p (kênh đối xứng), một lần phát thất bại với xác suất q = 1 − (1 − p)^2, và số lần phát trung bình có cận trên:
+  (4.10b) E[N_tx,trên](d) = (1 − q^K) / (1 − q),   q = 1 − (1 − p)^2
 
-[BẢNG 4.4] Mất gói do hết lượt phát và số lần phát trung bình, theo (4.9) và (4.10)
+[BẢNG 4.4] Mất gói do hết lượt phát và số lần phát trung bình, theo (4.9), (4.10) và (4.10b)
   d (m)         | 10    | 40    | 50    | 60     | 70     | 80     | 85     | 90     | 100
   P_mac         | 0     | ~0    | ~0    | 0,002% | 0,066% | 0,99%  | 2,8%   | 6,7%   | 23,6%
   E[N_tx]       | 1,00  | 1,04  | 1,12  | 1,26   | 1,54   | 2,05   | 2,43   | 2,91   | 4,10
+  E[N_tx,trên]  | 1,00  | 1,09  | 1,24  | 1,59   | 2,33   | 3,62   | 4,41   | 5,18   | 6,31
 
-Hàng đợi. Các khung chờ phát được xếp trong một hàng đợi của thiết bị Wi-Fi. Gọi E[S] là thời gian kênh trung bình để phục vụ xong một khung (gồm mọi lần phát, các lần chờ ACK, và thời gian chờ ngẫu nhiên trước mỗi lần phát; theo chuẩn 802.11, khoảng chờ ngẫu nhiên này tăng gấp đôi sau mỗi lần phát hỏng [CẦN NGUỒN: IEEE 802.11 DCF]). Mức sử dụng kênh là:
+Hàng đợi. Các khung chờ phát được xếp trong một hàng đợi riêng của từng node. Gọi E[S] là thời gian trung bình để node phục vụ xong một khung, gồm mọi lần phát, các lần chờ ACK, và thời gian chờ ngẫu nhiên trước mỗi lần phát; theo chuẩn 802.11, khoảng chờ ngẫu nhiên này tăng gấp đôi sau mỗi lần phát hỏng [CẦN NGUỒN: IEEE 802.11 DCF]. Mức sử dụng của node là:
   (4.11) ρ(d) = λ · E[S](d)
-  - Nếu ρ < 1: kênh phục vụ kịp, hàng đợi ngắn, độ trễ nhỏ.
+  - Nếu ρ < 1: node phục vụ kịp, hàng đợi ngắn, độ trễ nhỏ.
   - Nếu ρ ≥ 1: khung đến nhanh hơn khung đi; hàng đợi dài dần cho tới khi khung chờ quá D_max = 500 ms và bị bỏ. Lúc này độ trễ của khung vừa kịp phát gần bằng D_max, và có thêm một phần khung bị mất vì quá hạn chờ.
-E[S] tăng ít nhất tỷ lệ với E[N_tx], và còn tăng nhanh hơn thế vì thời gian chờ ngẫu nhiên tăng gấp đôi sau mỗi lần phát hỏng. Ở 70 m, mỗi khung đã cần trung bình 1,54 lần phát (bảng 4.4), trong khi tải λ khoảng 397 bản tin/s không đổi. Mô hình dự đoán: khi d tăng, ρ vượt 1 trước khi P_mac đáng kể, nên RTT sẽ tăng vọt lên gần 500 ms trong khi tỷ lệ mất gói còn thấp, và tỷ lệ mất gói đo được sẽ lớn hơn nhiều so với P_mac. Mục 6 kiểm tra dự đoán này với số đo.
+E[S] tăng ít nhất tỷ lệ với E[N_tx], và còn tăng nhanh hơn thế vì thời gian chờ ngẫu nhiên tăng gấp đôi sau mỗi lần phát hỏng. Lưu ý: phần lớn E[S] khi đó là thời gian chờ (chờ ACK, chờ ngẫu nhiên), không phải thời gian phát; vì vậy node có thể quá tải trong khi kênh vô tuyến phần lớn thời gian vẫn rảnh. Mô hình dự đoán: khi d tăng, ρ vượt 1 trước khi P_mac đáng kể, nên RTT sẽ tăng vọt lên gần 500 ms trong khi tỷ lệ mất gói còn thấp, và tỷ lệ mất gói đo được sẽ lớn hơn nhiều so với P_mac, vì phần lớn khung bị bỏ trong hàng đợi chứ không phải sau 7 lần phát. Mục 6 kiểm tra dự đoán này bằng số đo và bằng bản bắt gói của ns-3.
 
 Hai chiều không đối xứng về tải: chiều xe về trạm mang khoảng 397 bản tin/s, còn chiều trạm tới xe chỉ mang probe TIMESYNC (5 lần/s) hoặc lệnh lái (20 lần/s). Vì vậy hàng đợi phía xe (node 1) quá tải trước. Phản hồi TIMESYNC của xe cũng phải xếp hàng trong hàng đợi này, nên RTT phản ánh chủ yếu độ trễ hàng đợi ở phía xe.
 
@@ -160,12 +163,13 @@ và xử lý theo quy ước:
   - 1 ≤ g_k ≤ 127: coi là mất g_k bản tin, cộng vào số mất.
   - g_k ≥ 128: không phân biệt được "mất rất nhiều bản tin" với "bản tin đến sai thứ tự hoặc bị lặp", nên không cộng vào số mất mà đếm là một lần resync.
   (4.13) L = số_mất / (số_nhận + số_mất)
-Giới hạn: một khoảng đứt liền từ 128 bản tin trở lên (khoảng 0,32 s ở 397 bản tin/s) bị đếm thiếu. Vì vậy ở khoảng cách lớn, nơi có những lúc đứt dài, L thấp hơn thực tế. Ngoài ra, bản tin đến sai thứ tự tạo ra một khoảng hở giả và bị đếm như mất (đã gặp khi kiểm chứng bằng netem tạo trễ, mục 5).
+Giới hạn: một khoảng đứt liền từ 128 bản tin trở lên (khoảng 0,32 s ở 397 bản tin/s) sẽ bị đếm thiếu. Nếu các bản tin mất độc lập với nhau (GT2), một chuỗi mất liền dài như vậy rất hiếm, nên giới hạn này ít khi xảy ra; số lần resync cho biết nó có xảy ra hay không. Ngoài ra, bản tin đến sai thứ tự tạo ra một khoảng hở giả và bị đếm như mất (đã gặp khi kiểm chứng bằng netem tạo trễ, mục 5).
+Khoảng đếm: chương trình đo chỉ bắt đầu đếm seq khi đã nhận HEARTBEAT đầu tiên của xe (lúc đó mới biết system_id của xe). Gọi T_đếm là khoảng thời gian từ HEARTBEAT đầu tiên tới cuối lần đo. Khi kênh tốt, T_đếm gần bằng cả lần đo; khi kênh rất xấu, HEARTBEAT đầu tiên có thể tới muộn hàng chục giây, và các bản tin trước đó không được đếm.
 
 Ước lượng mất gói theo thông lượng (dùng để đối chiếu L):
-  (4.14) R = số_nhận / thời_lượng_đo   (bản tin/s)
-  (4.15) L_R = 1 − R(d) / R_ref,   R_ref = R ở 10 m (khoảng 397 bản tin/s)
-L_R không bị giới hạn 8 bit của seq, nhưng giả thiết PX4 luôn gửi với tốc độ không đổi (GT5).
+  (4.14) R = số_nhận / thời_lượng_đo   (bản tin/s; thông lượng nhận được trong cả lần đo)
+  (4.15) L_R = 1 − số_nhận / (R_ref · T_đếm),   R_ref = R ở 10 m (khoảng 397 bản tin/s)
+L_R không dùng seq, nên là một cách đếm độc lập để kiểm L: nếu cách đếm theo seq đúng, L và L_R (tính trên cùng khoảng đếm) phải gần bằng nhau. L_R giả thiết PX4 luôn gửi với tốc độ không đổi (GT5).
 
 Độ trễ khứ hồi RTT. Probe thứ i mang mã i trong trường ts1. Trạm ghi thời điểm gửi t_gửi,i; khi nhận phản hồi có cùng mã i (và tc1 khác 0) tại t_nhận,i:
   (4.16) RTT_i = t_nhận,i − t_gửi,i
@@ -182,7 +186,11 @@ Lưu ý: định nghĩa này khác cách tính jitter trong RFC 3550 (trung bìn
 Mất kết nối. Gọi t_HB là thời điểm nhận HEARTBEAT gần nhất. Trạng thái kết nối tại thời điểm t:
   (4.21) trạng thái(t) = WAITING nếu chưa từng nhận HEARTBEAT; LOST nếu t − t_HB > T_lost = 3 s; CONNECTED trong các trường hợp còn lại
   (4.22) E = số lần trạng thái chuyển từ khác LOST sang LOST trong một lần đo
-Giới hạn: nếu suốt lần đo không nhận được HEARTBEAT nào, trạng thái luôn là WAITING và E = 0, dù thực tế không liên lạc được. Khi đọc E phải xem kèm số bản tin nhận được.
+Giới hạn: E đếm số lần chuyển sang LOST, không đếm thời gian. Nếu kết nối mất rồi không hồi lại, nhiều lần mất có thể gộp thành một lần dài, nên E có thể giảm khi kênh xấu hơn. Ngoài ra, khi chưa từng nhận HEARTBEAT, trạng thái là WAITING và không được tính vào E, dù thực tế không liên lạc được. Vì vậy đề tài dùng thêm chỉ số thời gian không có kết nối:
+  (4.23) T_mất = số giây trong lần đo mà trạng thái là LOST hoặc WAITING
+T_mất tính từ cột trạng thái mà chương trình đo ghi mỗi giây, gồm cả khoảng chờ HEARTBEAT đầu tiên lúc bắt đầu đo (thường không quá 1 giây khi kênh tốt).
+  (4.24) tỷ lệ probe mất = số probe không có phản hồi sau T_probe / số probe đã gửi
+Tỷ lệ probe mất phản ánh mất gói khứ hồi (probe đi trạm tới xe, phản hồi đi xe về trạm), bổ sung cho L chỉ đo chiều xe về trạm.
 
 
 4.5. Quy ước xếp loại "tin cậy"
@@ -190,11 +198,11 @@ Giới hạn: nếu suốt lần đo không nhận được HEARTBEAT nào, tr�
 Ý chính: một khoảng cách được xếp loại dựa trên cả ba lần đo ở khoảng cách đó; có mất kết nối là không tin cậy, không mất kết nối nhưng mất gói hoặc trễ vượt ngưỡng là suy giảm.
 
 Với khoảng cách d và các lần đo r = 1, 2, 3:
-  (4.23) TIN CẬY       nếu với mọi r: E_r = 0, L_r < 1% và RTT_p95,r < 100 ms
+  (4.25) TIN CẬY       nếu với mọi r: E_r = 0, L_r < 1% và RTT_p95,r < 100 ms
          KHÔNG TIN CẬY nếu tồn tại r: E_r ≥ 1
          SUY GIẢM      trong các trường hợp còn lại
-  (4.24) d_tc = khoảng cách lớn nhất được xếp loại TIN CẬY
-Lý do chọn ngưỡng: mất kết nối (quá 3 giây không có HEARTBEAT) là lúc người vận hành mất hẳn thông tin về xe, nên xếp riêng là không tin cậy. Ngưỡng 100 ms cho RTT p95 tương ứng hai chu kỳ lệnh lái (lệnh lái gửi mỗi 50 ms); trễ hơn mức này nghĩa là xe nhận lệnh muộn hơn hai chu kỳ. Ngưỡng 1% mất gói và 100 ms là quy ước của nhóm; mục 6 kiểm tra rằng kết quả xếp loại không đổi khi thay các ngưỡng này trong một khoảng rộng.
+  (4.26) d_tc = khoảng cách lớn nhất được xếp loại TIN CẬY
+Lý do chọn ngưỡng: mất kết nối (quá 3 giây không có HEARTBEAT) là lúc người vận hành mất hẳn thông tin về xe, nên xếp riêng là không tin cậy. Ngưỡng 1% mất gói và 100 ms RTT p95 là quy ước của nhóm, không lấy từ chuẩn nào; mục 6 cho thấy kết quả xếp loại không đổi khi thay các ngưỡng này trong một khoảng rộng.
 
 
 4.6. Mô hình phản ứng của xe khi mất lệnh điều khiển
@@ -206,22 +214,39 @@ Gọi t0 là thời điểm xe bắt đầu không còn nhận được lệnh l
   - T_F = COM_FAIL_ACT_T = 5 s: thời gian giữ xe đứng yên (chế độ AUTO/LOITER) trước khi thực hiện hành động.
   - NAV_RCL_ACT = 2: hành động là Return (AUTO/RTL), xe tự chạy về điểm xuất phát.
   - NAV_DLL_ACT = 0: PX4 không làm gì riêng khi mất liên kết dữ liệu.
+  - Tham số của mẫu xe gz_r1_rover: RO_SPEED_LIM = 2 m/s (vận tốc tối đa khi tự chạy), RO_DECEL_LIM = 10 m/s^2 (giới hạn gia tốc phanh). Trong SITL, COM_RC_IN_MODE = 1: lệnh lái chỉ đến từ bản tin MANUAL_CONTROL.
 Mô hình dự đoán chuỗi diễn biến:
-  (4.25) t_phát_hiện ≈ t0 + T_RC + ε        (ε: độ trễ xử lý của PX4, nhỏ): xe chuyển sang AUTO/LOITER và phanh
-  (4.26) t_Return ≈ t_phát_hiện + T_F       : xe chuyển sang AUTO/RTL và tự chạy về điểm xuất phát
-  (4.27) quãng đường xe đi thêm sau t0 ≈ v0 · (T_RC + ε) + quãng đường phanh
-với v0 là vận tốc của xe tại t0. Quãng đường phanh phụ thuộc động lực học của xe trong Gazebo nên không tính trước được; đề tài đo trực tiếp (mục 6).
+  (4.27) t_phát_hiện ≈ t0 + T_RC + ε        (ε: độ trễ xử lý của PX4, nhỏ): xe chuyển sang AUTO/LOITER và phanh
+  (4.28) t_Return ≈ t_phát_hiện + T_F       : xe chuyển sang AUTO/RTL và tự chạy về điểm xuất phát
+  (4.29) quãng đường xe đi thêm sau t0 ≈ v0 · (T_RC + ε) + quãng đường phanh
+với v0 là vận tốc của xe ngay trước t0. Nếu chế độ giữ vị trí phanh đúng ở giới hạn RO_DECEL_LIM thì quãng đường phanh là v0^2 / (2 · RO_DECEL_LIM), khoảng 0,08 m với v0 = 1,3 m/s; điều này chưa được kiểm trong mã nguồn PX4, nên (4.29) chỉ dùng để kiểm độ lớn. Vận tốc và vị trí đều là giá trị ước lượng của PX4 (bộ ước lượng trạng thái), không phải giá trị thật trong Gazebo; xe có thể còn đang tăng tốc tại t0, nên v0 có thể khác nhau tùy cách lấy (vận tốc PX4 báo hay độ dời vị trí chia thời gian).
 Hệ quả của mô hình: vì cả hai cách làm mất lệnh (cắt đường truyền, ngừng gửi lệnh) đều làm PX4 không nhận được lệnh lái, và NAV_DLL_ACT = 0, mô hình dự đoán hai cách cho cùng chuỗi diễn biến.
+
+
+4.7. Các dự đoán của mô hình (được kiểm chứng ở mục 6)
+--------------------------------------------------
+Ý chính: từ các công thức trên, mô hình đưa ra bảy dự đoán có thể kiểm tra bằng số đo. Mục 6 lần lượt đối chiếu từng dự đoán.
+
+[BẢNG 4.5] Các dự đoán
+  Mã   | Dự đoán                                                                                          | Dựa trên
+  DĐ1  | Kênh không fading: mất 0% khi d ≤ 85,47 m, mất toàn bộ khi d > 85,47 m; trước ngưỡng, RTT không tăng (không có khung phải phát lại) | (4.7)
+  DĐ2  | Kênh có fading: chất lượng xấu đi dần trong một vùng khoảng cách quanh d*, không đứt gọn; RTT thay đổi trước mất gói | (4.8), (4.10)
+  DĐ3  | Hàng đợi quá tải xuất hiện trước khi mất do hết lượt phát đáng kể: sẽ có khoảng cách mà RTT đã gần D_max = 500 ms trong khi mất gói còn thấp; mất gói đo được lớn hơn nhiều P_mac; phần lớn khung mất bị bỏ trong hàng đợi chứ không phải sau 7 lần phát | (4.9), (4.11)
+  DĐ4  | RTT không vượt xa 500 ms dù khoảng cách tăng; khi RTT đã chạm trần thì J_RTT giảm lại          | RB3, (4.19)
+  DĐ5  | Vì các bản tin mất độc lập (GT2), hiếm khi có chuỗi mất liền từ 128 bản tin trở lên: số resync gần 0 và L (theo seq) gần bằng L_R (theo số bản tin nhận được, cùng khoảng đếm) ở mọi khoảng cách | GT2, (4.12)–(4.15)
+  DĐ6  | Khi kênh rất xấu, E có thể không tăng theo khoảng cách, còn T_mất thì tăng                     | (4.22), (4.23)
+  DĐ7  | Khi mất lệnh điều khiển: xe phanh sau khoảng T_RC + ε; chuyển sang Return sau thêm đúng T_F = 5 s; cắt đường truyền và ngừng gửi lệnh cho cùng diễn biến | (4.27)–(4.29)
 
 
 Tóm tắt mục 4
 -------------
   - Bài toán: thay đổi khoảng cách d, giữ cố định mọi tham số khác (bảng 4.1), đo L, RTT, jitter, E, R và tìm d_tc lớn nhất còn tin cậy.
   - Công suất thu trung bình giảm 30 dB mỗi lần khoảng cách tăng gấp 10. Không có fading, liên lạc đứt gọn tại d* = 85,47 m (L0 = 40,046 dB) hoặc 51,37 m (L0 mặc định của ns-3); số đo khớp cả hai giá trị.
-  - Có fading, xác suất một lần phát hỏng tăng dần từ khoảng 50 m. Tầng MAC phát lại tối đa 7 lần nên một mình fading ít làm mất gói, nhưng số lần phát tăng làm kênh quá tải; khi đó hàng đợi đầy, RTT tăng tới gần 500 ms và khung bị bỏ vì quá hạn chờ.
-  - Mỗi chỉ số có công thức và giới hạn: mất gói theo seq đếm thiếu khi đứt từ 128 bản tin trở lên; RTT có độ phân giải khoảng 10 ms; E không đếm khi chưa từng nhận HEARTBEAT.
+  - Có fading, xác suất một lần phát hỏng tăng dần từ khoảng 50 m. Tầng MAC phát lại tối đa 7 lần nên một mình fading ít làm mất gói, nhưng mỗi lần phát hỏng kéo theo thời gian chờ ACK và chờ ngẫu nhiên, nên node xe phục vụ chậm lại; khi đó hàng đợi đầy, RTT tăng tới gần 500 ms và khung bị bỏ vì quá hạn chờ.
+  - Mỗi chỉ số có công thức và giới hạn: mất gói theo seq chỉ đếm từ HEARTBEAT đầu tiên và đếm thiếu nếu đứt liền từ 128 bản tin; RTT có độ phân giải khoảng 10 ms; E không đếm khi chưa từng nhận HEARTBEAT.
   - Phản ứng failsafe dự đoán được từ tham số PX4: phanh sau khoảng 0,5 s, giữ yên 5 s, rồi tự chạy về điểm xuất phát.
-Mục 5 trình bày cách hiện thực các công thức này trong chương trình đo; mục 6 đối chiếu từng dự đoán của mục 4 với số đo.
+  - Mô hình đưa ra bảy dự đoán kiểm tra được (bảng 4.5).
+Mục 5 trình bày cách hiện thực các công thức này trong chương trình đo và kiểm chứng chương trình đo; mục 6 đối chiếu bảy dự đoán với số đo.
 
 
 Bảng ký hiệu
@@ -229,7 +254,7 @@ Bảng ký hiệu
   Ký hiệu          | Ý nghĩa                                                          | Đơn vị
   d, d0            | khoảng cách giữa hai node; khoảng cách tham chiếu (1 m)          | m
   d*               | khoảng cách ngưỡng khi không có fading (4.7)                    | m
-  d_tc             | khoảng cách lớn nhất được xếp loại tin cậy (4.24)               | m
+  d_tc             | khoảng cách lớn nhất được xếp loại tin cậy (4.26)               | m
   PL(d), L0        | suy hao ở khoảng cách d; suy hao ở d0                           | dB
   n                | hệ số suy hao theo khoảng cách                                   | không đơn vị
   f, c, λ_s        | tần số; tốc độ ánh sáng; bước sóng                               | Hz; m/s; m
@@ -253,6 +278,7 @@ Bảng ký hiệu
   RTT_i            | độ trễ khứ hồi của probe thứ i                                   | ms
   J_RTT, J_HB      | jitter RTT; jitter khoảng cách HEARTBEAT                         | ms
   E                | số lần mất kết nối trong một lần đo                              | lần
+  T_mất            | thời gian không có kết nối trong một lần đo (4.23)              | s
   T_RC, T_F        | COM_RC_LOSS_T; COM_FAIL_ACT_T                                    | s
   T_HB, T_lost, T_probe, T_loop | chu kỳ HEARTBEAT; ngưỡng mất kết nối; thời gian chờ probe; chu kỳ vòng lặp đo | s
 
@@ -273,9 +299,11 @@ Nguồn số liệu dùng trong mục 4 (DoD A2):
   - d* = 85,47 m và 51,37 m: tính lại 2026-11-18. Số đo đối chiếu: data/nofading/summary.csv (85 m nhận 23 643 bản tin, mất 0; 86 m nhận 0); data/old/sweep-20s-nofading/summary.csv (50 m nhận được, 60 m mất 100%; loạt cũ, nêu rõ là loạt cũ).
   - Tham số failsafe: docs/experiments/config.txt mục 6; docs/agile/user-stories/NET-04.txt (Q2).
 Cần sửa ở tài liệu khác (phát hiện khi viết mục 4):
-  - config.txt và calibration.txt ghi L0 = 40,046 dB "theo bước sóng 2,412 GHz". Thực tế 40,046 dB ứng với f = 2,4 GHz, c = 3·10^8 m/s; với 2,412 GHz ra 40,095 dB (d* = 85,15 m). Chênh 0,05 dB, không đổi kết luận, nhưng nên sửa câu chữ cho đúng.
+  - config.txt và calibration.txt ghi L0 = 40,046 dB "theo bước sóng 2,412 GHz". Thực tế 40,046 dB ứng với f = 2,4 GHz, c = 3·10^8 m/s; với 2,412 GHz ra 40,089 dB nếu c = 3·10^8 m/s (40,095 dB nếu c = 299 792 458 m/s), d* khoảng 85,2 m. Chênh 0,05 dB, không đổi kết luận, nhưng nên sửa câu chữ cho đúng.
   - calibration.txt mục 6 ghi seq đếm thiếu khi "đứt liền > 255 gói (≈ 0.65 s)". Theo code, ngưỡng là 128 (≈ 0,32 s): khoảng hở ≥ 128 bị coi là resync, không cộng. Nên sửa lại để mục 6 dùng đúng.
   - DoD mục 4 ghi "gửi lại 7 lần": đúng là "phát tối đa 7 lần (1 lần đầu + 6 lần gửi lại)".
 Cần làm:
-  - Ngưỡng 100 ms giải thích bằng "hai chu kỳ lệnh lái 50 ms" là lập luận của bản nháp này; nhóm xem có đồng ý không (NET-03.txt mục 4 chưa ghi lý do).
-  - Mô hình hàng đợi (4.11) chỉ định tính: chưa tính E[S] bằng số vì chưa đối chiếu CWmin, CWmax, slot time mà ns-3 dùng cho 802.11g ad-hoc (ns-3 cấu hình 802.11g với slot dài 20 µs trừ khi bật ShortSlotTimeSupported). Nếu muốn có số, cần kiểm các giá trị này trong ns-3 trước.
+  - (Đã sửa theo rà soát 2026-11-18) Bỏ lý do "hai chu kỳ lệnh lái 50 ms" cho ngưỡng 100 ms vì mâu thuẫn với 4.3 (RTT chủ yếu là trễ chiều xe về trạm) và thí nghiệm A không lái xe; ngưỡng ghi là quy ước thuần túy.
+  - Mô hình hàng đợi (4.11) chỉ định tính, không tính E[S] bằng số; mục 6 dùng số đo trực tiếp từ pcap 80 m (2,55 lần phát mỗi khung, 174,7 khung/s được phát, thời gian phát khoảng 8% thời gian) thay cho tính E[S].
+  - Mọi bảng số của mục 4 (4.2, 4.3, 4.4 gồm cả dòng E[N_tx,trên]) và d* lấy từ analysis/report_tables.py (output: analysis/report_tables.txt). Không sửa số bằng tay.
+  - Sửa theo rà soát 2026-11-18: DĐ5 viết lại (cơ chế cũ "đứt dài làm L < L_R" sai: chênh lệch 2–3 điểm đến từ việc L_R chia cho cả 60 s trong khi seq chỉ đếm từ HEARTBEAT đầu tiên); DĐ2 rút về định tính (mốc 60 m là khớp ngược sau khi có số đo); thêm (4.10b) cận trên tính cả mất ACK; (4.15) L_R tính trên T_đếm; 4.3 sửa "kênh bão hòa" thành "node xe phục vụ không kịp".

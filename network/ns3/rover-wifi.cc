@@ -49,7 +49,7 @@ main(int argc, char* argv[])
     std::string phyMode("ErpOfdmRate6Mbps");    // Chế độ PHY (DataMode, ControlMode, NonUnicastMode)
     double txPower = 16.0;                      // Công suất phát (dBm)
     double exponent = 3.0;                      // Hệ số suy hao khoảng cách LogDistance
-    double refLoss = 40.046;                    // Suy hao ở mốc 1 m (dB) cho 2.412 GHz: 20log10(4*pi*1m/lambda)
+    double refLoss = 40.046;                    // Suy hao ở mốc 1 m (dB): 20log10(4*pi*1m/lambda), f = 2.4 GHz, c = 3e8
     bool fading = true;                         // Fading Nakagami: mất gói tăng dần thay vì đứt gọn ở một khoảng cách
     double fadingM = 1.5;                       // Tham số m của Nakagami (m=1: Rayleigh; m càng lớn càng ít dao động)
     bool pcap = false;                          // Bật bắt gói PCAP radiotap ra data/pcap/
@@ -60,7 +60,7 @@ main(int argc, char* argv[])
     cmd.AddValue("phyMode", "Che do toc do 802.11g PHY", phyMode);
     cmd.AddValue("txPower", "Cong suat phat (dBm)", txPower);
     cmd.AddValue("exponent", "He so suy hao LogDistancePropagationLossModel", exponent);
-    cmd.AddValue("refLoss", "Suy hao o moc 1 m cua LogDistance (dB), 40.046 cho 2.412 GHz", refLoss);
+    cmd.AddValue("refLoss", "Suy hao o moc 1 m cua LogDistance (dB), 40.046 cho 2.4 GHz", refLoss);
     cmd.AddValue("fading", "Bat fading NakagamiPropagationLossModel", fading);
     cmd.AddValue("fadingM", "Tham so m cua Nakagami (dung chung cho moi khoang cach)", fadingM);
     cmd.AddValue("pcap", "Bat bat goi pcap 802.11 ra data/pcap/", pcap);

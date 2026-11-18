@@ -1,0 +1,66 @@
+# Sinh bởi analysis/report_tables.py – không sửa tay
+== MỤC 4: bảng 4.2–4.4 (mô hình)
+d (m) | P̄rx (dBm) | x(d) | p(d) | P_mac=p^7 (%) | E[N_tx] chỉ mất khung | E[N_tx] tính cả mất ACK
+   10 |   -54.05 | 0.002 | 0.000 |     0.000 |  1.00 |  1.00
+   40 |   -72.11 | 0.103 | 0.041 |     0.000 |  1.04 |  1.09
+   50 |   -75.02 | 0.200 | 0.104 |     0.000 |  1.12 |  1.24
+   60 |   -77.39 | 0.346 | 0.208 |     0.002 |  1.26 |  1.59
+   70 |   -79.40 | 0.549 | 0.351 |     0.066 |  1.54 |  2.33
+   80 |   -81.14 | 0.820 | 0.517 |     0.994 |  2.05 |  3.62
+   85 |   -81.93 | 0.984 | 0.601 |     2.825 |  2.43 |  4.41
+   90 |   -82.67 | 1.168 | 0.680 |     6.698 |  2.91 |  5.18
+  100 |   -84.05 | 1.602 | 0.813 |    23.553 |  4.10 |  6.31
+d* (L0 = 40.046 dB) = 85.47 m
+d* (L0 = 46.6777 dB) = 51.37 m
+
+== MỤC 6: bảng 6.2 (R_ref = 396.8 bản tin/s ở 10 m; L_R và tỷ lệ nhận tính trên khoảng có đếm, tức từ HEARTBEAT đầu tiên)
+                 L%        L_R%          R/s         RTT ms     p95  J_RTT    J_HB  probe mất%      E     T_mất s chờ HB đầu (s)  resync  nhận%
+d                                                                                                                                              
+0.0     0.00 ± 0.00   0.3 ± 0.3  395.8 ± 1.3   10.32 ± 0.01   10.51   0.12     4.8   0.0 ± 0.0  0/0/0   0.0 ± 0.0          0/0/0       0   99.7
+10.0    0.00 ± 0.00  -0.0 ± 0.6  396.8 ± 2.4   10.46 ± 0.11   10.44   1.65     3.3   0.0 ± 0.0  0/0/0   0.0 ± 0.0          0/0/0       0  100.0
+40.0    0.00 ± 0.00   0.2 ± 0.4  395.8 ± 1.6   10.50 ± 0.04   10.45   1.76     3.4   0.0 ± 0.0  0/0/0   0.0 ± 0.0          0/0/0       1   99.8
+50.0    0.00 ± 0.00  -0.1 ± 0.5  397.1 ± 1.9   10.52 ± 0.11   10.44   1.80     4.0   0.0 ± 0.0  0/0/0   0.0 ± 0.0          0/0/0       0  100.1
+60.0    0.01 ± 0.01  -0.3 ± 0.4  398.2 ± 1.8   11.80 ± 0.37   20.65   5.34     7.1   0.0 ± 0.0  0/0/0   0.0 ± 0.0          0/0/0       1  100.3
+70.0    7.57 ± 0.59   7.6 ± 0.3  364.5 ± 4.5  444.87 ± 4.11  502.29  55.90   111.2   4.4 ± 1.6  0/0/0   0.3 ± 0.6          1/0/0       0   92.4
+80.0   63.21 ± 0.21  63.2 ± 0.1  145.4 ± 1.3  503.21 ± 1.61  515.05   8.29  1760.2  50.4 ± 3.1  7/5/3  12.3 ± 4.6          0/1/0       0   36.8
+90.0   81.78 ± 0.28  81.8 ± 0.4  63.7 ± 10.2  506.81 ± 1.19  519.98   7.10  3884.2  73.2 ± 3.8  6/9/5  32.7 ± 6.8         16/2/3       0   18.2
+100.0  90.12 ± 0.15  90.2 ± 0.4  28.7 ± 14.3  512.74 ± 3.65  533.36  10.81  6049.9  85.2 ± 2.2  2/4/5  43.3 ± 2.1         40/7/1       0    9.8
+|L − L_R| lớn nhất (70–100 m, cùng khoảng đếm) = 0.44 điểm %
+tổng resync loạt A = 2 (ở 70–100 m: 0)
+
+== MỤC 6: bảng 6.5 (xếp loại) và khoảng ngưỡng
+   10 m | E max 0 | L max 0.000% | p95 max 10.54 ms | TIN CẬY
+   40 m | E max 0 | L max 0.008% | p95 max 10.49 ms | TIN CẬY
+   50 m | E max 0 | L max 0.000% | p95 max 10.49 ms | TIN CẬY
+   60 m | E max 0 | L max 0.025% | p95 max 20.89 ms | TIN CẬY
+   70 m | E max 0 | L max 8.247% | p95 max 503.87 ms | SUY GIẢM
+   80 m | E max 7 | L max 63.440% | p95 max 524.97 ms | KHÔNG TIN CẬY
+   90 m | E max 9 | L max 82.012% | p95 max 525.93 ms | KHÔNG TIN CẬY
+  100 m | E max 5 | L max 90.294% | p95 max 538.55 ms | KHÔNG TIN CẬY
+60 m giữ TIN CẬY cần: ngưỡng mất gói > 0.025% VÀ ngưỡng p95 > 20.89 ms
+70 m giữ SUY GIẢM cần: ngưỡng mất gói < 8.25% HOẶC ngưỡng p95 < 503.87 ms
+
+== MỤC 6: bảng 6.4, kênh không fading (1 lần mỗi mức)
+   70 m | rx  23847 | L   0.00% | RTT 10.58 ms
+   80 m | rx  23748 | L   0.00% | RTT 10.55 ms
+   85 m | rx  23643 | L   0.00% | RTT 10.44 ms
+   86 m | rx      0 | L 100.00% | RTT nan ms
+   90 m | rx      0 | L 100.00% | RTT nan ms
+
+== MỤC 6: bảng 6.6 (thí nghiệm C)
+         v0_mps        t_brake_s        d_max_m        t_stop_s        d_stop_m        t_move_again_s       
+           mean    std      mean    std    mean    std     mean    std     mean    std           mean    std
+scenario                                                                                                    
+cut       1.286  0.013     0.725  0.016   0.749  0.025    4.565  0.347    0.564  0.030          7.705  0.067
+stopcmd   1.290  0.021     0.668  0.021   0.705  0.027    4.907  0.679    0.528  0.033          7.674  0.208
+fs_cut_r1: v0 báo 1.30 | v0 theo vị trí (1 s) 1.12 | vận tốc dưới 95% v0 tại 0.68 s | vận tốc lớn nhất khi Return 2.15 | AUTO/LOITER/ARMED +1.29, AUTO/RTL/ARMED +6.29, MANUAL/DISARMED +15.29
+fs_cut_r2: v0 báo 1.28 | v0 theo vị trí (1 s) 1.11 | vận tốc dưới 95% v0 tại 0.68 s | vận tốc lớn nhất khi Return 2.01 | AUTO/LOITER/ARMED +1.38, AUTO/RTL/ARMED +6.38, MANUAL/DISARMED +12.38
+fs_cut_r3: v0 báo 1.27 | v0 theo vị trí (1 s) 1.12 | vận tốc dưới 95% v0 tại 0.64 s | vận tốc lớn nhất khi Return 2.12 | AUTO/LOITER/ARMED +1.33, AUTO/RTL/ARMED +6.33, MANUAL/DISARMED +15.33
+fs_stopcmd_r1: v0 báo 1.27 | v0 theo vị trí (1 s) 1.11 | vận tốc dưới 95% v0 tại 0.62 s | vận tốc lớn nhất khi Return 2.04 | AUTO/LOITER/ARMED +1.38, AUTO/RTL/ARMED +6.38, MANUAL/DISARMED +12.38
+fs_stopcmd_r2: v0 báo 1.31 | v0 theo vị trí (1 s) 1.12 | vận tốc dưới 95% v0 tại 0.62 s | vận tốc lớn nhất khi Return 2.06 | AUTO/LOITER/ARMED +1.37, AUTO/RTL/ARMED +6.37, MANUAL/DISARMED +15.37
+fs_stopcmd_r3: v0 báo 1.29 | v0 theo vị trí (1 s) 1.11 | vận tốc dưới 95% v0 tại 0.60 s | vận tốc lớn nhất khi Return 1.87 | AUTO/LOITER/ARMED +1.38, AUTO/RTL/ARMED +6.38, MANUAL/DISARMED +12.38
+
+== MỤC 6: pcap 80 m phía xe (docs/evidence/net-03-wifi-80m.pcap)
+thời lượng 57.4 s | lần phát 25631 | khung khác nhau 10035 (174.7/s) | trung bình 2.55 lần phát/khung | chạm 7 lần 1.4% | phân bố {1: 3912, 2: 1943, 3: 1381, 4: 1120, 5: 1003, 6: 537, 7: 139}
+thời gian phát khung dữ liệu ≈ 8.4% thời gian (chưa tính ACK, SIFS, chờ ngẫu nhiên)
+

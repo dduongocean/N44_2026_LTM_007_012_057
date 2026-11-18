@@ -1,0 +1,290 @@
+MỤC 6. PHÂN TÍCH VÀ ĐÁNH GIÁ HIỆU NĂNG
+=====================================
+(Bản nháp nội dung, 2026-11-18, đã sửa theo rà soát độc lập cùng ngày. Tiêu chí: 25 điểm. Dự kiến 12–15 trang khi dàn trang.)
+(Ghi chú cho nhóm, xóa khi dàn trang: [HÌNH] là chỗ đặt hình; [BẢNG] là bảng cần dàn lại; phần "GHI CHÚ CHO NHÓM" cuối file ghi nguồn của từng con số và không đưa vào báo cáo. Mọi bảng số lấy từ analysis/report_tables.txt (sinh bởi analysis/report_tables.py). Thuật ngữ: 00-thuat-ngu.txt. Hướng dẫn các file dữ liệu: 00-huong-dan.txt.)
+
+BỐ CỤC MỤC 6
+  6.1. Các thí nghiệm, chỉ số và độ tin cậy của số đo
+  6.2. Kết quả theo khoảng cách: bức tranh chung
+  6.3. Vùng 10–60 m: gần như không khác baseline
+  6.4. Vùng 70 m: trễ tăng trước, mất gói tăng sau
+  6.5. Vùng 80–100 m: mất kết nối
+  6.6. Ảnh hưởng của fading: so sánh với kênh không fading
+  6.7. Xếp loại tin cậy và trả lời Câu hỏi 1
+  6.8. Phản ứng của xe khi mất lệnh điều khiển và trả lời Câu hỏi 2
+  6.9. Độ phức tạp của các thuật toán đo
+  6.10. Đối chiếu bảy dự đoán của mục 4
+  6.11. Giới hạn của phép đo
+  Tóm tắt mục 6
+
+Mục này làm hai việc. Thứ nhất, trả lời hai câu hỏi đặt ra ở mục 2: xe được chạy xa bao nhiêu thì đường điều khiển còn tin cậy (6.7), và mất lệnh điều khiển thì xe làm gì (6.8). Thứ hai, kiểm tra mô hình của mục 4: mỗi phần kết quả ghi rõ nó kiểm dự đoán nào trong bảng 4.5 (DĐ1 đến DĐ7), và 6.10 tổng hợp lại. Các công thức được nhắc theo số của mục 4, ví dụ (4.13).
+
+
+6.1. Các thí nghiệm, chỉ số và độ tin cậy của số đo
+------------------------------------------------
+Ý chính: có ba thí nghiệm, đều chạy bằng script và lặp lại được. Công cụ đo đã được kiểm chứng ở mục 5, và các lần đo lặp cho kết quả rất sát nhau, nên các khác biệt trong mục này là do kênh Wi-Fi chứ không do sai số đo.
+
+[BẢNG 6.1] Ba thí nghiệm
+  Thí nghiệm                     | Thay đổi gì                                    | Số lần đo                                      | Trả lời
+  A. Khảo sát theo khoảng cách   | d ∈ {10, 40, 50, 60, 70, 80, 90, 100} m, kênh có fading (m = 1,5) | 8 mức × 3 lần × 60 s, cộng 3 lần baseline × 60 s | Câu hỏi 1; DĐ2 đến DĐ6
+  B. Kênh không fading           | d ∈ {70, 80, 85, 86, 90} m, cùng L0, tắt fading | 5 mức × 1 lần × 60 s                           | DĐ1; vai trò của fading
+  C. Mất lệnh điều khiển         | cách làm mất lệnh: cắt đường truyền, hoặc ngừng gửi lệnh; d = 10 m | 2 cách × 3 lần                    | Câu hỏi 2; DĐ7
+
+Các chỉ số đã định nghĩa ở 4.4: L (4.13), R (4.14), L_R (4.15), RTT trung bình (4.17), RTT p95 (4.18), J_RTT (4.19), J_HB (4.20), E (4.22), T_mất (4.23), tỷ lệ probe mất (4.24). Thí nghiệm B chỉ đo 1 lần mỗi mức vì khi không có fading, kênh trong ns-3 là tất định: cùng khoảng cách thì mọi khung có cùng công suất thu.
+
+Độ tin cậy của số đo dựa trên ba điểm:
+  - Công cụ đo đúng: mục 5 đã kiểm chứng bằng lỗi biết trước. Đặt netem mất 10% gói thì đo được 9,76 ± 0,10%; đặt netem trễ 50 ms thì RTT đo được tăng 49,46 ± 0,45 ms; baseline đo được 0,00% mất gói.
+  - Kết quả lặp lại được: ở mọi khoảng cách, độ lệch chuẩn giữa 3 lần đo của L không quá 0,6 điểm phần trăm, của RTT trung bình không quá 4,1 ms (bảng 6.2).
+  - Hai cách đếm mất gói độc lập cho cùng kết quả: L (đếm theo seq) và L_R (đếm theo số bản tin nhận được) lệch nhau không quá 0,44 điểm phần trăm ở mọi lần đo 70–100 m (6.5).
+
+
+6.2. Kết quả theo khoảng cách: bức tranh chung
+-------------------------------------------
+Ý chính: theo khoảng cách, chất lượng đường truyền chia rõ ba vùng: 10–60 m gần như không khác baseline; 70 m trễ đã rất lớn nhưng mất gói còn ít; 80–100 m mất phần lớn bản tin và mất kết nối.
+
+[BẢNG 6.2] Kết quả thí nghiệm A (trung bình ± độ lệch chuẩn của 3 lần đo; baseline là PX4 và chương trình đo nói chuyện qua localhost)
+  d (m)    | L (%)         | L_R (%)     | R (bản tin/s) | RTT tb (ms)    | RTT p95 (ms) | J_RTT (ms) | J_HB (ms) | probe mất (%) | E (từng lần) | T_mất (s, trên 59 s) | chờ HEARTBEAT đầu (s, từng lần)
+  baseline | 0,00 ± 0,00   | không tính  | 395,8 ± 1,3   | 10,32 ± 0,01   | 10,51        | 0,12       | 4,8       | 0,0           | 0/0/0        | 0                    | 0/0/0
+  10       | 0,00 ± 0,00   | 0,0 ± 0,6   | 396,8 ± 2,4   | 10,46 ± 0,11   | 10,44        | 1,65       | 3,3       | 0,0           | 0/0/0        | 0                    | 0/0/0
+  40       | 0,00 ± 0,01   | 0,2 ± 0,4   | 395,8 ± 1,6   | 10,50 ± 0,04   | 10,45        | 1,76       | 3,4       | 0,0           | 0/0/0        | 0                    | 0/0/0
+  50       | 0,00 ± 0,00   | −0,1 ± 0,5  | 397,1 ± 1,9   | 10,52 ± 0,11   | 10,44        | 1,80       | 4,0       | 0,0           | 0/0/0        | 0                    | 0/0/0
+  60       | 0,01 ± 0,01   | −0,3 ± 0,4  | 398,2 ± 1,8   | 11,80 ± 0,37   | 20,65        | 5,34       | 7,1       | 0,0           | 0/0/0        | 0                    | 0/0/0
+  70       | 7,57 ± 0,59   | 7,6 ± 0,3   | 364,5 ± 4,5   | 444,87 ± 4,11  | 502,29       | 55,90      | 111       | 4,4 ± 1,6     | 0/0/0        | 0,3                  | 1/0/0
+  80       | 63,21 ± 0,21  | 63,2 ± 0,1  | 145,4 ± 1,3   | 503,21 ± 1,61  | 515,05       | 8,29       | 1 760     | 50,4 ± 3,1    | 7/5/3        | 12,3 ± 4,6           | 0/1/0
+  90       | 81,78 ± 0,28  | 81,8 ± 0,4  | 63,7 ± 10,2   | 506,81 ± 1,19  | 519,98       | 7,10       | 3 884     | 73,2 ± 3,8    | 6/9/5        | 32,7 ± 6,8           | 16/2/3
+  100      | 90,12 ± 0,15  | 90,2 ± 0,4  | 28,7 ± 14,3   | 512,74 ± 3,65  | 533,36       | 10,81      | 6 050     | 85,2 ± 2,2    | 2/4/5        | 43,3 ± 2,1           | 40/7/1
+Ghi chú bảng:
+  - L chỉ được đếm từ HEARTBEAT đầu tiên (4.4); L_R tính theo (4.15) trên cùng khoảng đếm đó, với R_ref = 396,8 bản tin/s (R ở 10 m). R dao động khoảng ±2 bản tin/s giữa các lần đo, nên L_R có sai số khoảng ±0,5 điểm phần trăm; giá trị âm nhỏ ở 50–60 m chỉ là dao động này.
+  - R tính trên cả 60 s, kể cả thời gian chờ HEARTBEAT đầu tiên (cột cuối).
+  - T_mất gồm cả thời gian chờ HEARTBEAT đầu tiên; ở 70 m, 0,3 s trung bình chính là 1 giây chờ lúc bắt đầu của lần đo thứ nhất, không phải mất kết nối.
+
+[HÌNH 6.1] analysis/combined_metrics.png: (a) mất gói, (b) RTT trung bình và p95, (c) jitter RTT và jitter HEARTBEAT, (d) số lần mất kết nối; đều theo khoảng cách, có đường baseline và thanh độ lệch chuẩn.
+[HÌNH 6.2] analysis/throughput_vs_distance.png: số bản tin nhận được mỗi giây theo khoảng cách, có đường baseline.
+
+Đọc bảng 6.2 theo cột: RTT là chỉ số thay đổi sớm nhất (60 m bắt đầu tăng, 70 m tăng vọt), mất gói thay đổi muộn hơn (70 m mới đáng kể), và mất kết nối xuất hiện muộn nhất (từ 80 m). Ba phần tiếp theo giải thích từng vùng bằng mô hình của mục 4.
+
+
+6.3. Vùng 10–60 m: gần như không khác baseline
+-------------------------------------------
+Ý chính: ở 10–50 m, đường đi qua ns-3 gần như trong suốt; ở 60 m xuất hiện dấu hiệu đầu tiên là một phần phản hồi bị trễ thêm một chu kỳ đọc. Đây là phần đầu của dự đoán DĐ2: chất lượng xấu đi dần và RTT thay đổi trước mất gói.
+
+Ở 10–50 m, mọi chỉ số gần bằng baseline: không mất gói, không mất kết nối, thông lượng bằng tốc độ PX4 gửi (khoảng 397 bản tin/s). RTT trung bình chỉ hơn baseline 0,14–0,20 ms. Phần lớn RTT khoảng 10,3 ms đã có sẵn ở baseline và đến từ chu kỳ đọc 10 ms của chương trình đo (4.4), không phải từ Wi-Fi. Jitter RTT tăng từ 0,12 ms (baseline) lên khoảng 1,7 ms; phần tăng này do đường đi qua ns-3 và do RTT bị làm tròn theo chu kỳ đọc, và vẫn rất nhỏ.
+
+Mô hình giải thích: theo bảng 4.3 và 4.4, ở 10–50 m xác suất một lần phát hỏng p(d) tối đa khoảng 0,10, nên mỗi khung cần trung bình không quá 1,12–1,24 lần phát. Node xe dư sức phục vụ, hàng đợi gần như trống.
+
+Ở 60 m, mất gói vẫn gần 0 (0,01%) nhưng RTT p95 tăng từ khoảng 10,4 ms lên 20,65 ms, đúng thêm một chu kỳ đọc 10 ms; RTT trung bình tăng 1,34 ms so với 10 m. Vì RTT bị làm tròn theo chu kỳ đọc, điều này cho thấy ít nhất 5% (theo p95) và khoảng 13% (theo RTT trung bình: 1,34 ms / 10 ms) số phản hồi bị trễ thêm đủ để rơi sang chu kỳ đọc sau. Mô hình giải thích: ở 60 m, mỗi khung cần trung bình 1,26–1,59 lần phát (bảng 4.4), nên thời gian phục vụ mỗi khung dài hơn; phản hồi TIMESYNC phải xếp sau các bản tin telemetry trong hàng đợi phía xe, và mỗi khung đứng trước cũng phải phát lại nhiều hơn, nên thời gian chờ cộng dồn. Đây là dấu hiệu đầu tiên của sự xấu đi.
+
+
+6.4. Vùng 70 m: trễ tăng trước, mất gói tăng sau
+---------------------------------------------
+Ý chính: ở 70 m, RTT đã tăng lên khoảng 445 ms (gần trần 500 ms) trong khi mất gói mới 7,6%, và mất gói đo được lớn gấp hơn 100 lần mức mà riêng việc hết lượt phát gây ra. Cả hai điều này là dấu hiệu của hàng đợi quá tải ở node xe, đúng như dự đoán DĐ3. Bản bắt gói ở 80 m cho bằng chứng trực tiếp của cơ chế này.
+
+[BẢNG 6.3] Mất gói theo mô hình hết lượt phát (4.9) so với mất gói đo được
+  d (m) | P_mac = p^7 (bảng 4.4) | L đo được (bảng 6.2)
+  60    | 0,002%                 | 0,01%
+  70    | 0,066%                 | 7,57%
+  80    | 0,99%                  | 63,21%
+  90    | 6,7%                   | 81,78%
+  100   | 23,6%                  | 90,12%
+
+Giải thích theo mô hình hàng đợi (4.11): nếu chỉ tính khung bị bỏ vì phát hỏng cả 7 lần thì ở 70 m chỉ mất 0,066%. Số đo lớn hơn rất nhiều, và RTT trung bình lại gần trần 500 ms. Lời giải thích phù hợp là: ở 70 m mỗi khung cần trung bình khoảng 1,5–2,3 lần phát (bảng 4.4, tùy có tính mất ACK hay không), và mỗi lần phát hỏng kéo theo thời gian chờ ACK và thời gian chờ ngẫu nhiên tăng dần, trong khi PX4 vẫn gửi khoảng 397 bản tin mỗi giây. Node xe không phục vụ kịp (ρ ≥ 1), hàng đợi ở node xe đầy dần, khung phải chờ gần 500 ms; khung nào chờ quá 500 ms thì bị bỏ. Như vậy phần lớn mất gói là do quá hạn chờ trong hàng đợi, không phải do phát hỏng.
+
+Bằng chứng trực tiếp từ bản bắt gói: ns-3 ghi lại mọi khung node xe phát ở 80 m (docs/evidence/net-03-wifi-80m.pcap, 57,4 s). Đếm các khung khác nhau (theo số thứ tự khung 802.11) và số lần phát của mỗi khung:
+  - Node xe chỉ phát 174,7 khung khác nhau mỗi giây, trong khi PX4 đưa xuống khoảng 397 bản tin mỗi giây: khoảng 56% bản tin bị bỏ trong hàng đợi trước khi được phát lần nào.
+  - Mỗi khung được phát trung bình 2,55 lần, nằm giữa hai giá trị mô hình ở 80 m (2,05 khi chỉ tính mất khung, 3,62 khi tính cả mất ACK; bảng 4.4).
+  - Chỉ 1,4% khung được phát đủ 7 lần, cùng bậc với P_mac ở 80 m (0,99%).
+  - Tổng thời gian phát khung dữ liệu chỉ khoảng 8% thời gian: kênh vô tuyến phần lớn thời gian rảnh. Node xe chậm không phải vì thiếu băng thông mà vì phần lớn thời gian phục vụ là thời gian chờ ACK và chờ ngẫu nhiên trước mỗi lần phát lại.
+Bản bắt gói chỉ có ở 80 m; ở 70 m, cơ chế được suy ra từ các số đo gián tiếp dưới đây, cùng hướng với bằng chứng ở 80 m.
+
+Các số đo ở 70 m cùng chỉ về hướng này:
+  - RTT p95 = 502,29 ms, sát D_max = 500 ms: những probe chậm nhất là những probe đã chờ gần hết hạn trong hàng đợi.
+  - Thông lượng R = 364,5 bản tin/s, thấp hơn tốc độ PX4 gửi (khoảng 397): node xe không phục vụ kịp, phần dư bị bỏ ở hàng đợi.
+  - Jitter RTT đạt cực đại 55,9 ms: RTT lúc thì nhỏ (hàng đợi vừa vơi), lúc thì gần 500 ms, nên dao động mạnh nhất.
+  - Chưa có lần mất kết nối nào: HEARTBEAT vẫn tới, chỉ trễ hơn và đôi khi mất (J_HB = 111 ms).
+Một hiện tượng chưa giải thích được: tỷ lệ probe mất ở 70 m (4,4%) thấp hơn L (7,6%), dù phản hồi probe cũng phải xếp trong hàng đợi phía xe như telemetry. Khác biệt này lớn hơn dao động ngẫu nhiên (38 probe mất trên 858, trong khi nếu bị bỏ với xác suất 7,6% thì kỳ vọng khoảng 65). Một giả thuyết là telemetry của PX4 được đưa xuống thành từng loạt, nên hay gặp lúc hàng đợi đầy hơn so với phản hồi TIMESYNC đi lẻ; nhóm chưa kiểm được giả thuyết này vì không có bản bắt gói ở 70 m.
+
+Ý nghĩa cho việc điều khiển (ước lượng, suy ra từ mô hình chứ chưa đo trễ riêng từng chiều): ở 70 m, người vận hành vẫn thấy xe "đang kết nối" và gần như không mất bản tin, nhưng trạng thái hiển thị ở trạm có thể đã cũ tới khoảng nửa giây, vì chiều xe về trạm là chiều mang nhiều bản tin và có hàng đợi quá tải (4.3). Với xe chạy 1,3 m/s, vị trí thật khi đó có thể đã cách vị trí trạm đang thấy khoảng 0,6 m. Tình huống này nguy hiểm vì khó nhận ra: không có cảnh báo mất kết nối nào.
+
+
+6.5. Vùng 80–100 m: mất kết nối
+-----------------------------
+Ý chính: từ 80 m, mất gói vượt 60%, bắt đầu mất kết nối, và RTT nằm sát trần 500 ms. Các số đo ở vùng này xác nhận ba dự đoán DĐ4, DĐ5, DĐ6, đồng thời cho thấy cần đọc E cùng với T_mất.
+
+Mức độ: ở 80, 90 và 100 m, mất gói theo seq lần lượt là 63,2%, 81,8% và 90,1%; thông lượng giảm còn 145, 64 và 29 bản tin/s; probe mất 50%, 73% và 85%. Mất gói ở vùng này cũng lớn hơn nhiều so với P_mac (bảng 6.3), nên hàng đợi quá tải vẫn là nguyên nhân chính (ở 80 m đã có bằng chứng trực tiếp, 6.4).
+
+RTT chạm trần (DĐ4): RTT trung bình chỉ tăng từ 503 lên 513 ms dù khoảng cách tăng từ 80 lên 100 m. Ở vùng này hầu hết khung được phát đều đã chờ gần 500 ms, nên RTT không còn phản ánh mức độ xấu của kênh. Cũng vì mọi RTT đều gần 500 ms, jitter RTT giảm từ 55,9 ms (70 m) xuống 7–11 ms. Vì vậy ở vùng này cần dùng mất gói, thông lượng và T_mất để so sánh, không dùng RTT.
+
+Cách đếm theo seq vẫn chính xác (DĐ5): ở cả 12 lần đo từ 70 đến 100 m, số lần resync bằng 0, tức không có chuỗi mất liền từ 128 bản tin trở lên; điều này khớp giả thiết các bản tin mất độc lập với nhau. L và L_R (tính trên cùng khoảng đếm) lệch nhau không quá 0,44 điểm phần trăm. Hai cách đếm độc lập cho cùng kết quả, nên giới hạn 8 bit của seq không ảnh hưởng tới số đo trong loạt này. Lưu ý về khoảng đếm: ở lần đo thứ nhất tại 90 m và 100 m, trạm phải chờ 16 s và 40 s mới nhận được HEARTBEAT đầu tiên, nên L của hai lần này chỉ phản ánh phần còn lại của lần đo.
+
+E không tăng theo khoảng cách, nhưng T_mất thì tăng (DĐ6): số lần mất kết nối trong 3 lần đo là 15 (80 m), 20 (90 m) và 11 (100 m), giảm ở 100 m. Nhưng thời gian không có kết nối tăng đều: 12,3 s, 32,7 s và 43,3 s trên 59 s đo. Hai lý do:
+  - Ở 100 m, kết nối mất lâu và ít khi hồi lại, nên nhiều lần mất ngắn gộp thành ít lần mất dài; E đếm số lần, không đếm thời gian.
+  - Ở lần đo thứ nhất tại 100 m, 40 giây chờ HEARTBEAT đầu tiên có trạng thái WAITING và không được tính vào E (giới hạn ở 4.4), nhưng được tính vào T_mất.
+Vì vậy T_mất là chỉ số phù hợp hơn E để so sánh mức độ mất kết nối giữa các khoảng cách xa.
+
+Jitter HEARTBEAT tăng lên hàng giây (1,8 s ở 80 m, 6,0 s ở 100 m): khi HEARTBEAT bị mất, khoảng cách giữa hai HEARTBEAT nhận được dài 2, 3 giây hoặc hơn thay vì 1 giây.
+
+
+6.6. Ảnh hưởng của fading: so sánh với kênh không fading
+-----------------------------------------------------
+Ý chính: với cùng suy hao, kênh không fading giữ chất lượng hoàn hảo tới 85 m rồi đứt gọn, đúng như công thức (4.7) dự đoán. Fading trải vùng chuyển tiếp ra hai phía: chất lượng xấu đi sớm hơn khoảng 15 m, nhưng ở xa hơn ngưỡng vẫn còn nhận được một phần bản tin.
+
+[BẢNG 6.4] Kênh không fading (thí nghiệm B, 1 lần đo mỗi mức) so với kênh có fading (thí nghiệm A, trung bình 3 lần)
+  d (m) | P̄rx (dBm, bảng 4.2) | Không fading: L, RTT tb           | Có fading: L, RTT tb, tỷ lệ bản tin nhận được
+  70    | -79,40               | 0,00%, 10,58 ms                   | 7,57%, 444,87 ms, 92%
+  80    | -81,14               | 0,00%, 10,55 ms                   | 63,21%, 503,21 ms, 37%
+  85    | -81,93               | 0,00%, 10,44 ms                   | (không đo)
+  86    | -82,08               | không nhận được bản tin nào       | (không đo)
+  90    | -82,67               | không nhận được bản tin nào       | 81,78%, 506,81 ms, 18%
+  100   | -84,05               | (không đo)                        | 90,12%, 512,74 ms, 10%
+(Tỷ lệ bản tin nhận được = 100% − L_R, tính trên khoảng đếm, theo bảng 6.2.)
+
+[HÌNH 6.3] analysis/fading_vs_nofading_loss.png: tỷ lệ mất gói theo khoảng cách của hai kênh, kèm ngưỡng tính tay 85,47 m.
+
+Kiểm DĐ1: không fading, kênh nhận đủ bản tin ở 85 m (P̄rx = -81,93 dBm, trên ngưỡng -82 dBm) và không nhận được gì ở 86 m (P̄rx = -82,08 dBm, dưới ngưỡng). Ranh giới nằm giữa 85 và 86 m, khớp với d* = 85,47 m tính theo (4.7). RTT ở 70–85 m vẫn bằng như ở 10 m (khoảng 10,5 ms) vì mọi khung đều trên ngưỡng nên không có lần phát lại nào. Cả hai ý của DĐ1 đều đúng.
+
+Vai trò của fading: so hai cột của bảng 6.4,
+  - Phía gần ngưỡng: ở 70 và 80 m, kênh không fading vẫn hoàn hảo, còn kênh có fading đã trễ gần 500 ms và mất 8–63% bản tin. Lý do: fading làm một phần khung rơi xuống dưới ngưỡng dù công suất trung bình còn trên ngưỡng (p(70 m) = 0,35), gây phát lại và quá tải hàng đợi như 6.4.
+  - Phía xa ngưỡng: ở 90 m, kênh không fading không nhận được gì, còn kênh có fading vẫn nhận được khoảng 18% bản tin, vì đôi khi fading đẩy công suất của một khung lên trên ngưỡng (p(90 m) = 0,68 < 1).
+Trả lời ý "dần dần hay đột ngột" của Câu hỏi 1: điều này phụ thuộc vào kênh. Không có fading, chất lượng xấu đi đột ngột tại một khoảng cách xác định; có fading (gần thực tế hơn vì sóng thật luôn phản xạ), chất lượng xấu đi dần trong khoảng 60–100 m, và bắt đầu xấu đi sớm hơn ngưỡng không fading khoảng 15 m. Kết luận định lượng của đề tài dựa trên kênh có fading, với giả thiết m = 1,5 (mục 7 bàn về giới hạn của giả thiết này).
+
+
+6.7. Xếp loại tin cậy và trả lời Câu hỏi 1
+---------------------------------------
+Ý chính: theo quy ước (4.25), 10–60 m là tin cậy, 70 m là suy giảm, 80–100 m là không tin cậy. Ranh giới này không đổi khi thay ngưỡng trong một khoảng rất rộng.
+
+[BẢNG 6.5] Xếp loại theo (4.25)
+  d (m)  | E lớn nhất trong 3 lần | L lớn nhất (%) | RTT p95 lớn nhất (ms) | Xếp loại
+  10     | 0                      | 0,000          | 10,54                 | TIN CẬY
+  40     | 0                      | 0,008          | 10,49                 | TIN CẬY
+  50     | 0                      | 0,000          | 10,49                 | TIN CẬY
+  60     | 0                      | 0,025          | 20,89                 | TIN CẬY
+  70     | 0                      | 8,25           | 503,87                | SUY GIẢM
+  80     | 7                      | 63,44          | 524,97                | KHÔNG TIN CẬY
+  90     | 9                      | 82,01          | 525,93                | KHÔNG TIN CẬY
+  100    | 5                      | 90,29          | 538,55                | KHÔNG TIN CẬY
+
+Độ nhạy theo ngưỡng: ngưỡng mất gói 1% và ngưỡng RTT p95 100 ms là quy ước của nhóm (4.5). Ranh giới giữa 60 m và 70 m giữ nguyên khi đồng thời hai điều kiện sau thỏa mãn:
+  - 60 m vẫn tin cậy: ngưỡng mất gói lớn hơn 0,025% VÀ ngưỡng RTT p95 lớn hơn 20,89 ms (giá trị lớn nhất đo được ở 60 m);
+  - 70 m vẫn suy giảm: ngưỡng mất gói nhỏ hơn 8,25% HOẶC ngưỡng RTT p95 nhỏ hơn 503,87 ms (chỉ cần một lần đo ở 70 m vượt một ngưỡng).
+Với ngưỡng RTT p95 bất kỳ từ 21 ms đến 500 ms, điều kiện thứ hai luôn đúng nhờ RTT, và khi đó ngưỡng mất gói chỉ cần lớn hơn 0,025%. Khoảng ngưỡng hợp lý rất rộng, nên kết luận không phụ thuộc vào cách chọn ngưỡng cụ thể.
+
+Trả lời Câu hỏi 1: trong cấu hình đã khảo sát (802.11g, 6 Mbit/s, 16 dBm, kênh log-distance n = 3 có fading Nakagami m = 1,5, trạm và xe đứng yên), khoảng cách lớn nhất mà đường điều khiển còn tin cậy là d_tc = 60 m trong các mức đã đo; ranh giới thật nằm trong khoảng 60–70 m. Từ 70 m, độ trễ khoảng nửa giây làm việc điều khiển kém chính xác dù vẫn còn kết nối; từ 80 m, kết nối mất từng lúc và phần lớn bản tin không tới.
+
+
+6.8. Phản ứng của xe khi mất lệnh điều khiển và trả lời Câu hỏi 2
+--------------------------------------------------------------
+Ý chính: cả 6 lần đo diễn ra giống nhau và đúng như mô hình (4.27)–(4.29): xe tiếp tục chạy khoảng 0,6 s, giảm tốc, đứng yên đúng 5 s, rồi tự chạy về điểm xuất phát và tự khóa. Cắt đường truyền và ngừng gửi lệnh cho cùng diễn biến (DĐ7).
+
+[BẢNG 6.6] Kết quả thí nghiệm C (trung bình ± độ lệch chuẩn của 3 lần, mốc thời gian tính từ t0)
+  Chỉ số                                              | Cắt đường truyền        | Ngừng gửi lệnh (mạng tốt)
+  Vận tốc trong 0,5 s trước t0, PX4 báo (m/s)         | 1,29 ± 0,01             | 1,29 ± 0,02
+  Vận tốc trong 1 s trước t0, theo độ dời vị trí (m/s)| 1,11–1,12               | 1,11–1,12
+  Bắt đầu giảm tốc, vận tốc dưới 95% (s)              | 0,64–0,68               | 0,60–0,62
+  Vận tốc còn một nửa (s)                             | 0,73 ± 0,02             | 0,67 ± 0,02
+  Quãng đường xa nhất xe đi thêm, d_max (m)           | 0,75 ± 0,03             | 0,71 ± 0,03
+  HEARTBEAT đầu tiên báo AUTO/LOITER (s)              | 1,29–1,38               | 1,37–1,38
+  HEARTBEAT đầu tiên báo AUTO/RTL (s)                 | 6,29–6,38               | 6,37–6,38
+  Khoảng cách giữa hai mốc trên (s)                   | 5,0 (cả 3 lần)          | 5,0 (cả 3 lần)
+  Xe tự chạy lại, vận tốc vượt 0,2 m/s (s)            | 7,71 ± 0,07             | 7,67 ± 0,21
+  Vận tốc lớn nhất khi tự chạy về (m/s)               | 2,01–2,15               | 1,87–2,06
+  HEARTBEAT báo đã tự khóa (s)                        | 15,29 / 12,38 / 15,33   | 12,38 / 15,37 / 12,38
+  Nối lại mạng (s)                                    | 15,0                    | không áp dụng
+
+[HÌNH 6.4] analysis/failsafe_speed.png: vận tốc theo thời gian quanh t0, mỗi kịch bản 3 đường, vạch t0 và vạch nối lại mạng.
+
+Đối chiếu với mô hình (DĐ7):
+  - Thời điểm phát hiện: mô hình dự đoán t0 + T_RC + ε với T_RC = COM_RC_LOSS_T = 0,5 s (4.27). Xe bắt đầu giảm tốc ở 0,60–0,68 s, tức ε khoảng 0,1–0,2 s.
+  - Thời gian đứng yên: hai mốc AUTO/LOITER và AUTO/RTL đều đọc từ HEARTBEAT (1 lần mỗi giây), nên từng mốc trễ hơn thực tế tới 1 s; nhưng hiệu của chúng không bị ảnh hưởng và bằng đúng 5,0 s ở cả 6 lần, khớp T_F = COM_FAIL_ACT_T = 5 s (4.28).
+  - Hai cách làm mất lệnh: mọi mốc của hai cách gần như trùng nhau, khớp dự đoán rằng PX4 không phân biệt mất mạng với ngừng gửi lệnh. Kịch bản cắt đường truyền có các mốc giảm tốc muộn hơn khoảng 0,05 s. Có hai lời giải thích có thể, nhóm chưa tách được: (a) vài lệnh lái đã nằm trên đường truyền trước lúc cắt vẫn tới được xe; (b) hai kịch bản ghi t0 khác nhau: cắt đường truyền ghi t0 sau khi đã đặt xong netem ở cả hai phía, còn ngừng gửi lệnh ghi t0 ngay sau vòng gửi lệnh cuối cùng (lệnh cuối được gửi trước t0 tối đa khoảng 50 ms).
+  - Quãng đường đi thêm (4.29): v0 không xác định chính xác vì xe còn đang tăng tốc tới t0 và hai cách lấy vận tốc cho kết quả khác nhau (1,29 m/s theo PX4 báo, 1,11–1,12 m/s theo độ dời vị trí trong 1 s). Với khoảng 0,6 s trước khi giảm tốc, phần đường này nằm trong khoảng 0,67–0,77 m; quãng phanh ở giới hạn RO_DECEL_LIM khoảng 0,08 m. Số đo d_max = 0,71–0,75 m cùng bậc độ lớn với dự đoán; mô hình chỉ dùng để kiểm độ lớn, không dùng để dự đoán chính xác tới vài centimet.
+
+Sau khi phanh, xe còn lùi lại chậm khoảng 0,2 m; vì vậy khoảng cách từ vị trí t0 tới chỗ xe đứng yên (khoảng 0,55 m) nhỏ hơn d_max. Về an toàn, d_max là chỉ số đúng, vì đó là điểm xa nhất xe đã tới.
+
+Sau giai đoạn đứng yên, xe tự chạy về điểm xuất phát với vận tốc lớn nhất 1,87–2,15 m/s theo PX4 báo, đúng bằng giới hạn RO_SPEED_LIM = 2 m/s của mẫu xe và nhanh hơn lúc người vận hành lái (1,3 m/s). Xe tự khóa khi về tới nơi; HEARTBEAT báo đã khóa ở 12,38 s hoặc 15,29–15,37 s tính từ t0 (khác nhau do khoảng cách về điểm xuất phát ở mỗi lần khác nhau), và sau khi khóa PX4 tự trở về chế độ MANUAL. Trong kịch bản cắt đường truyền, mạng được nối lại ở 15,0 s và script vẫn tiếp tục gửi lệnh lái, nhưng không lần nào xe chạy theo lệnh: xe đã tự khóa từ trước, hoặc HEARTBEAT báo khóa khoảng 0,3 s sau khi nối mạng (thời điểm khóa thật không xác định chính xác hơn vì HEARTBEAT chỉ 1 lần mỗi giây).
+
+Trả lời Câu hỏi 2: khi mất lệnh điều khiển lúc đang chạy khoảng 1,3 m/s, xe PX4 với cấu hình mặc định tiếp tục chạy theo lệnh cuối khoảng 0,6 s, đi thêm khoảng 0,7–0,75 m rồi phanh; đứng yên 5 s; sau đó tự chạy về điểm xuất phát (nhanh tới khoảng 2 m/s) và tự khóa. Trong suốt quá trình đó, trạm mặt đất không liên lạc được và không can thiệp được. Thí nghiệm chưa thử nối lại mạng trong lúc xe còn đứng yên hoặc đang tự chạy về; trong các lần đã đo, khi mạng có lại ở 15 s thì xe đã (hoặc vừa) tự khóa sau khi về tới điểm xuất phát, và muốn lái tiếp phải gửi lệnh arm lại.
+
+
+6.9. Độ phức tạp của các thuật toán đo
+-----------------------------------
+Ý chính: mọi thao tác xử lý một bản tin đều có chi phí hằng số, nên chương trình đo theo kịp khoảng 400 bản tin mỗi giây với chu kỳ 10 ms.
+
+[BẢNG 6.7] Độ phức tạp (mã giả ở mục 5)
+  Thành phần                       | Thời gian                                                   | Bộ nhớ
+  SeqTracker (đếm mất gói)         | O(1) mỗi bản tin (tra bảng băm theo nguồn, vài phép tính)   | O(S), S là số nguồn MAVLink (thực tế vài nguồn)
+  RttTracker (đo RTT)              | gửi và nhận probe O(1); hủy probe quá hạn O(P), P ≤ 5 × 2 = 10 probe đang chờ | O(N) mẫu RTT, N ≤ 300 trong 60 s
+  Tính RTT p95 mỗi giây            | O(N log N) do sắp xếp, N ≤ 300                               | O(N)
+  LinkMonitor (mất kết nối)        | O(1)                                                        | O(1)
+  IntervalStats (jitter HEARTBEAT) | ghi O(1); tính độ lệch chuẩn O(H) mỗi giây, H ≤ 60           | O(H)
+Với khoảng 400 bản tin mỗi giây, tức khoảng 4 bản tin mỗi chu kỳ 10 ms, chi phí xử lý không đáng kể so với chu kỳ.
+
+
+6.10. Đối chiếu bảy dự đoán của mục 4
+----------------------------------
+Ý chính: cả bảy dự đoán đều khớp với số đo; nhờ vậy mỗi hiện tượng quan sát được đều có lời giải thích bằng công thức ở mục 4. Còn một hiện tượng chưa giải thích được (probe mất thấp hơn L ở 70 m, 6.4).
+
+[BẢNG 6.8] Dự đoán (bảng 4.5) và kết quả
+  Mã   | Dự đoán (tóm tắt)                                             | Kết quả đo                                                    | Khớp | Ở
+  DĐ1  | không fading: đứt gọn tại 85,47 m; RTT không tăng trước ngưỡng | 85 m nhận đủ, 86 m không nhận được gì; RTT 10,4–10,6 ms ở 70–85 m | có | 6.6
+  DĐ2  | có fading: xấu đi dần, không đứt gọn; RTT thay đổi trước mất gói | 60 m: p95 tăng một chu kỳ đọc, mất gói 0,01%; 70 m: RTT 445 ms, mất gói 7,6%; xấu dần tới 100 m | có | 6.3, 6.4
+  DĐ3  | quá tải hàng đợi trước khi mất do hết lượt phát; L ≫ P_mac; khung mất chủ yếu bị bỏ trong hàng đợi | 70 m: RTT 445 ms, L 7,6% so với P_mac 0,066%; pcap 80 m: 56% bản tin bị bỏ trước lần phát đầu, chỉ 1,4% khung phát đủ 7 lần | có | 6.4
+  DĐ4  | RTT chạm trần khoảng 500 ms; J_RTT giảm khi đã chạm trần       | RTT 503–513 ms ở 80–100 m; J_RTT giảm từ 55,9 xuống 7–11 ms   | có | 6.5
+  DĐ5  | resync gần 0, L gần bằng L_R (cùng khoảng đếm)                 | 0 resync ở 70–100 m; L và L_R lệch tối đa 0,44 điểm %          | có | 6.5
+  DĐ6  | E có thể không tăng, T_mất tăng                               | E: 15, 20, 11; T_mất: 12,3, 32,7, 43,3 s                      | có | 6.5
+  DĐ7  | phát hiện sau T_RC + ε; Return sau thêm đúng 5 s; hai cách như nhau | giảm tốc ở 0,60–0,68 s; LOITER tới RTL đúng 5,0 s; hai cách gần trùng nhau | có | 6.8
+
+
+6.11. Giới hạn của phép đo
+------------------------
+Ý chính: các kết luận trên đúng trong giới hạn sau; mỗi giới hạn đã được tính đến khi đọc số liệu.
+  - RTT bị chặn trên khoảng 500 ms do hàng đợi bỏ khung chờ quá 500 ms (6.5); ở 80–100 m, RTT không dùng để so sánh mức độ xấu.
+  - Mất gói theo seq chỉ được đếm từ HEARTBEAT đầu tiên; ở hai lần đo phải chờ lâu (16 s ở 90 m, 40 s ở 100 m), L chỉ phản ánh phần còn lại của lần đo (6.5).
+  - Mất gói theo seq sẽ đếm thiếu nếu đứt liền từ 128 bản tin trở lên; trong loạt A điều này không xảy ra (0 resync ở 70–100 m, L khớp L_R).
+  - Gói đến sai thứ tự bị đếm như mất; trong loạt A chỉ có 2 lần resync ở 40 m và 60 m, không ảnh hưởng kết quả.
+  - E không đếm thời gian WAITING và gộp các lần mất dài (6.5); dùng thêm T_mất. T_mất lại gồm cả thời gian chờ HEARTBEAT đầu tiên lúc bắt đầu đo.
+  - RTT có độ phân giải khoảng 10 ms do chu kỳ đọc; RTT ở 10–60 m không phân biệt được chênh lệch nhỏ hơn mức này (6.3).
+  - Mất gói theo seq chỉ đo chiều xe về trạm; chiều trạm tới xe chỉ được phản ánh gián tiếp qua probe mất. Chưa đo trễ riêng từng chiều, nên nhận định "trạng thái ở trạm cũ khoảng nửa giây" ở 70 m là ước lượng (6.4).
+  - Bằng chứng trực tiếp về hàng đợi (pcap) chỉ có ở 80 m; ở 70 m cơ chế được suy ra gián tiếp. Hiện tượng probe mất thấp hơn L ở 70 m chưa giải thích được (6.4).
+  - Thí nghiệm C: vận tốc và vị trí là giá trị ước lượng của PX4, và xe còn đang tăng tốc tại t0, nên v0 không xác định chính xác; hai kịch bản ghi t0 theo cách hơi khác nhau; chưa thử nối lại mạng trong lúc xe đang đứng yên hoặc đang tự chạy về (6.8).
+  - Trạm và xe đứng yên trong mỗi lần đo của thí nghiệm A; chưa đo khi xe di chuyển và khoảng cách thay đổi liên tục.
+  - Kết quả về vùng chuyển tiếp phụ thuộc giả thiết fading Nakagami m = 1,5; thí nghiệm B chỉ đo 1 lần mỗi mức (chấp nhận được vì kênh không fading là tất định).
+
+
+Tóm tắt mục 6
+-------------
+  - Chất lượng đường MAVLink chia ba vùng: 10–60 m gần như không khác baseline; 70 m trễ khoảng nửa giây dù chỉ mất 7,6% bản tin; 80–100 m mất 63–90% bản tin và mất kết nối từng lúc.
+  - Nguyên nhân chính của trễ và mất gói ở khoảng cách lớn là node xe phục vụ không kịp vì phải chờ ACK và chờ ngẫu nhiên trước mỗi lần phát lại, làm hàng đợi quá tải; không phải do khung phát hỏng cả 7 lần, cũng không phải do kênh vô tuyến hết băng thông (kênh chỉ bận khoảng 8% thời gian ở 80 m).
+  - Ở 70 m, trạng thái trạm nhìn thấy có thể đã cũ khoảng nửa giây mà không có cảnh báo mất kết nối nào; đây là vùng nguy hiểm vì khó nhận ra.
+  - Câu hỏi 1: đường điều khiển tin cậy tới 60 m trong các mức đã đo (ranh giới thật trong 60–70 m), và kết luận này không phụ thuộc vào việc chọn ngưỡng cụ thể. Chất lượng xấu đi dần khi có fading, đột ngột tại 85,47 m khi không có fading.
+  - Câu hỏi 2: mất lệnh điều khiển thì xe đi thêm khoảng 0,7–0,75 m trong khoảng 0,7 s rồi phanh, đứng yên 5 s, tự chạy về điểm xuất phát (tới 2 m/s) và tự khóa; mất mạng và ngừng gửi lệnh cho cùng kết quả.
+  - Cả bảy dự đoán của mục 4 đều khớp với số đo.
+Mục 7 tổng kết mức độ đạt các mục tiêu M1 đến M4 và hướng phát triển.
+
+
+GHI CHÚ CHO NHÓM (không đưa vào báo cáo)
+---------------------------------------
+Mọi bảng số của mục 6 lấy từ analysis/report_tables.txt, sinh bởi analysis/report_tables.py (chạy: venv/bin/python analysis/report_tables.py). Không sửa số bằng tay; nếu dữ liệu thay đổi, chạy lại script rồi cập nhật bảng. Hướng dẫn chung về các file dữ liệu: 00-huong-dan.txt.
+
+Nguồn từng nhóm số (script đọc các file này):
+  - Bảng 6.2, 6.5: data/summary.csv (27 dòng). L = lost / (rx + lost) (không dùng cột loss_rate vì đã làm tròn 4 chữ số, ví dụ 60 m: 6 / 24 003 = 0,025% chứ không phải 0,02%). R = rx / duration. Probe mất = probes_lost / probes_sent (dòng cuối data/raw/<nhãn>.csv; mẫu số gồm cả probe còn đang chờ lúc kết thúc, sai lệch nhỏ). T_mất và thời gian chờ HEARTBEAT đầu: cột link_state của data/raw/<nhãn>.csv. L_R: (4.15) với T_đếm tính từ giây đầu tiên có link_state khác WAITING. Resync: cột resyncs dòng cuối của file raw.
+  - Bảng 6.3 và các số mô hình: phần "MỤC 4" của analysis/report_tables.txt.
+  - Bảng 6.4: data/nofading/summary.csv (script bỏ dòng thử 14,7 s).
+  - Bảng 6.6: data/failsafe_summary.csv (v0, vận tốc còn một nửa, d_max, d_stop, tự chạy lại); data/failsafe/<nhãn>_pose.csv (vận tốc theo vị trí, mốc dưới 95%, vận tốc lớn nhất khi Return, các dòng MODE); t0 từ fs_cut_r*_netem.csv hoặc fs_stopcmd_r*_events.csv.
+  - Số liệu pcap 80 m (6.4): phần "pcap 80 m" của analysis/report_tables.txt, đọc từ docs/evidence/net-03-wifi-80m.pcap. Thời gian phát ước lượng theo ERP-OFDM 6 Mbit/s (20 µs đầu khung + số ký hiệu × 4 µs), chưa tính ACK, SIFS, thời gian chờ.
+  - "38 probe mất trên 858" ở 70 m: tổng probes_lost và probes_sent của 3 lần d070.
+  - 6.1 (kiểm chứng công cụ): docs/acceptance/NET-02-acceptance.txt lần 2, data/net02_acceptance_summary.csv.
+  - 6.9: docs/report/noi-dung/05-ma-gia-thuat-toan.txt phần D.
+  - RO_SPEED_LIM = 2, RO_DECEL_LIM = 10: ~/PX4-Autopilot/ROMFS/px4fmu_common/init.d-posix/airframes/4009_gz_r1_rover.
+Sửa theo rà soát độc lập 2026-11-18:
+  - DĐ5 viết lại: cơ chế cũ ("đứt dài làm L < L_R") sai; chênh lệch 2–3 điểm trước đây là do L_R chia cho cả 60 s trong khi seq chỉ đếm từ HEARTBEAT đầu tiên. Tính trên cùng khoảng đếm, L và L_R lệch tối đa 0,44 điểm, 0 resync ở 70–100 m.
+  - "Kênh 6 Mbit/s bão hòa" là sai: pcap 80 m cho thấy kênh chỉ bận khoảng 8% thời gian; sửa thành node xe phục vụ không kịp.
+  - Bỏ lý do "probe đi chiều tải nhẹ" (mâu thuẫn với 4.3); ghi probe mất thấp hơn L là hiện tượng chưa giải thích.
+  - 60 m: tỷ lệ phản hồi bị trễ một chu kỳ là ít nhất 5% / khoảng 13%, không phải "khoảng 5%".
+  - Bỏ nhận định "vận tốc lệch 14% ổn định" (độ lệch phụ thuộc cửa sổ tính, xe còn tăng tốc); (4.29) chỉ dùng kiểm độ lớn.
+  - Đổi nhãn t_brake thành "vận tốc còn một nửa" (0,73 cho cắt mạng), thêm mốc bắt đầu giảm tốc 0,60–0,68 s; nêu hai cách giải thích cho chênh 0,05 s.
+  - "Có lấy lại được xe không": ghi đúng phạm vi đã thử.
+Có thể bổ sung (chưa làm, cần sudo): loạt ngắn khoảng 5 phút `sudo NS3_BIN=$NS3 tools/run_failsafe.sh --scenarios cut --observe-time 3` (nối mạng lại khi xe còn đứng yên) để trả lời trọn ý "có lấy lại được xe không" của M4; một pcap ở 70 m để có bằng chứng trực tiếp cho 6.4 và kiểm hiện tượng probe mất thấp hơn L.
+Cần thống nhất với các mục khác:
+  - Mục 5 phải trình bày kết quả kiểm chứng netem (9,76 ± 0,10%; +49,46 ± 0,45 ms), cách chương trình chỉ đếm sau HEARTBEAT đầu tiên, định nghĩa t0 của hai kịch bản thí nghiệm C, và thống kê pcap 80 m.
+  - Mục 7 dùng đúng các con số: d_tc = 60 m (ranh giới 60–70 m), 70 m RTT khoảng 445 ms và mất 7,6%, 85,47 m, d_max 0,7–0,75 m, 5 s, Return tới 2 m/s.
+  - NET-04.txt mục 6 ghi "~12 s tới nơi, PX4 tự khóa": chính xác hơn là HEARTBEAT báo khóa ở 12,38 s (3 lần) hoặc 15,29–15,37 s (3 lần).

@@ -68,7 +68,7 @@ Chuỗi diễn biến (cả 6 lần giống nhau):
                 AUTO/LOITER (Hold): phanh gấp. Xe đã đi thêm ~0.75 m (d_max), sau đó lùi lại chậm ~0.2 m.
   ~5.7 s        hết COM_FAIL_ACT_T = 5 s -> AUTO/RTL (NAV_RCL_ACT = 2, Return).
   ~7.7 s        xe tự chạy về điểm xuất phát, tăng tốc tới ~2 m/s (nhanh hơn lúc người lái: 1.3 m/s).
-  ~12 s         tới nơi, PX4 tự khóa xe (DISARMED).
+  12–15 s       tới nơi, PX4 tự khóa xe (DISARMED): HEARTBEAT báo khóa ở 12,38 s (3 lần) hoặc 15,29–15,37 s (3 lần), sau đó PX4 tự về MANUAL.
   15 s (cut)    nối lại mạng: lệnh lái lại tới nhưng xe đã khóa -> người điều khiển không lấy lại xe được.
 Giải thích (AC4):
   - Khớp tham số Q2: phản ứng ~0.7 s ≈ COM_RC_LOSS_T 0.5 s; Hold đúng 5 s (COM_FAIL_ACT_T); hành động Return.

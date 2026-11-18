@@ -1,0 +1,84 @@
+HƯỚNG DẪN ĐỌC CÁC FILE NHÁP BÁO CÁO VÀ CÁC FILE DỮ LIỆU
+=====================================================
+(Tài liệu nội bộ của nhóm, không đưa vào báo cáo. Cập nhật 2026-11-18.)
+Đọc file này trước khi viết hoặc rà soát một mục. Nó trả lời ba câu hỏi: mỗi file nháp là gì, các mục 4, 5, 6 nối với nhau ra sao, và mỗi file dữ liệu chứa gì.
+
+
+1. CÁC FILE NHÁP TRONG docs/report/noi-dung/
+-------------------------------------------
+  File                          | Nội dung                                                     | Trạng thái
+  00-huong-dan.txt              | file này                                                     | –
+  00-thuat-ngu.txt              | danh sách thuật ngữ, đặt ở đầu báo cáo                       | cập nhật khi mục mới có thuật ngữ mới
+  02-cap-thiet-y-nghia.txt      | mục 2: vấn đề, vì sao mô phỏng, mục tiêu M1–M4, phạm vi       | bản nháp, còn [CẦN NGUỒN]
+  03-kien-truc-thiet-ke.txt     | mục 3: các phần mềm, kiến trúc mạng, đường đi gói tin, so sánh | bản nháp, còn [CẦN NGUỒN], bảng QGroundControl cần kiểm
+  04-mo-hinh-toan.txt           | mục 4: công thức (4.1)–(4.29), bảy dự đoán DĐ1–DĐ7           | bản nháp, đã sửa theo rà soát độc lập 2026-11-18
+  05-ma-gia-thuat-toan.txt      | NGUYÊN LIỆU cho mục 5 (mã giả, độ phức tạp), chưa phải mục 5 hoàn chỉnh | cần viết thành mục 5
+  06-phan-tich-hieu-nang.txt    | mục 6: kết quả ba thí nghiệm, đối chiếu DĐ1–DĐ7, trả lời hai câu hỏi | bản nháp, đã sửa theo rà soát độc lập 2026-11-18
+  (chưa có)                     | mục 1 (đóng góp), mục 5 hoàn chỉnh, mục 7 (kết luận), tài liệu tham khảo | –
+Mỗi file nháp có phần "GHI CHÚ CHO NHÓM" ở cuối, ghi nguồn của từng con số trong mục đó.
+
+Quy ước viết: mỗi đoạn một dòng (dùng word wrap của VS Code); tiếng Việt tự nhiên, giữ nguyên thuật ngữ tiếng Anh; không dùng dấu gạch để chèn ý; mỗi mục mở đầu bằng câu hỏi mục trả lời, mỗi tiểu mục mở bằng "Ý chính", cuối mục có tóm tắt; hình và bảng đánh số theo mục (Hình 6.1, Bảng 4.3...).
+
+
+2. MỤC 4, 5, 6 NỐI VỚI NHAU THẾ NÀO
+---------------------------------
+    MỤC 4: mô hình                MỤC 5: hiện thực và kiểm chứng          MỤC 6: số đo và đối chiếu
+    công thức (4.1)–(4.29)  --->  chương trình đo tính đúng các công thức  --->  kết quả ba thí nghiệm
+    bảng 4.5: bảy dự đoán         (mã giả, lưu đồ); kiểm chứng bằng netem      bảng 6.8: từng dự đoán khớp hay không
+                                  cho thấy số đo đáng tin                       trả lời Câu hỏi 1 (6.7), Câu hỏi 2 (6.8)
+Quy tắc liên kết:
+  - Mục 6 nhắc công thức theo số của mục 4, ví dụ (4.13), và nhắc dự đoán theo mã DĐ1–DĐ7.
+  - Mục 5 phải có: cách chương trình hiện thực (4.12)–(4.24); kết quả kiểm chứng netem (9,76 ± 0,10%; +49,46 ± 0,45 ms; baseline 0,00%), vì mục 6.1 dẫn về.
+  - Một con số dùng ở nhiều mục phải giống hệt nhau. Các số dùng chung: 85,47 m; 51,37 m; 397 bản tin/s (396,8); 70 m: RTT 444,87 ms, mất 7,57%; d_tc = 60 m; 0,75 m; 5 s; 9,76%; +49,46 ms.
+
+
+3. CÁC FILE DỮ LIỆU: CHỨA GÌ, DÙNG Ở ĐÂU
+-------------------------------------
+Nhãn của một lần đo: baseline_rN (đối chứng qua localhost), dXXX_rN (khoảng cách XXX mét, lần N), acc_ref_rN / acc_loss10_rN / acc_delay50_rN (kiểm chứng công cụ đo, NET-02 lần 2), fs_cut_rN / fs_stopcmd_rN (thí nghiệm mất lệnh điều khiển).
+
+3.1. Số liệu chính thức (chỉ dùng các file này cho báo cáo)
+  File / thư mục                       | Chứa gì                                                                                  | Dùng ở
+  data/summary.csv                     | 27 dòng, mỗi lần đo của thí nghiệm A một dòng tổng kết: label, distance, duration, rx, lost, loss_rate, rtt_mean_ms, rtt_p95_ms, rtt_jitter_ms, hb_jitter_ms, probes_lost, lost_events | mục 6 (bảng 6.2, 6.5)
+  data/raw/<nhãn>.csv                  | số liệu từng giây của một lần đo. 6 dòng đầu bắt đầu bằng "#": lệnh đã chạy, thời điểm bắt đầu, nhãn, khoảng cách, thời lượng, tần số probe. Sau đó các cột t, rx, lost, loss_rate, resyncs, probes_sent, probes_lost, rtt_mean_ms, rtt_p95_ms, rtt_jitter_ms, hb_jitter_ms, link_state (WAITING / CONNECTED / LOST), lost_events; giá trị cộng dồn từ đầu lần đo | mục 6 (T_mất, probe mất, resync)
+  data/raw/<nhãn>.ns3.log              | các tham số ns-3 in ra lúc khởi động của lần đo đó (khoảng cách, công suất, L0, fading, RngRun) | kiểm cấu hình
+  data/raw/acc_*.csv                   | số liệu từng giây của NET-02 lần kiểm 2                                                   | mục 5
+  data/net02_acceptance_summary.csv    | 9 dòng tổng kết NET-02 lần 2 (ref, loss10, delay50 × 3 lần), cùng cột với summary.csv     | mục 5
+  data/nofading/summary.csv, raw/      | thí nghiệm B: kênh không fading, cùng L0; 70, 80, 85, 86, 90 m × 1 lần. Dòng đầu (d070_r1, 14,7 s, rx = 0) là lần thử bị dừng, không dùng; xem data/nofading/README.txt | mục 4 (đối chiếu d*), mục 6 (bảng 6.4)
+  data/failsafe/<nhãn>_pose.csv        | thí nghiệm C, ghi trong ns-rover: t (giờ máy, giây), x, y, vx, vy, speed (vị trí và vận tốc PX4 ước lượng); dòng có text = MODE là lúc đổi chế độ hoặc arm; dòng có text khác là bản tin STATUSTEXT của PX4 | mục 6 (bảng 6.6)
+  data/failsafe/<nhãn>_events.csv      | mốc do script lái ghi: drive_start, t0 (chỉ kịch bản stopcmd), end                       | mục 6
+  data/failsafe/fs_cut_rN_netem.csv    | mốc do script điều phối ghi: t0 (lúc đặt netem mất 100%), restore (lúc gỡ netem)         | mục 6
+  data/failsafe_summary.csv            | 6 dòng, chỉ số mỗi lần của thí nghiệm C: v0_mps, new_mode, t_react_s, t_brake_s, d_max_m, t_stop_s, d_stop_m, t_move_again_s | mục 6 (bảng 6.6)
+
+3.2. Kết quả đã xử lý (tạo lại được bằng script)
+  File                                  | Tạo bởi                         | Chứa gì                                  | Dùng ở
+  analysis/summary_table.csv, .txt      | analysis/plot_results.py        | trung bình ± độ lệch chuẩn theo khoảng cách từ data/summary.csv | đối chiếu bảng 6.2
+  analysis/combined_metrics.png         | analysis/plot_results.py        | 4 hình (a) mất gói, (b) RTT, (c) jitter, (d) mất kết nối | Hình 6.1
+  analysis/loss_, rtt_, jitter_, lost_events_vs_distance.png | analysis/plot_results.py | từng hình riêng của Hình 6.1          | tùy dàn trang
+  analysis/throughput_vs_distance.png, throughput_table.csv | analysis/plot_report_extras.py | thông lượng theo khoảng cách       | Hình 6.2
+  analysis/fading_vs_nofading_loss.png  | analysis/plot_report_extras.py  | so sánh kênh có và không fading          | Hình 6.3
+  analysis/failsafe_speed.png           | analysis/failsafe_analysis.py   | vận tốc quanh t0, 2 kịch bản             | Hình 6.4
+  analysis/report_tables.txt            | analysis/report_tables.py       | MỌI bảng số của mục 4 và mục 6 (mô hình, bảng 6.2–6.6, khoảng ngưỡng, thống kê pcap 80 m); không sửa tay | mục 4, mục 6
+  docs/diagrams/*/ *.mmd, *.svg, *.txt  | Mermaid (file .mmd là gốc)       | sơ đồ mạng (network-overview), lưu đồ đo (measure-loop) | mục 3, mục 5
+
+3.3. Minh chứng và tài liệu cấu hình
+  docs/evidence/net-01-tap-gcs-*.pcap, net-01-wireshark-tap-gcs.png : gói tin hai chiều trên tap-gcs (mục 5, M1); ảnh đã thấy cả hai chiều.
+  docs/evidence/net-03-wifi-80m.pcap, net-03-wireshark-retry-80m.png : khung 802.11 có cờ Retry ở 80 m (mục 5, mục 6).
+  docs/experiments/config.txt : bảng tham số cố định (mục 4 bảng 4.1).
+  docs/experiments/calibration.txt mục 6 : lịch sử hiệu chỉnh, lý do thêm fading, ghi chú khi đo.
+  docs/acceptance/NET-0x-acceptance.txt : biên bản kiểm thử chấp nhận (mục 5).
+
+3.4. Dữ liệu lưu trữ, KHÔNG dùng cho số liệu báo cáo
+  data/old/sweep-20s-nofading/      : loạt đo đầu tiên (20 s, L0 mặc định 46,68 dB, không fading, trước khi sửa BUG-02). Chỉ nhắc tới khi giải thích d* = 51,37 m và lý do thêm fading, và phải nói rõ là loạt cũ.
+  data/old/sweep-60s-fading-bug02/  : loạt có fading nhưng đo trước khi sửa BUG-02 (mất gói cao hơn thật khoảng 1,3 điểm %).
+  data/old/failsafe-t0-loi/         : lần chạy thí nghiệm C đầu tiên, mất mốc t0 do hai script ghi chung một file.
+  data/old/net02-acceptance-lan2-thu/ : lần chạy NET-02 lần 2 bằng tay (có 3 lần hỏng rx = 0, file raw bị ghi đè do BUG-03); đã thay bằng loạt chạy lại bằng script. Chỉ dùng để dẫn chứng BUG-03 và hiện tượng gói đến sai thứ tự (xem README.txt trong thư mục).
+  data/pcap/                        : pcap lớn, không commit (.gitignore).
+
+
+4. CÁCH TRA MỘT CON SỐ
+--------------------
+Ví dụ "ở 70 m RTT trung bình 444,87 ms":
+  1. Mở data/summary.csv, lấy 3 dòng d070_r1, d070_r2, d070_r3, cột rtt_mean_ms: 444,17; 449,28; 441,16.
+  2. Trung bình = 444,87 ms; độ lệch chuẩn mẫu = 4,11 ms.
+  3. Đối chiếu với analysis/summary_table.txt (dòng 70.0 m).
+Mọi con số trong báo cáo phải tra được theo cách này. Các bảng của mục 4 và 6 đã có sẵn trong analysis/report_tables.txt (chạy lại: venv/bin/python analysis/report_tables.py); nếu con số được tính thêm (ví dụ T_mất, v0 theo vị trí), phần ghi chú cuối mục phải ghi cách tính.

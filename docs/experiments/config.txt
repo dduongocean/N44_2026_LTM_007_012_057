@@ -6,7 +6,7 @@ Tài liệu liên quan: docs/experiments/calibration.txt, network/ns3/rover-wifi
 1. CẤU HÌNH TẦNG VẬT LÝ VÀ LIÊN KẾT DỮ LIỆU (NS-3 WI-FI 802.11g)
 ---------------------------------------------------------------
 - Chuẩn Wi-Fi                : IEEE 802.11g Ad-hoc (WIFI_STANDARD_80211g)
-- Tần số sóng mang            : 2.412 GHz (Kênh 1)
+- Tần số sóng mang            : 2.412 GHz (Kênh 1); L0 bên dưới tính theo 2,4 GHz
 - Tốc độ truyền PHY (DataMode): ErpOfdmRate6Mbps (OFDM BPSK, mã sửa lỗi 1/2)
 - Tốc độ điều khiển (Control) : ErpOfdmRate6Mbps
 - NonUnicastMode (Broadcast) : ErpOfdmRate6Mbps
@@ -19,7 +19,7 @@ Tài liệu liên quan: docs/experiments/calibration.txt, network/ns3/rover-wifi
 --------------------------------------------------
 - Mô hình suy hao công suất   : ns3::LogDistancePropagationLossModel
 - Hệ số suy hao môi trường (n): Exponent = 3.0 (phù hợp môi trường ngoài trời có che chắn / phản xạ gần mặt đất)
-- Suy hao mốc 1 mét (L0)     : 40.046 dB (theo bước sóng 2.412 GHz), đặt tường minh bằng --refLoss
+- Suy hao mốc 1 mét (L0)     : 40.046 dB (= 20log10(4π/λ) với f = 2,4 GHz, c = 3·10^8 m/s; theo 2,412 GHz là 40,089 dB), đặt tường minh bằng --refLoss
                                (mặc định của ns-3 là 46.6777 dB cho 5.15 GHz; loạt cũ trong data/old/ dùng giá trị này)
 - Fading nhanh               : ns3::NakagamiPropagationLossModel, m = 1.5 cho mọi khoảng cách (--fading, --fadingM).
                                Không fading thì liên lạc đứt gọn tại khoảng cách có công suất thu = -82 dBm

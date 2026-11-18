@@ -170,7 +170,7 @@ Mục 3 tiếp theo trình bày hệ thống được dựng như thế nào.
 GHI CHÚ CHO NHÓM (không đưa vào báo cáo)
 ---------------------------------------
 Bằng chứng cho từng mục tiêu:
-  - M1: docs/acceptance/NET-01-acceptance.txt (AC4 bổ sung 2026-11-17: pcap hai chiều + pcap dừng/chạy lại ns-3 trong docs/evidence/). Ảnh Wireshark cần chụp lại để thấy cả hai chiều.
+  - M1: docs/acceptance/NET-01-acceptance.txt (AC4 bổ sung 2026-11-17: pcap hai chiều + pcap dừng/chạy lại ns-3 trong docs/evidence/). Ảnh docs/evidence/net-01-wireshark-tap-gcs.png đã thấy cả hai chiều (kiểm 2026-11-18).
   - M2: NET-02-acceptance.txt lần kiểm 2 (2026-11-17, sau BUG-02, 3 trường hợp × 3 lần × 60 s): loss 10% -> đo 9,76 ± 0,10%; delay 50 ms -> RTT +49,46 ± 0,45 ms; baseline 0,00%. Phát hiện và sửa BUG-03 (ghi đè file raw).
   - M3: analysis/summary_table.txt, analysis/*.png. Áp tiêu chí: <= 60 m tin cậy; 70 m suy giảm (RTT tb ~445 ms); >= 80 m không tin cậy. Định nghĩa "tin cậy" đã CHỐT (NET-03.txt mục 4, sprint-02.txt Sprint Review, 2026-11-17). Hình bổ sung cho mục 6: analysis/throughput_vs_distance.png, analysis/fading_vs_nofading_loss.png (analysis/plot_report_extras.py).
   - M4: data/failsafe_summary.csv, analysis/failsafe_speed.png, NET-04.txt mục 6, docs/acceptance/NET-04-acceptance.txt.

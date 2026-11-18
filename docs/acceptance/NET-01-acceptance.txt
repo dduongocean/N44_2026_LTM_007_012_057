@@ -77,7 +77,7 @@ Trạng thái     : [x] ĐẠT TẤT CẢ TIÊU CHÍ (AC1 - AC4)
       - Bắt bằng: sudo tcpdump -Z $USER -i tap-gcs -nn -w <file> udp port 14540, trong lúc chạy drive_check.py tien (ns-3 --distance=5).
       - docs/evidence/net-01-tap-gcs-drive.pcap (23:13:59–23:14:16): 6 128 gói 10.0.0.2:14581 -> 10.0.0.1:14540 và 73 gói 10.0.0.1:14540 -> 10.0.0.2:14581 – đủ hai chiều. MAC nguồn / đích 02:00:00:00:00:02 / 02:00:00:00:00:01 đúng như setup-netns.sh.
       - docs/evidence/net-01-tap-gcs-stop-restart.pcap (23:16:50–23:17:15): dừng ns-3 -> không còn gói nào trên tap-gcs trong 15.05 s (23:16:54.56 -> 23:17:09.61); chạy lại ns-3 -> gói xuất hiện lại ngay (bước 3, 4).
-      - Ảnh: docs/evidence/net-01-wireshark-tap-gcs.png (CẦN CHỤP LẠI: ảnh hiện tại chỉ thấy chiều xe -> trạm; chụp Statistics > Conversations > UDP để thấy cả hai chiều).
+      - Ảnh: docs/evidence/net-01-wireshark-tap-gcs.png (đã chụp lại: thấy cả hai chiều, ví dụ khung 451 là 10.0.0.1:14540 -> 10.0.0.2:14581, các khung khác 10.0.0.2:14581 -> 10.0.0.1:14540; kiểm 2026-11-18).
       - Bản bắt đầy đủ (19 MB, gồm cả các lần đo NET-02 lần kiểm 2): data/pcap/net-01-tap-gcs-full.pcap (không commit, xem .gitignore).
     Đánh giá   : [x] ĐẠT
 

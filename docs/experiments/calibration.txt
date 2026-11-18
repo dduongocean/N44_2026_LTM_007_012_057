@@ -102,8 +102,10 @@ Kết quả loạt chính NET-03/T2 (2026-11-17, sau khi sửa BUG-02; data/summ
   90       | 81.8%         | 84.0%             | 506.8    | 520.0   |  7.1       | 20
   100      | 90.1%         | 92.8%             | 512.7    | 533.4   | 10.8       | 11
 Ghi chú:
-- "theo rx" = 1 - rx / (397 gói/s × 60 s), 397 gói/s là tốc độ nhận ở 10 m. Ở 90–100 m đếm theo seq thấp hơn thật
-  2–3 điểm % vì seq 8 bit: đứt liền > 255 gói (≈ 0.65 s) thì SeqTracker không đếm hết (quy ước đứt quãng của NET-02).
+- "theo rx" = 1 - rx / (397 gói/s × 60 s), 397 gói/s là tốc độ nhận ở 10 m. (SỬA 2026-11-18, rà soát báo cáo:) chênh 2–3
+  điểm % ở 90–100 m KHÔNG do seq 8 bit: 0 lần resync ở 70–100 m, và tính "theo rx" trên đúng khoảng có đếm (từ HEARTBEAT
+  đầu tiên; lần d090_r1 chờ 16 s, d100_r1 chờ 40 s) thì lệch theo seq tối đa 0,44 điểm. SeqTracker coi khoảng hở ≥ 128
+  (không phải 255) là resync. Xem analysis/report_tables.py và mục 4–6 báo cáo.
 - RTT ~10.3 ms ở baseline không qua ns-3 -> phần nền này không do Wi-Fi (khả năng do chu kỳ 10 ms của chương trình đo);
   Wi-Fi ở gần chỉ cộng ~0.15 ms.
 - Từ 70 m RTT chạm trần ~500 ms = MaxDelay của hàng đợi MAC ns-3; jitter RTT giảm ở >= 80 m cũng vì trần này.
