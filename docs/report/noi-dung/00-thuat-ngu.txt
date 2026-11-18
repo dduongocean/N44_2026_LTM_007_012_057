@@ -1,0 +1,58 @@
+DANH SÁCH THUẬT NGỮ
+==================
+(Bản nháp, 2026-11-18. Đặt ở đầu báo cáo, sau mục lục. Thuật ngữ tiếng Anh giữ nguyên trong báo cáo; bảng này giải thích nghĩa. Sắp theo thứ tự chữ cái. Khi một mục mới dùng thuật ngữ mới thì bổ sung vào đây.)
+
+Thuật ngữ | Viết đầy đủ / tiếng Việt | Giải thích (theo nghĩa dùng trong đề tài)
+---------+--------------------------+-------------------------------------------
+ACK | Acknowledgement, khung xác nhận | Khung bên nhận Wi-Fi gửi lại để báo đã nhận đúng một khung. Bên gửi không nhận được ACK thì gửi lại khung đó.
+ARP | Address Resolution Protocol | Giao thức tìm địa chỉ MAC ứng với một địa chỉ IP trong cùng mạng.
+arm / disarm | mở khóa / khóa động cơ | Trạng thái cho phép hoặc không cho phép động cơ của xe quay. Xe disarm thì không chạy dù có lệnh lái.
+autopilot | bộ điều khiển tự động | Phần mềm điều khiển trên xe, tự giữ hướng, giữ tốc độ, chạy theo lộ trình; trong đề tài là PX4.
+baseline | cấu hình đối chứng | Cấu hình PX4 và chương trình đo nói chuyện qua localhost, không đi qua ns-3; dùng để tách phần số đo không do Wi-Fi gây ra.
+bridge | cầu nối tầng 2 | Thiết bị mạng ảo của Linux hoạt động như một switch, chuyển khung Ethernet giữa các cổng gắn vào nó.
+broadcast | phát quảng bá | Khung gửi tới mọi thiết bị trong mạng. Trong Wi-Fi, khung broadcast không có ACK nên không được gửi lại.
+COMMAND_LONG | (bản tin MAVLink) | Bản tin lệnh tổng quát, dùng để đổi chế độ, arm hoặc disarm.
+CSV | Comma-Separated Values | Định dạng file bảng, mỗi dòng một bản ghi, các cột ngăn bằng dấu phẩy.
+failsafe | cơ chế an toàn khi mất tín hiệu | Hành động autopilot tự thực hiện khi phát hiện mất tín hiệu điều khiển (ví dụ giữ vị trí, tự quay về).
+fading | (fading) | Hiện tượng công suất tín hiệu thu dao động nhanh do sóng đi theo nhiều đường (phản xạ) rồi cộng hoặc triệt tiêu nhau.
+Gazebo | (Gazebo) | Phần mềm mô phỏng robot 3D, mô phỏng vật lý và cảm biến của xe.
+GCS | Ground Control Station, trạm mặt đất | Máy tính và phần mềm người vận hành dùng để điều khiển, giám sát xe.
+header | phần đầu gói / bản tin | Phần chứa thông tin quản lý (nguồn, đích, số thứ tự...) đứng trước dữ liệu.
+HEARTBEAT | (bản tin MAVLink) | Bản tin xe gửi mỗi giây một lần, báo đang hoạt động, kèm chế độ và trạng thái arm. Quá 3 giây không nhận được thì tính là mất kết nối.
+instance MAVLink | kênh MAVLink | Một kênh liên lạc MAVLink của PX4, có cổng UDP và địa chỉ đích riêng; một PX4 có thể mở nhiều kênh.
+jitter | độ biến động trễ | Mức dao động của độ trễ (hoặc của khoảng cách thời gian giữa các bản tin) quanh giá trị trung bình.
+localhost | (127.0.0.1) | Địa chỉ trỏ về chính máy đang chạy; gói gửi tới localhost không rời khỏi máy.
+log-distance | mô hình suy hao log-distance | Mô hình cho suy hao tín hiệu tăng theo logarit của khoảng cách (công thức ở mục 4).
+MAC (tầng) | Medium Access Control | Tầng điều khiển truy cập kênh của Wi-Fi: đóng dữ liệu thành khung, gửi, chờ ACK, gửi lại khi cần, quản lý hàng đợi.
+MAC (địa chỉ) | địa chỉ phần cứng | Địa chỉ 48 bit định danh một giao diện mạng ở tầng 2.
+MANUAL_CONTROL | (bản tin MAVLink) | Lệnh lái từ trạm (ga, hướng), giống tín hiệu từ tay điều khiển.
+MAVLink | Micro Air Vehicle Link | Giao thức bản tin nhỏ giữa trạm mặt đất và autopilot, trong đề tài gửi qua UDP.
+multicast | phát nhóm | Gói gửi tới một nhóm thiết bị; Gazebo và PX4 dùng multicast để tìm thấy nhau.
+Nakagami | mô hình fading Nakagami | Mô hình xác suất cho fading; tham số m càng nhỏ thì tín hiệu dao động càng mạnh (đề tài dùng m = 1,5).
+netem | network emulator | Công cụ của Linux (dùng qua lệnh tc) để đặt tỷ lệ mất gói hoặc độ trễ lên một giao diện mạng.
+netns | network namespace | Vùng mạng tách biệt trong Linux, giống một máy tính riêng về mặt mạng (giao diện, IP, định tuyến riêng).
+node | nút mạng | Một thiết bị trong mô phỏng ns-3; đề tài có node 0 (trạm) và node 1 (xe).
+ns-3 | network simulator 3 | Phần mềm mô phỏng mạng theo sự kiện rời rạc, mã nguồn mở.
+p95 | phân vị thứ 95 | Giá trị mà 95% số mẫu nhỏ hơn nó; RTT p95 cho biết độ trễ "gần xấu nhất" thường gặp.
+pcap | packet capture | Định dạng file chứa các gói tin đã bắt, mở được bằng Wireshark.
+preamble | phần mở đầu khung vô tuyến | Tín hiệu đầu khung để bên thu phát hiện có khung tới; trong ns-3, khung có công suất thu dưới -82 dBm không được phát hiện và bị bỏ.
+probe | gói thăm dò | Một lần gửi TIMESYNC để đo RTT, có đánh số để nhận ra phản hồi tương ứng.
+promiscuous | chế độ nhận mọi khung | Chế độ giao diện mạng nhận cả những khung không gửi tới địa chỉ MAC của nó.
+PX4 | (PX4 Autopilot) | Phần mềm autopilot mã nguồn mở dùng trong đề tài.
+pymavlink | (thư viện Python) | Thư viện Python đọc và ghi bản tin MAVLink.
+resync | đồng bộ lại seq | Trường hợp chương trình đo gặp seq lùi lại hoặc nhảy quá xa, phải bắt đầu đếm lại từ seq mới.
+Retry (cờ) | cờ gửi lại | Bit trong header khung 802.11 cho biết khung này là bản gửi lại.
+rover | xe tự hành mặt đất | Robot di chuyển trên mặt đất; đề tài dùng mẫu xe gz_r1_rover.
+RTT | Round-Trip Time, độ trễ khứ hồi | Thời gian từ lúc trạm gửi probe tới lúc nhận được phản hồi.
+script | (tập lệnh) | Chương trình ngắn tự động hóa một chuỗi thao tác, ví dụ dựng mạng ảo hay chạy loạt thí nghiệm.
+seq | sequence number, số thứ tự | Trường 8 bit trong header bản tin MAVLink, tăng 1 sau mỗi bản tin, quay về 0 sau 255; dùng để đếm bản tin bị mất.
+SITL | Software In The Loop | Cách chạy PX4 trên máy tính, cảm biến và động cơ được thay bằng mô phỏng.
+socket | (socket) | Điểm đầu cuối để chương trình gửi và nhận dữ liệu qua mạng (ở đây là socket UDP).
+tap | (tap) | Giao diện mạng ảo mà phía bên kia là một chương trình (ở đây là ns-3) đọc và ghi khung Ethernet.
+TapBridge | (thành phần của ns-3) | Thành phần nối một thiết bị mạng mô phỏng của ns-3 với một tap của Linux.
+TIMESYNC | (bản tin MAVLink) | Bản tin đo thời gian; trạm gửi, xe gửi trả lại, dùng để tính RTT.
+UDP | User Datagram Protocol | Giao thức tầng giao vận không kết nối, không gửi lại gói mất; MAVLink trong đề tài chạy trên UDP.
+UseLocal | (chế độ của TapBridge) | Chế độ TapBridge cho thiết bị Wi-Fi của ns-3 dùng chung địa chỉ MAC với thiết bị duy nhất ở phía Linux.
+veth | virtual Ethernet pair | Cặp giao diện Ethernet ảo nối với nhau như một sợi dây cáp hai đầu.
+Wi-Fi 802.11g | chuẩn IEEE 802.11g | Chuẩn Wi-Fi băng tần 2,4 GHz; đề tài dùng tốc độ cố định 6 Mbit/s.
+Wireshark / tcpdump | (công cụ bắt gói) | Phần mềm bắt và hiển thị từng gói tin trên một giao diện mạng hoặc từ file pcap.

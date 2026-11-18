@@ -1,4 +1,4 @@
-NGUYÊN LIỆU MỤC 5 (VÀ MỤC 6) – MÃ GIẢ CÁC GIẢI THUẬT ĐO
+NGUYÊN LIỆU MỤC 5 (VÀ MỤC 6): MÃ GIẢ CÁC GIẢI THUẬT ĐO
 =====================================================
 (Nguyên liệu để dàn trang vào mục 5. Viết theo code thật: rover/core/linkstats.py, rover/core/vehicle.py, tools/run_experiment.py. Báo cáo không đưa code, nên trình bày bằng mã giả dưới đây và lưu đồ docs/diagrams/measure-loop/.)
 
@@ -31,7 +31,7 @@ Giả thiết và hệ quả: đứt liền từ 128 bản tin trở lên (≈ 0
 
 B. ĐO ĐỘ TRỄ KHỨ HỒI BẰNG TIMESYNC (RttTracker)
 -----------------------------------------------
-Ý tưởng: trạm gửi một bản tin TIMESYNC có đánh số; PX4 trả lại nguyên số đó. Trạm tự ghi thời điểm gửi, nên RTT chỉ dùng đồng hồ của trạm – không cần đồng bộ giờ hai máy.
+Ý tưởng: trạm gửi một bản tin TIMESYNC có đánh số; PX4 trả lại nguyên số đó. Trạm tự ghi thời điểm gửi, nên RTT chỉ dùng đồng hồ của trạm, không cần đồng bộ giờ hai máy.
 
   Dữ liệu: pending <- bảng rỗng (mã probe -> thời điểm gửi); sent, replied, lost <- 0; samples <- danh sách rỗng; timeout <- 2 s
 
@@ -64,5 +64,5 @@ D. ĐỘ PHỨC TẠP (dùng cho mục 6)
 ------------------------------
   - SeqTracker.on_packet: O(1) thời gian mỗi bản tin (một lần tra bảng băm, vài phép tính); bộ nhớ O(S) với S là số nguồn MAVLink (thực tế vài nguồn), không phụ thuộc số bản tin. Với ~400 bản tin/s, chi phí đếm không đáng kể so với chu kỳ 10 ms.
   - RttTracker: on_probe_sent, on_reply O(1); expire O(P) với P là số probe đang chờ, P ≤ tần số probe × timeout = 5 × 2 = 10. Bộ nhớ samples O(N), N = số phản hồi trong phiên (≤ 300 cho 60 s).
-  - Tính p95 mỗi giây: sắp xếp samples, O(N log N) với N ≤ 300 – không đáng kể. (Nếu đo dài nhiều giờ có thể thay bằng cửa sổ trượt hoặc ước lượng phân vị trực tuyến – ghi vào hướng phát triển.)
-  - LinkMonitor: O(1) thời gian và bộ nhớ. IntervalStats: ghi sự kiện O(1), nhưng giữ danh sách mọi khoảng (bộ nhớ O(H), H = số HEARTBEAT, 60 trong 60 s) và tính độ lệch chuẩn O(H) mỗi lần ghi dòng CSV – không đáng kể.
+  - Tính p95 mỗi giây: sắp xếp samples, O(N log N) với N ≤ 300, không đáng kể. (Nếu đo dài nhiều giờ có thể thay bằng cửa sổ trượt hoặc ước lượng phân vị trực tuyến; ý này ghi vào hướng phát triển.)
+  - LinkMonitor: O(1) thời gian và bộ nhớ. IntervalStats: ghi sự kiện O(1), nhưng giữ danh sách mọi khoảng (bộ nhớ O(H), H = số HEARTBEAT, 60 trong 60 s) và tính độ lệch chuẩn O(H) mỗi lần ghi dòng CSV, không đáng kể.

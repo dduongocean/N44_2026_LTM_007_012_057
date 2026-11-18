@@ -2,8 +2,9 @@
 
 1. analysis/throughput_vs_distance.png: số bản tin MAVLink nhận được mỗi giây (chiều xe -> trạm) theo khoảng cách,
    trung bình ± độ lệch chuẩn 3 lần, có điểm từng lần và đường baseline. Đọc data/summary.csv.
-2. analysis/fading_vs_nofading_loss.png: tỷ lệ mất gói theo khoảng cách của kênh có fading (loạt chính) và kênh
-   không fading (loạt cũ data/old/sweep-20s-nofading/summary.csv), kèm ngưỡng tính tay 51.37 m.
+2. analysis/fading_vs_nofading_loss.png: tỷ lệ mất gói theo khoảng cách, CÙNG L0 = 40.046 dB: kênh có fading
+   (loạt chính, data/summary.csv) và kênh không fading (data/nofading/summary.csv, chạy bằng
+   NS3_ARGS="--fading=false" tools/run_sweep.sh ...), kèm ngưỡng tính tay 85.47 m.
 
 Cách chạy (từ thư mục repo): venv/bin/python analysis/plot_report_extras.py
 Bảng số của hình 1 ghi ra analysis/throughput_table.csv.
@@ -19,7 +20,7 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parent.parent
 MAIN_SUMMARY = ROOT / "data" / "summary.csv"
-OLD_SUMMARY = ROOT / "data" / "old" / "sweep-20s-nofading" / "summary.csv"
+NOFADING_SUMMARY = ROOT / "data" / "nofading" / "summary.csv"
 OUT_DIR = ROOT / "analysis"
 
 # Màu theo thứ tự cố định (slot 1 xanh, slot 2 cam); chữ dùng màu chữ, không dùng màu series.
@@ -27,8 +28,8 @@ SERIES_1 = "#2a78d6"
 SERIES_2 = "#eb6834"
 TEXT_MUTED = "#5f5e57"
 GRID = "#d9d8d2"
-# Khoảng cách mà công suất thu trung bình = -82 dBm với L0 46.68 dB, không fading (calibration.txt mục 6).
-NOFADING_CLIFF_M = 51.37
+# Khoảng cách mà công suất thu = -82 dBm khi không fading: 16 - (40.046 + 30 log10 d) = -82 (calibration.txt mục 6).
+NOFADING_CLIFF_M = 85.47
 
 
 def load_summary(path: Path) -> pd.DataFrame:
@@ -92,32 +93,33 @@ def loss_by_distance(df: pd.DataFrame) -> pd.DataFrame:
     return wifi.groupby("distance")["loss_pct"].agg(["mean", "std"]).reset_index()
 
 
-def plot_fading_compare(main: pd.DataFrame, old: pd.DataFrame) -> None:
+def plot_fading_compare(main: pd.DataFrame, nofading: pd.DataFrame) -> None:
     fad = loss_by_distance(main)
-    nof = loss_by_distance(old)
+    nof = loss_by_distance(nofading)
 
     fig, ax = plt.subplots(figsize=(8, 5))
     style_axes(ax)
     ax.axvline(NOFADING_CLIFF_M, ymax=0.8, color=TEXT_MUTED, linestyle=":", linewidth=1.5)
-    ax.text(NOFADING_CLIFF_M - 1.5, 60, f"ngưỡng tính tay\n(không fading)\n{NOFADING_CLIFF_M} m", fontsize=9,
-            color=TEXT_MUTED, ha="right")
+    ax.text(NOFADING_CLIFF_M + 1.2, 40, f"ngưỡng tính tay\nkhi không fading\n{NOFADING_CLIFF_M} m", fontsize=9,
+            color=TEXT_MUTED, ha="left")
     ax.plot(nof["distance"], nof["mean"], "-s", color=SERIES_2, linewidth=2, markersize=6,
-            label="không fading (loạt cũ, 20 s)")
-    ax.plot(fad["distance"], fad["mean"], "-o", color=SERIES_1, linewidth=2, markersize=6,
-            label="fading Nakagami m = 1.5 (loạt chính, 60 s)")
-    # Nhãn trực tiếp ở cuối mỗi đường (chữ màu chữ, không dùng màu series)
-    ax.annotate("không fading", (nof["distance"].iloc[-1], nof["mean"].iloc[-1]), textcoords="offset points",
-                xytext=(-10, 8), ha="right", fontsize=9, color="#1f1f1c")
+            label="không fading (1 lần × 60 s mỗi mức)")
+    ax.errorbar(fad["distance"], fad["mean"], yerr=fad["std"].fillna(0), fmt="-o", color=SERIES_1, linewidth=2,
+                markersize=6, capsize=3, label="fading Nakagami m = 1.5 (3 lần × 60 s, ± độ lệch chuẩn)")
+    # Nhãn trực tiếp (chữ màu chữ, không dùng màu series)
+    last_nof = nof.iloc[-1]
+    ax.annotate("không fading", (last_nof["distance"], last_nof["mean"]), textcoords="offset points",
+                xytext=(-14, 7), ha="right", fontsize=9, color="#1f1f1c")
     ax.annotate("có fading", (fad["distance"].iloc[-1], fad["mean"].iloc[-1]), textcoords="offset points",
-                xytext=(10, -4), ha="left", fontsize=9, color="#1f1f1c")
+                xytext=(8, -4), ha="left", fontsize=9, color="#1f1f1c")
     ax.set_xlabel("Khoảng cách trạm – xe trong ns-3 (m)")
     ax.set_ylabel("Tỷ lệ mất gói chiều xe → trạm (%)")
-    ax.set_title("Ảnh hưởng của mô hình kênh: đứt gọn (không fading) và suy giảm dần (có fading)")
-    ax.set_xlim(0, 125)
+    ax.set_title("Cùng suy hao (L0 = 40.05 dB): không fading đứt gọn, có fading suy giảm dần")
+    ax.set_xlim(0, 115)
     ax.set_ylim(-3, 105)
     ax.legend(loc="upper left", frameon=False, fontsize=9)
-    fig.text(0.01, 0.01, "L0 = 46.68 dB (loạt cũ) và 40.05 dB (loạt chính). Loạt cũ đo trước khi sửa BUG-02: mất gói ở 10–50 m bị cộng thêm khoảng 1,3 điểm %.",
-             fontsize=8, color=TEXT_MUTED)
+    fig.text(0.01, 0.01, "Không fading: kênh tất định, chỉ đo 70–90 m (dưới 70 m công suất thu còn cao hơn nên theo tính toán là 0%). "
+             "85 m: 0% mất; 86 m: 100% mất.", fontsize=8, color=TEXT_MUTED)
     fig.tight_layout(rect=(0, 0.03, 1, 1))
     fig.savefig(OUT_DIR / "fading_vs_nofading_loss.png", dpi=300)
     plt.close(fig)
@@ -128,7 +130,7 @@ def main() -> None:
     table = plot_throughput(main_df)
     print("Thông lượng nhận (bản tin/s), distance 0 = baseline:")
     print(table.round(1).to_string(index=False))
-    plot_fading_compare(main_df, load_summary(OLD_SUMMARY))
+    plot_fading_compare(main_df, load_summary(NOFADING_SUMMARY))
     print("Đã ghi analysis/throughput_vs_distance.png, analysis/fading_vs_nofading_loss.png, analysis/throughput_table.csv")
 
 

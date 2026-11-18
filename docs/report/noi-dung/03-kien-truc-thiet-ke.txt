@@ -1,0 +1,269 @@
+MỤC 3. KIẾN TRÚC VÀ THIẾT KẾ HỆ THỐNG
+====================================
+(Bản nháp nội dung, viết lại 2026-11-18 cho dễ đọc. Tiêu chí: 15 điểm. Dự kiến 12–16 trang khi dàn trang.)
+(Ghi chú cho nhóm, xóa khi dàn trang: [CẦN NGUỒN] là chỗ cần trích dẫn; [HÌNH] là chỗ đặt hình; [BẢNG] là bảng cần dàn lại; phần "GHI CHÚ CHO NHÓM" cuối file không đưa vào báo cáo. Thuật ngữ: 00-thuat-ngu.txt.)
+
+Mục này trả lời câu hỏi: hệ thống gồm những gì, các phần được nối với nhau thế nào, và vì sao thiết kế như vậy. Cách đọc: xem bức tranh tổng thể trước (3.1), rồi đi vào từng phần mềm (3.2), cách nối mạng (3.3), theo chân một gói tin đi từ xe về trạm (3.4), cách đo độ trễ (3.5), những quyết định thiết kế quan trọng (3.6), chương trình đo (3.7), và cuối cùng là hai so sánh thiết kế (3.8, 3.9).
+
+
+3.1. Bức tranh tổng thể
+---------------------
+Ý chính: toàn bộ hệ thống chạy trên một máy Linux, chia thành ba vùng. Trạm và xe nằm ở hai vùng tách biệt; vùng thứ ba chứa ns-3, là đường nối duy nhất giữa hai bên.
+
+[HÌNH 3.1] Ba vùng của hệ thống (bản đơn giản; bản đầy đủ ở 3.3)
+    +---------------------------+      +----------------------------------+      +---------------------------+
+    | VÙNG TRẠM (ns-gcs)        |      | VÙNG GIỮA (namespace chính)      |      | VÙNG XE (ns-rover)        |
+    | chương trình đo           | <==> | ns-3: hai node Wi-Fi             | <==> | PX4 SITL + Gazebo         |
+    | hoặc script lái xe        |      | cách nhau d mét                  |      | (xe gz_r1_rover)          |
+    | địa chỉ 10.0.0.1          |      |                                  |      | địa chỉ 10.0.0.2          |
+    +---------------------------+      +----------------------------------+      +---------------------------+
+
+Ba điều cần nhớ khi đọc phần còn lại:
+  1. Trạm và xe giống như hai máy tính riêng, mỗi máy có địa chỉ IP riêng. Chúng không có dây nối trực tiếp với nhau.
+  2. Mọi gói tin giữa trạm và xe phải đi qua ns-3. Trong ns-3, gói tin được "phát sóng" qua một kênh Wi-Fi mô phỏng, nên có thể bị trễ hoặc mất giống như Wi-Fi thật.
+  3. Thay đổi khoảng cách d giữa hai node Wi-Fi trong ns-3 là cách đề tài mô phỏng việc xe đi xa hoặc lại gần trạm.
+
+
+3.2. Các phần mềm trong hệ thống
+------------------------------
+Ý chính: mỗi phần mềm đóng một vai. Bảng dưới tóm tắt vai trò; các tiểu mục sau giải thích những gì cần biết để đọc mục 4 đến mục 6.
+
+[BẢNG 3.1] Vai trò của các phần mềm
+  Phần mềm              | Đóng vai                                  | Chạy ở vùng
+  PX4 SITL              | bộ điều khiển trên xe                     | xe (ns-rover)
+  Gazebo                | chiếc xe và môi trường vật lý             | xe (ns-rover)
+  MAVLink               | ngôn ngữ chung giữa trạm và xe            | cả hai bên
+  netns, veth, bridge, tap | các "phòng", "dây" và "cửa" mạng ảo của Linux | cả ba vùng
+  ns-3                  | khoảng không mà sóng Wi-Fi đi qua         | giữa (namespace chính)
+  chương trình đo (tự viết) | trạm mặt đất đo chất lượng đường truyền | trạm (ns-gcs)
+  netem, Wireshark      | công cụ kiểm chứng                        | dùng khi cần
+
+3.2.1. PX4 SITL: bộ điều khiển của xe
+Là gì: PX4 là phần mềm autopilot mã nguồn mở cho máy bay không người lái và xe tự hành. [CẦN NGUỒN: tài liệu PX4] SITL (Software In The Loop) là cách chạy PX4 trên máy tính thay vì trên mạch điều khiển gắn trên xe; cảm biến và động cơ được thay bằng mô phỏng.
+Làm gì trong hệ thống: nhận lệnh từ trạm (đổi chế độ, arm, lệnh lái), điều khiển xe trong Gazebo, và gửi trạng thái của xe về trạm.
+Cần biết:
+  - Arm và disarm: xe ở trạng thái disarm thì động cơ không quay dù có lệnh lái. Trạm phải gửi lệnh arm trước khi lái.
+  - Ba chế độ hoạt động gặp trong đề tài: MANUAL (xe chạy theo lệnh lái của người vận hành), AUTO/LOITER (xe giữ vị trí, với xe mặt đất nghĩa là đứng yên), AUTO/RTL (xe tự chạy về điểm xuất phát).
+  - Failsafe: khi không nhận được lệnh lái trong COM_RC_LOSS_T giây, PX4 coi là mất tín hiệu điều khiển. Xe giữ vị trí trong COM_FAIL_ACT_T giây, rồi thực hiện hành động do tham số NAV_RCL_ACT chọn. [CẦN NGUỒN: tài liệu failsafe PX4] Ba tham số này giải thích kết quả thí nghiệm mất lệnh điều khiển ở mục 6.
+  - Một PX4 có thể mở nhiều kênh MAVLink cùng lúc (gọi là instance), mỗi kênh dùng một cổng UDP và gửi tới một địa chỉ riêng.
+Cấu hình của nhóm: PX4 v1.18 (bản phát triển), mẫu xe gz_r1_rover (rover hai bánh vi sai). Ngoài kênh mặc định gửi tới 127.0.0.1:14550 bên trong vùng xe, script network/run-px4.sh mở thêm một kênh gửi tới trạm ở 10.0.0.1:14540. Kênh thêm này là kênh đi qua ns-3. [BẢNG: tham số failsafe mặc định, lấy từ config.txt mục 6]
+
+3.2.2. Gazebo: chiếc xe và môi trường vật lý
+Là gì: phần mềm mô phỏng robot 3D mã nguồn mở, mô phỏng vật lý (khối lượng, ma sát, va chạm) và cảm biến. [CẦN NGUỒN: tài liệu Gazebo]
+Làm gì trong hệ thống: mô phỏng chiếc xe gz_r1_rover. PX4 đọc cảm biến giả lập (IMU, GPS...) từ Gazebo và gửi lệnh động cơ cho Gazebo. Vì xe có quán tính như xe thật, khi lệnh lái đến trễ hoặc bị mất, xe vẫn chạy thêm một quãng, và quãng đó đo được.
+Cần biết: PX4 và Gazebo trao đổi qua thư viện gz-transport, và tìm thấy nhau bằng gói multicast. Vì vậy hai phần mềm này phải chạy trong cùng một vùng mạng.
+Cấu hình của nhóm: Gazebo Harmonic (gz-sim 8). Cả PX4 và Gazebo chạy trong vùng xe. Script bật multicast trên giao diện lo của vùng xe và buộc gz-transport chỉ dùng địa chỉ 127.0.0.1, để PX4 và Gazebo trao đổi nội bộ, không đi qua ns-3.
+
+3.2.3. MAVLink: ngôn ngữ chung giữa trạm và xe
+Là gì: giao thức truyền các bản tin nhỏ giữa trạm mặt đất và autopilot, dùng phổ biến với PX4 và ArduPilot. [CẦN NGUỒN: tài liệu MAVLink] Đề tài dùng MAVLink phiên bản 2, gửi qua UDP; thường mỗi gói UDP chứa một bản tin.
+Làm gì trong hệ thống: mọi trao đổi giữa trạm và xe là bản tin MAVLink. Xe gửi về trạm khoảng 400 bản tin mỗi giây (vị trí, tư thế, trạng thái...). Trạm gửi lệnh lái 20 lần mỗi giây khi lái xe, và gửi bản tin đo thời gian 5 lần mỗi giây khi đo.
+Cần biết (mỗi khái niệm gắn với một số đo ở mục 4 đến mục 6):
+
+[BẢNG 3.2] Các phần của MAVLink được dùng trong đề tài
+  Khái niệm            | Là gì                                                                    | Dùng để
+  seq (trong header)   | số thứ tự 8 bit, tăng 1 sau mỗi bản tin, đi từ 0 đến 255 rồi quay về 0    | đếm bản tin bị mất: seq nhảy cóc nghĩa là có bản tin mất
+  system_id, component_id (trong header) | cho biết bản tin do ai gửi                      | chỉ đếm bản tin của xe
+  HEARTBEAT            | bản tin "tôi vẫn hoạt động", xe gửi mỗi giây một lần, kèm chế độ và trạng thái arm | phát hiện mất kết nối (quá 3 giây không có HEARTBEAT)
+  TIMESYNC             | bản tin đo thời gian: trạm gửi, xe gửi trả lại                            | đo độ trễ khứ hồi RTT (3.5)
+  MANUAL_CONTROL       | lệnh lái (ga, hướng), giống tín hiệu từ tay điều khiển                    | lái xe
+  COMMAND_LONG         | lệnh đổi chế độ, arm, disarm                                              | chuẩn bị trước khi lái
+  LOCAL_POSITION_NED   | vị trí và vận tốc của xe                                                  | đo quãng đường xe đi thêm khi mất lệnh
+
+Cấu hình của nhóm: trạm nghe ở cổng UDP 14540; kênh PX4 gửi tới trạm dùng cổng nguồn 14581. Trạm không cần biết trước địa chỉ của xe: nó lấy địa chỉ và cổng từ gói đầu tiên nhận được, rồi gửi ngược lại đúng địa chỉ đó.
+
+3.2.4. Mạng ảo trong Linux: netns, veth, bridge, tap
+Linux cho phép tạo thiết bị mạng hoàn toàn bằng phần mềm. [CẦN NGUỒN: man ip-netns, ip-link] Đề tài dùng bốn loại; bảng dưới đưa ra một hình ảnh dễ nhớ cho từng loại.
+
+[BẢNG 3.3] Bốn loại thiết bị mạng ảo
+  Thiết bị | Hình dung như                  | Thực chất                                                                 | Trong đề tài
+  netns    | một căn phòng kín              | vùng mạng riêng: có giao diện mạng, địa chỉ IP, bảng định tuyến, cổng UDP riêng; chương trình chạy trong netns nào chỉ thấy mạng của netns đó | ns-gcs (trạm), ns-rover (xe)
+  veth     | một sợi dây cáp hai đầu        | cặp giao diện Ethernet ảo, khung đưa vào đầu này đi ra ở đầu kia; một đầu đặt trong netns, đầu kia ở ngoài | nối mỗi phòng ra vùng giữa
+  bridge   | một ổ chia mạng (switch)       | chuyển khung Ethernet giữa các cổng gắn vào nó                            | nối đầu dây veth với tap
+  tap      | một ô cửa dẫn vào chương trình | giao diện mạng mà phía bên kia là một chương trình đọc và ghi khung Ethernet | cửa để ns-3 lấy khung vào và trả khung ra
+
+Nhờ bốn loại thiết bị này, trạm và xe trở thành hai "phòng kín" chỉ thông nhau qua ns-3 (3.3). Script network/setup-netns.sh dựng toàn bộ; network/teardown-netns.sh gỡ toàn bộ.
+
+3.2.5. ns-3: khoảng không mà sóng Wi-Fi đi qua
+Là gì: phần mềm mô phỏng mạng theo sự kiện rời rạc, mã nguồn mở, dùng phổ biến trong nghiên cứu mạng. [CẦN NGUỒN: ns-3] Người dùng viết một chương trình C++ mô tả các node, thiết bị mạng và kênh truyền; ns-3 tính xem chuyện gì xảy ra với từng khung.
+Làm gì trong hệ thống: chương trình network/ns3/rover-wifi.cc tạo hai node Wi-Fi. Node 0 đại diện cho trạm, node 1 đại diện cho xe, đặt cách nhau d mét. ns-3 chuyển khung giữa hai node qua một kênh Wi-Fi 802.11g mô phỏng. Đây là đường nối duy nhất giữa trạm và xe.
+Cần biết:
+  - Chạy theo thời gian thực: bình thường ns-3 chạy nhanh nhất có thể. Ở đây nhóm dùng chế độ thời gian thực (RealtimeSimulatorImpl) để thời gian trong mô phỏng trôi đúng bằng thời gian thật, vì hai đầu là PX4 và chương trình đo đang chạy thật.
+  - TapBridge: thành phần nối một thiết bị Wi-Fi mô phỏng của ns-3 với một tap của Linux. Đây chính là "ô cửa" trong bảng 3.3 (chi tiết ở 3.6).
+  - Mô hình kênh Wi-Fi gồm bốn hiệu ứng: công suất thu giảm dần theo khoảng cách (mô hình log-distance); công suất thu dao động ngẫu nhiên theo từng khung (fading Nakagami); khung thu được quá yếu bị bỏ ngay; tầng MAC gửi lại khung hỏng và xếp các khung chờ gửi trong hàng đợi. Công thức và tham số ở mục 4.
+Cấu hình của nhóm: ns-3 bản phát triển (ns-3-dev); một thành viên dùng ns-3.49. Chương trình nhận các tham số dòng lệnh --distance (m), --txPower (dBm), --exponent, --refLoss, --fading, --fadingM và --pcap. [BẢNG: tham số cố định, lấy từ config.txt mục 1–2]
+
+3.2.6. Các công cụ kiểm chứng
+  - pymavlink: thư viện Python đọc và ghi bản tin MAVLink; chương trình đo và các script lái xe đều dùng thư viện này. [CẦN NGUỒN]
+  - netem (dùng qua lệnh tc của Linux): đặt lên một giao diện mạng một tỷ lệ mất gói hoặc một độ trễ cố định. Nhóm dùng netem để kiểm chứng chương trình đo bằng lỗi biết trước (mục 5), và để cắt hẳn đường truyền (mất 100% gói) trong thí nghiệm mất lệnh điều khiển. [CẦN NGUỒN: man tc-netem]
+  - Wireshark và tcpdump: bắt và xem từng gói tin. Nhóm dùng chúng để chứng minh gói tin đi qua ns-3 (bắt gói trên tap-gcs) và để thấy khung Wi-Fi bị gửi lại (cờ Retry trong file pcap do ns-3 ghi ra). [CẦN NGUỒN]
+
+
+3.3. Kiến trúc mạng chi tiết
+--------------------------
+Ý chính: mỗi phòng (netns) nối ra vùng giữa bằng một sợi dây (veth); ở vùng giữa, đầu dây và cửa ns-3 (tap) cắm chung một ổ chia (bridge). Gói tin muốn sang phòng bên kia chỉ có một đường là đi qua ns-3.
+
+[HÌNH 3.2] Sơ đồ mạng chi tiết (bản vẽ chính thức: docs/diagrams/network-overview/network-overview.svg)
+     VÙNG TRẠM (ns-gcs)                                                                      VÙNG XE (ns-rover)
+    +----------------------+                                                               +----------------------+
+    | chương trình đo      |                                                               | PX4 SITL + Gazebo    |
+    | veth-gcs 10.0.0.1    |                                                               | veth-rover 10.0.0.2  |
+    +----------+-----------+                                                               +-----------+----------+
+               | dây veth                                                                              | dây veth
+     . . . . . | . . . . . . . . . . . . VÙNG GIỮA (namespace chính) . . . . . . . . . . . . . . . . . | . . . . .
+               |                                                                                       |
+         veth-gcs-br                                                                             veth-rover-br
+               |                                                                                       |
+            br-gcs ---- tap-gcs ==== [ ns-3: node 0 ~~~~ kênh Wi-Fi 802.11g, d mét ~~~~ node 1 ] ==== tap-rover ---- br-rover
+
+[BẢNG 3.4] Các thành phần mạng
+  Thành phần            | Nằm ở           | Địa chỉ                          | Vai trò
+  veth-gcs              | vùng trạm       | IP 10.0.0.1/24, MAC 02:00:00:00:00:01 | card mạng của trạm
+  veth-rover            | vùng xe         | IP 10.0.0.2/24, MAC 02:00:00:00:00:02 | card mạng của xe
+  veth-gcs-br           | vùng giữa       | không có IP                      | đầu ngoài của dây veth-gcs, cắm vào br-gcs
+  veth-rover-br         | vùng giữa       | không có IP                      | đầu ngoài của dây veth-rover, cắm vào br-rover
+  br-gcs, br-rover      | vùng giữa       | không có IP                      | ổ chia, mỗi cái nối một đầu dây veth với một tap
+  tap-gcs, tap-rover    | vùng giữa       | không có IP                      | cửa để ns-3 lấy khung vào và trả khung ra
+  node 0, node 1        | trong ns-3      | vị trí (0, 0, 0) và (d, 0, 0)    | hai đầu của kênh Wi-Fi, cách nhau d mét
+
+Cách kiểm chứng "không có đường tắt" (chi tiết ở mục 5): khi chưa chạy ns-3, trạm ping xe mất 100% gói; khi chạy ns-3 thì ping thông; dừng ns-3 thì gói tin trên tap-gcs dừng ngay lập tức.
+
+
+3.4. Theo chân một gói HEARTBEAT từ xe về trạm
+--------------------------------------------
+Ý chính: một bản tin đi qua 10 chặng. Chỉ có một chặng (chặng 5, kênh Wi-Fi trong ns-3) làm gói tin bị trễ hoặc bị mất; mọi chặng còn lại là phần mềm Linux chuyển khung gần như tức thời.
+
+Ví dụ: PX4 gửi bản tin HEARTBEAT (báo "xe vẫn hoạt động") từ địa chỉ 10.0.0.2, cổng 14581, tới trạm ở 10.0.0.1, cổng 14540.
+
+[BẢNG 3.5] Mười chặng của một gói HEARTBEAT
+  Chặng | Gói đang ở đâu                 | Chuyện gì xảy ra
+  1     | PX4, trong vùng xe             | PX4 gửi bản tin qua socket UDP. Kernel của vùng xe đóng thành gói UDP/IP, rồi thành khung Ethernet.
+  2     | veth-rover -> veth-rover-br    | Khung đi qua dây veth, ra khỏi vùng xe, sang vùng giữa.
+  3     | br-rover -> tap-rover          | Ổ chia br-rover chuyển khung sang cửa tap-rover.
+  4     | ns-3, node 1                   | TapBridge đọc khung từ tap-rover và đưa vào hàng đợi của thiết bị Wi-Fi ở node 1 (đại diện cho xe).
+  5     | kênh Wi-Fi trong ns-3          | Node 1 phát khung. Node 0 nhận được nếu công suất thu đủ mạnh và khung không lỗi. Nếu không, node 1 không nhận được xác nhận (ACK) và phát lại; mỗi khung được phát tối đa 7 lần (1 lần đầu và tối đa 6 lần gửi lại), sau đó bị bỏ. Khung chờ trong hàng đợi quá 500 ms cũng bị bỏ.
+  6     | ns-3, node 0                   | Node 0 (đại diện cho trạm) nhận khung; TapBridge ghi khung ra cửa tap-gcs.
+  7     | tap-gcs -> br-gcs              | Ổ chia br-gcs nhận khung từ cửa tap-gcs.
+  8     | veth-gcs-br -> veth-gcs        | Khung đi qua dây veth vào vùng trạm.
+  9     | kernel của vùng trạm           | Kernel tách khung thành gói IP, rồi gói UDP, và tìm chương trình đang nghe cổng 14540.
+  10    | chương trình đo                | Chương trình đo nhận bản tin HEARTBEAT, ghi nhận seq và thời điểm nhận.
+
+Chiều ngược lại (lệnh từ trạm tới xe) đi đúng 10 chặng này theo thứ tự ngược. Lệnh gồm COMMAND_LONG (đổi sang chế độ MANUAL, arm, disarm) và MANUAL_CONTROL gửi 20 lần mỗi giây khi lái. Lưu ý: chương trình đo dùng trong khảo sát khoảng cách không lái xe, nên theo chiều này nó chỉ gửi TIMESYNC (3.5). Chỉ script lái xe trong thí nghiệm mất lệnh điều khiển mới gửi lệnh lái.
+
+
+3.5. Đo độ trễ bằng TIMESYNC, và đọc vị trí xe khi đã cắt mạng
+------------------------------------------------------------
+Ý chính: trạm tự bấm giờ khi gửi và khi nhận, nên không cần đồng bộ đồng hồ với xe. Còn vị trí xe được đọc qua một đường riêng không đi qua ns-3, nên vẫn đọc được khi đã cắt mạng.
+
+Đo độ trễ khứ hồi (RTT) giống như ném một quả bóng có đánh số vào tường rồi chờ bóng bật lại: người ném tự bấm giờ lúc ném và lúc bắt, nên không cần biết đồng hồ ở bức tường chỉ mấy giờ. Cụ thể:
+  1. Trạm gửi bản tin TIMESYNC 5 lần mỗi giây. Mỗi lần gửi, trạm ghi một mã probe (số thứ tự 1, 2, 3...) vào trường ts1 của bản tin, và lưu lại thời điểm gửi theo đồng hồ của trạm.
+  2. PX4 trả lời bằng một bản tin TIMESYNC giữ nguyên ts1, và điền thời gian của xe vào trường tc1 (khác 0).
+  3. Trạm nhận phản hồi. Chỉ bản tin có tc1 khác 0 mới được coi là phản hồi, vì PX4 cũng tự gửi bản tin TIMESYNC với tc1 bằng 0. Trạm dùng mã probe trong ts1 để tìm lại thời điểm gửi, rồi tính RTT = thời điểm nhận − thời điểm gửi.
+  4. Probe nào không có phản hồi sau 2 giây được tính là mất.
+
+[HÌNH 3.3] Sơ đồ trình tự đo RTT (CẦN VẼ bằng Mermaid sequenceDiagram)
+    Trạm                                   ns-3 (Wi-Fi)                                   PX4
+     | ghi: probe 17 gửi lúc t1                 |                                           |
+     |--- TIMESYNC (tc1 = 0, ts1 = 17) -------->|------------------------------------------>|
+     |                                          |                                           | điền tc1 = giờ của xe
+     |<---------------------------------------- |<--- TIMESYNC (tc1 ≠ 0, ts1 = 17) ---------|
+     | nhận lúc t2; RTT = t2 − t1               |                                           |
+
+Vì bản tin TIMESYNC đi qua đường Wi-Fi cả lượt đi lẫn lượt về, RTT phản ánh độ trễ của cả hai chiều. Ngược lại, tỷ lệ mất gói đếm theo seq chỉ phản ánh chiều từ xe về trạm.
+
+Đọc vị trí xe trong thí nghiệm mất lệnh điều khiển: khi đường qua ns-3 bị cắt, trạm không còn nhận được vị trí của xe. Vì vậy thí nghiệm dùng thêm một chương trình ghi (tools/failsafe_logger.py) chạy bên trong vùng xe, nghe kênh MAVLink mặc định của PX4 ở 127.0.0.1:14550. Đường này nằm trọn trong vùng xe, không đi qua ns-3, nên không bị ảnh hưởng khi cắt mạng. Mọi chương trình đều ghi thời điểm theo cùng một đồng hồ của máy (dùng chung cho mọi netns), nên số liệu ghi ở vùng trạm và vùng xe ghép được với nhau.
+
+
+3.6. TapBridge chế độ UseLocal và bốn quyết định thiết kế
+-----------------------------------------------------
+Ý chính: thiết bị Wi-Fi của ns-3 không tự nhận được mọi khung, nên TapBridge phải cho nó "mượn" địa chỉ MAC của veth. Điều kiện để mượn được là phía Linux chỉ có đúng một thiết bị gửi khung, và điều kiện này dẫn tới bốn quyết định thiết kế.
+
+Vì sao phải mượn MAC: chế độ thông thường của TapBridge yêu cầu thiết bị mô phỏng của ns-3 nhận được mọi khung đi qua (chế độ promiscuous), nhưng thiết bị Wi-Fi mô phỏng không hỗ trợ việc này. Chế độ UseLocal giải quyết bằng cách cho thiết bị Wi-Fi của ns-3 dùng chung địa chỉ MAC với thiết bị duy nhất đang gửi khung ở phía Linux, tức là veth của vùng tương ứng. Khi đó, khung nào gửi tới địa chỉ MAC này đều được thiết bị Wi-Fi nhận và chuyển qua tap. [CẦN NGUỒN: tài liệu ns-3 TapBridge]
+
+[BẢNG 3.6] Bốn quyết định thiết kế đi kèm UseLocal
+  Quyết định                                  | Nếu không làm thì sao
+  Cố định MAC của hai veth (02:00:00:00:00:01 cho trạm, 02:00:00:00:00:02 cho xe) và gán sẵn đúng hai MAC này cho hai thiết bị Wi-Fi trong ns-3 | TapBridge tự đổi MAC khi gặp khung đầu tiên; bản ns-3 dùng trong đề tài chỉ cập nhật một phần bên trong thiết bị Wi-Fi và dừng với lỗi (BUG-01, mục 5)
+  Tắt IPv6 trên bridge, tap và đầu ngoài của veth | các thiết bị này tự phát gói (tìm router, tìm thiết bị lân cận); TapBridge có thể học nhầm địa chỉ MAC của chúng
+  Ghi sẵn bảng ARP (IP và MAC của bên kia) trong cả hai vùng | ARP dùng khung broadcast; trong Wi-Fi, khung broadcast không được xác nhận nên không được gửi lại, dễ mất khi tín hiệu yếu. Mất ARP thì không gửi được gói nào, dù kênh vẫn dùng được
+  Tắt bridge-nf (lọc tường lửa trên bridge)   | quy tắc iptables của máy (ví dụ do Docker tạo) có thể chặn khung đi qua bridge
+
+
+3.7. Kiến trúc chương trình đo
+----------------------------
+Ý chính: chương trình đo tách phần tính toán khỏi phần mạng, để phần tính toán kiểm thử tự động được mà không cần chạy PX4.
+
+Chương trình đo (tools/run_experiment.py) chạy không có giao diện trong vùng trạm, đo trong một khoảng thời gian định trước rồi ghi kết quả ra file CSV. Mã nguồn Python của nhóm chia thành bốn tầng; tầng trên chỉ gọi tầng dưới thông qua giao diện.
+
+[BẢNG 3.7] Bốn tầng mã nguồn
+  Tầng | Thư mục / file  | Nội dung                                                                  | Phụ thuộc
+  1    | tools/          | các chương trình chạy: đo, lái thử, thí nghiệm mất lệnh điều khiển        | tầng 2 và tầng 4
+  2    | rover/core/     | phần tính toán: đếm mất gói (SeqTracker), đo RTT (RttTracker), thống kê khoảng thời gian (IntervalStats), theo dõi kết nối (LinkMonitor) | không dùng thư viện mạng, không đọc đồng hồ
+  3    | rover/hal.py    | giao diện (chỉ khai báo hàm): kênh liên lạc với xe, đồng hồ               | không có
+  4    | rover/drivers/  | phần hiện thực giao diện: MAVLink qua UDP bằng pymavlink, đồng hồ hệ thống | pymavlink
+
+Vì sao chia như vậy: tầng 2 không đọc đồng hồ và không mở socket; thời điểm hiện tại được truyền vào qua tham số. Nhờ đó, toàn bộ phần tính toán (đếm seq, xử lý seq quay về 0, tính RTT, phát hiện mất kết nối) được kiểm thử tự động bằng dữ liệu giả. Tầng 4 được kiểm thử bằng một chương trình giả lập PX4 gửi gói UDP thật. Bộ kiểm thử hiện có 58 test.
+
+Vòng lặp chính của chương trình đo chạy mỗi 10 ms, làm năm việc: đọc mọi bản tin đang chờ; cập nhật trạng thái kết nối; gửi probe TIMESYNC khi đến hạn; hủy các probe quá 2 giây; mỗi giây ghi một dòng số liệu. Lưu đồ và mã giả ở mục 5. Chu kỳ 10 ms này cũng là giới hạn độ phân giải của RTT đo được.
+
+
+3.8. So sánh với cấu hình đối chứng (baseline)
+--------------------------------------------
+Ý chính: muốn biết phần nào của số đo là do Wi-Fi, phải đo thêm một lần không có Wi-Fi và lấy hiệu.
+
+[BẢNG 3.8] Hai cấu hình
+  Đặc điểm             | Baseline (đối chứng)                                  | Qua ns-3 (cấu hình khảo sát)
+  Vị trí chương trình  | PX4 và chương trình đo cùng ở namespace chính         | chương trình đo ở vùng trạm; PX4 và Gazebo ở vùng xe
+  Đường truyền         | localhost (127.0.0.1), không qua thiết bị mạng nào    | 10 chặng ở 3.4, gồm kênh Wi-Fi 802.11g của ns-3
+  Kênh PX4 sử dụng     | kênh mặc định tới 127.0.0.1:14540                     | kênh thêm tới 10.0.0.1:14540
+  Đo được gì           | phần nền do chính PX4 và chương trình đo gây ra       | phần nền cộng với ảnh hưởng của Wi-Fi ở khoảng cách d
+  Cách chạy            | tools/run_sweep.sh --baseline-only, không dựng netns  | tools/run_sweep.sh sau khi đã dựng netns
+
+Ví dụ cho thấy vì sao cần baseline: ở baseline, RTT đã khoảng 10,3 ms dù gói tin không rời khỏi máy. Phần này do chu kỳ 10 ms của chương trình đo, không phải do mạng. Nếu không có baseline, người đọc dễ hiểu nhầm rằng Wi-Fi ở 10 m gây trễ 10 ms; thực tế Wi-Fi ở gần chỉ làm RTT tăng thêm dưới 1 ms (mục 6).
+
+
+3.9. So sánh chương trình đo tự viết với phần mềm trạm mặt đất có sẵn
+-------------------------------------------------------------------
+Ý chính: phần mềm trạm mặt đất có sẵn phục vụ người vận hành; đề tài cần số đo tự động và lặp lại được, nên nhóm tự viết chương trình đo.
+
+Có thể dùng phần mềm trạm mặt đất phổ biến như QGroundControl để điều khiển xe qua ns-3. [CẦN NGUỒN: QGroundControl] Bảng dưới so sánh hai lựa chọn theo nhu cầu của đề tài.
+
+[BẢNG 3.9] So sánh
+  Tiêu chí                       | QGroundControl                                      | Chương trình đo tự viết
+  Mục đích chính                 | giao diện để người vận hành điều khiển và giám sát | đo chất lượng đường MAVLink
+  Chạy tự động, không giao diện  | không phù hợp                                       | có; chạy trong netns, được script gọi hàng loạt
+  Ghi số liệu theo thời gian     | (cần kiểm tra, xem ghi chú)                         | mỗi giây một dòng CSV, mỗi lần chạy một dòng tổng kết
+  Mất gói theo seq               | (cần kiểm tra, xem ghi chú)                         | đếm theo seq của từng nguồn, có xử lý seq quay về 0
+  RTT                            | (cần kiểm tra, xem ghi chú)                         | probe TIMESYNC 5 lần mỗi giây; ghi trung bình, p95, jitter
+  Lặp lại thí nghiệm             | thao tác bằng tay                                   | script tự chạy 8 mức × 3 lần cùng baseline, không cần người
+  Kiểm chứng độ đúng             | không có                                            | kiểm chứng bằng netem (mục 5) và 58 test tự động
+
+Đổi lại, chương trình đo không có giao diện và chỉ đo những chỉ số nhóm cần. Khi muốn quan sát trực quan, có thể chạy QGroundControl song song.
+
+
+Tóm tắt mục 3
+-------------
+  - Hệ thống chạy trên một máy Linux, chia ba vùng: trạm (ns-gcs), xe (ns-rover), và vùng giữa chứa ns-3. Gói tin giữa trạm và xe chỉ có một đường duy nhất là đi qua kênh Wi-Fi trong ns-3.
+  - Một gói tin đi qua 10 chặng; chỉ chặng kênh Wi-Fi gây trễ hoặc mất gói, mỗi khung được phát tối đa 7 lần và chờ tối đa 500 ms trong hàng đợi.
+  - RTT đo bằng TIMESYNC theo đồng hồ của trạm; vị trí xe khi cắt mạng được đọc qua một đường riêng trong vùng xe.
+  - TapBridge UseLocal buộc phải cố định MAC, tắt IPv6, ghi sẵn ARP và tắt bridge-nf.
+  - Chương trình đo chia bốn tầng để kiểm thử tự động được; baseline cho biết phần nào của số đo không do Wi-Fi.
+Mục 4 tiếp theo đưa ra các công thức mô tả kênh Wi-Fi và cách tính từng chỉ số.
+
+
+GHI CHÚ CHO NHÓM (không đưa vào báo cáo)
+---------------------------------------
+Nguồn trong repo: docs/diagrams/network-overview/network-overview.txt (bảng thành phần, luồng gói, UseLocal), README.md (kiến trúc code), docs/experiments/config.txt (tham số), network/setup-netns.sh, network/run-px4.sh, network/ns3/rover-wifi.cc, docs/diagrams/measure-loop/measure-loop.txt.
+Nguồn số liệu dùng trong mục 3 (DoD A2):
+  - IP, MAC, cổng (10.0.0.1/2, 02:00:00:00:00:01/02, 14540, 14581, 14550): network/setup-netns.sh (GCS_MAC, ROVER_MAC), network/run-px4.sh (GCS_IP, GCS_PORT, LOCAL_PORT), docs/experiments/config.txt mục 3–4 và 6. Đã đối chiếu 2026-11-18: khớp.
+  - Khoảng 400 bản tin/s: analysis/throughput_table.csv (10 m: 396,8 bản tin/s).
+  - Lệnh lái 20 lần/s: tools/run_failsafe_experiment.py (SEND_PERIOD = 0.05 s). TIMESYNC 5 lần/s: tools/run_sweep.sh (PROBE_HZ = 5.0).
+  - Tối đa 7 lần phát: ns-3 WifiMac thuộc tính FrameRetryLimit = 7 ("maximum number of transmission attempts", ~/ns-3-dev/src/wifi/model/wifi-mac.cc); khung bị bỏ khi đếm lỗi đạt 7, tức 1 lần đầu + 6 lần gửi lại. Bản cũ ghi "gửi lại tối đa 7 lần" là sai, đã sửa. network-overview.txt ghi "tối đa 7 lần thử" là đúng.
+  - Hàng đợi 500 ms: ns-3 WifiMacQueue MaxDelay mặc định 500 ms (config.txt).
+  - Timeout probe 2 s: rover/core/linkstats.py (RttTracker timeout_s = 2.0, dùng trong run_experiment.py). 3 s mất kết nối: rover/core/vehicle.py (LINK_TIMEOUT_S = 3.0).
+  - ts1 = mã probe: tools/run_experiment.py (probe_counter truyền vào send_timesync) và rover/core/linkstats.py (on_probe_sent / on_reply theo probe_id). Đã kiểm 2026-11-18.
+  - RTT baseline 10,3 ms: data/summary.csv baseline_r1..r3 (10,31–10,33 ms). "Wi-Fi gần cộng dưới 1 ms": 10 m 10,46 ms so với baseline 10,32 ms; NET-02 lần 2 ở 5 m: 10,75 ms.
+  - 58 test: pytest ngày 2026-11-18; chạy lại trước khi nộp.
+Cần làm:
+  - Vẽ sơ đồ trình tự cho đo RTT (HÌNH 3.3) bằng Mermaid sequenceDiagram, lưu docs/diagrams/ cùng file .mmd gốc.
+  - Bảng 3.9 (QGroundControl): các ô "cần kiểm tra" và "không phù hợp" CHƯA được kiểm trên QGroundControl. QGC có màn hình thống kê kênh MAVLink (có thể hiển thị tỷ lệ mất gói); cần mở QGC kiểm lại và ghi đúng những gì nó làm được trước khi nộp.
+  - Phiên bản: PX4 v1.18.0-beta1-1267-gcd2b157682, gz-sim 8.15.0 (config.txt); ns-3-dev commit c3b0d18fc (máy Hoàng), ns-3.49 (máy Dương).
+  - Mục 3 thuộc phần của Dương (sprint-02); bản nháp này để Dương sửa và bổ sung.

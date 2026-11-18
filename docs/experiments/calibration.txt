@@ -110,3 +110,23 @@ Ghi chú:
 - 70 m: mất gói còn thấp (7.6%) nhưng RTT đã ~445 ms -> độ trễ xấu đi trước mất gói.
 - pcap 80 m (docs/evidence/net-03-wifi-80m.pcap, phía xe): 15 777 / 25 874 khung data có cờ Retry (61%);
   so với pcap 50 m không fading cũ: 6 / 26 528.
+
+So sánh CÙNG L0 = 40.046 dB, chỉ tắt fading (2026-11-18; data/nofading/, analysis/fading_vs_nofading_loss.png):
+Lý do: hình so sánh trước đó dùng loạt cũ (L0 46.68 dB, 20 s, trước BUG-02) nên lệch cả fading lẫn L0.
+Lệnh: sudo NS3_BIN=<rover-wifi debug> NS3_ARGS="--fading=false" tools/run_sweep.sh --distances "70 80 85 86 90"
+      --runs 1 --skip-baseline --out-dir data/nofading/raw --summary-file data/nofading/summary.csv
+  d (m) | P_rx tính tay | không fading: mất gói, RTT tb | có fading (loạt chính, tb 3 lần): mất gói, RTT tb
+  70    | -79.40 dBm    | 0.00%, 10.58 ms               |  7.6%, 445 ms
+  80    | -81.14 dBm    | 0.00%, 10.55 ms               | 63.2%, 503 ms
+  85    | -81.93 dBm    | 0.00%, 10.44 ms               |   –
+  86    | -82.08 dBm    | 100% (rx = 0)                 |   –
+  90    | -82.67 dBm    | 100% (rx = 0)                 | 81.8%, 507 ms
+- Ngưỡng tính tay 16 - (40.046 + 30 log10 d) = -82 => d = 85.47 m; đo được đứt gọn giữa 85 và 86 m – khớp.
+- Không fading thì không có khung phải gửi lại nên ở 70–85 m RTT vẫn như ở 10 m (~10.5 ms), không có vùng trễ tăng.
+- Kết luận: với cùng suy hao, fading TRẢI vùng chuyển tiếp ra hai phía ngưỡng 85 m chứ không chỉ dời ngưỡng: phía gần,
+  suy giảm bắt đầu từ ~70 m (sớm hơn ~15 m, do gửi lại MAC + hàng đợi đầy với tải ~400 bản tin/s); phía xa, 90–100 m
+  vẫn nhận được 10–18% bản tin trong khi không fading mất 100%.
+- Ghi chú đo: ở 86 và 90 m trạm không nhận được HEARTBEAT nào (trạng thái WAITING suốt 60 s) nên lost_events = 0 –
+  không có nghĩa là liên kết tốt (LinkMonitor chỉ đếm khi chuyển từ CONNECTED sang LOST).
+- summary.csv có thêm một dòng d070_r1 14.7 s, rx = 0 ở đầu: lần thử bị dừng giữa chừng, file raw của lần đó không còn;
+  script vẽ giữ lần ghi sau cùng của mỗi nhãn.
